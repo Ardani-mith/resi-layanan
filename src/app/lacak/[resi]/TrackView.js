@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import StatusBadge from "@/components/StatusBadge";
-import Timeline from "@/components/Timeline";
+import { useState } from "react";
+import StatusBadge from "@/components/application/StatusBadge";
+import Timeline from "@/components/application/Timeline";
+import DemoClockBanner from "@/components/layout/DemoClockBanner";
 import { buttonClass } from "@/components/ui/Button";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { formatDate, formatDateTime } from "@/lib/format";
 
 const REFRESH_MS = 20_000;
@@ -96,11 +98,7 @@ export default function TrackView({ data, serverNow, offsetMs }) {
   const isOpen = OPEN.includes(data.status);
 
   // Status diperbarui otomatis selama permohonan masih berjalan (mis. petugas baru menyelesaikan tahap).
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const id = setInterval(() => router.refresh(), REFRESH_MS);
-    return () => clearInterval(id);
-  }, [isOpen, router]);
+  useAutoRefresh(REFRESH_MS, isOpen);
 
   async function send(action, extra = {}) {
     if (!/^\d{4}$/.test(last4)) {
@@ -127,6 +125,8 @@ export default function TrackView({ data, serverNow, offsetMs }) {
 
   return (
     <div className="space-y-5">
+      <DemoClockBanner offsetMs={offsetMs} />
+
       {/* Ringkasan */}
       <section className="rounded-card border border-line bg-surface p-5 shadow-card">
         <div className="flex items-center gap-2">

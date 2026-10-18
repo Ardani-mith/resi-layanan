@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Button from "@/components/ui/Button";
+import Skeleton from "@/components/ui/Skeleton";
 import { isValidResi, normalizeResi } from "@/lib/resi-format";
 
 export const metadata = { title: "Permohonan terkirim" };
@@ -53,7 +54,7 @@ async function Success({ searchParams }) {
 export default function SuccessPage({ searchParams }) {
   return (
     <div className="mx-auto max-w-xl px-4 py-14">
-      <Suspense fallback={<div className="h-80 animate-pulse rounded-card bg-surface" />}>
+      <Suspense fallback={<Skeleton className="h-80" />}>
         <Success searchParams={searchParams} />
       </Suspense>
     </div>

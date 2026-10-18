@@ -1,4 +1,4 @@
-import ResiSearch from "@/components/ResiSearch";
+import ResiSearch from "@/components/application/ResiSearch";
 import Button from "@/components/ui/Button";
 import { site } from "@/config/site";
 

@@ -1,4 +1,4 @@
-import ResiSearch from "@/components/ResiSearch";
+import ResiSearch from "@/components/application/ResiSearch";
 import { site } from "@/config/site";
 
 export const metadata = { title: "Lacak resi" };

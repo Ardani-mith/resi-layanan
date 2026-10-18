@@ -22,6 +22,17 @@ export const STATUS_LABELS = {
   ditolak: "Ditolak",
 };
 
+/** Label aksi di audit log. */
+export const EVENT_LABELS = {
+  created: "Permohonan dibuat",
+  complete: "Tahap diselesaikan",
+  request_fix: "Diminta perbaikan",
+  resume: "Berkas dilengkapi, proses dilanjutkan",
+  reject: "Permohonan ditolak",
+  escalated: "Eskalasi otomatis",
+  rated: "Warga memberi rating",
+};
+
 /** Status yang tahapnya sedang berjalan (hitung mundur aktif). */
 export const RUNNING_STATUSES = [STATUS.DIAJUKAN, STATUS.DIPROSES, STATUS.SIAP_DIAMBIL];
 /** Status yang belum final (termasuk yang dijeda). */

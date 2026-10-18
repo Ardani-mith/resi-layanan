@@ -1,7 +1,7 @@
 "use client";
 
-import { STEP_STATE } from "@/components/StatusBadge";
-import { useNow } from "@/components/useNow";
+import { STEP_STATE } from "@/components/application/StatusBadge";
+import { useNow } from "@/hooks/useNow";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 /** Status tahap dihitung ulang di browser supaya "berjalan" berubah jadi "terlambat" tanpa reload. */

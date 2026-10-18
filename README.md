@@ -18,7 +18,8 @@ Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Sken
 Prasyarat: Node.js 20.9+ dan database MongoDB (Atlas M0 gratis sudah cukup).
 
 ```bash
-git clone <url-repo-ini> resi-layanan
+# Sudah punya foldernya? Lewati 2 baris ini, cukup cd ke folder proyek.
+git clone https://github.com/Ardani-mith/frontend-codecraft-new.git resi-layanan
 cd resi-layanan
 npm install
 cp .env.example .env.local   # isi MONGODB_URI, SESSION_SECRET, DEMO_PASSWORD
@@ -32,19 +33,19 @@ Perintah lain: `npm test` (unit + integrasi, tidak butuh Atlas), `npm run lint`,
 
 Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
 
-| Peran | Email |
-|---|---|
-| Petugas loket | `loket@resi.demo` |
-| Petugas teknis | `teknis@resi.demo` |
-| Pimpinan | `pimpinan@resi.demo` |
-| Admin | `admin@resi.demo` |
+| Peran          | Email                  |
+| -------------- | ---------------------- |
+| Petugas loket  | `loket@resi.demo`    |
+| Petugas teknis | `teknis@resi.demo`   |
+| Pimpinan       | `pimpinan@resi.demo` |
+| Admin          | `admin@resi.demo`    |
 
-| Resi | Kondisi | 4 digit HP |
-|---|---|---|
-| `RL-HJ26-AKTA` | Terlambat & dieskalasi | 1234 |
-| `RL-HJ26-PRBK` | Perlu perbaikan | 5678 |
-| `RL-HJ26-SLSE` | Selesai, belum diberi rating | 4321 |
-| `RL-HJ26-TLAK` | Ditolak | 8765 |
+| Resi             | Kondisi                      | 4 digit HP |
+| ---------------- | ---------------------------- | ---------- |
+| `RL-HJ26-AKTA` | Terlambat & dieskalasi       | 1234       |
+| `RL-HJ26-PRBK` | Perlu perbaikan              | 5678       |
+| `RL-HJ26-SLSE` | Selesai, belum diberi rating | 4321       |
+| `RL-HJ26-TLAK` | Ditolak                      | 8765       |
 
 ## Progress
 
@@ -59,12 +60,17 @@ Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
 - API: pengajuan online & loket, lacak publik, antrean per peran, aksi petugas, KPI/rapor, simulasi waktu demo.
 - Login petugas & proteksi halaman per peran.
 - Seed: 3 layanan, 6 akun, 60 permohonan hasil simulasi alur kerja nyata.
-- 69 tes otomatis (SLA, alur kerja, eskalasi, privasi, integrasi database).
-- Landing page & halaman masuk.
-- Halaman lacak `/lacak/[resi]`: timeline per tahap dengan hitung mundur langsung, banner terlambat/eskalasi, perbaikan berkas, rating, detail pemohon setelah verifikasi HP, pembaruan otomatis, mode gelap.
-- Pengajuan online `/ajukan` dan halaman sukses dengan nomor resi.
+- 70 tes otomatis (SLA, alur kerja, eskalasi, privasi, mode demo, integrasi database).
+- Landing page & halaman masuk petugas.
+- **Warga:** lacak `/lacak/[resi]` (timeline, hitung mundur langsung, verifikasi HP, perbaikan berkas, rating, pembaruan otomatis), pengajuan online `/ajukan` + halaman sukses.
+- **Petugas:** antrean `/kerja` (urut sisa SLA, filter, pencarian), detail & aksi `/kerja/[resi]` (selesaikan, minta perbaikan, lanjutkan, tolak, audit log), input loket `/kerja/baru`.
+- **Pimpinan:** dashboard `/pantau` (KPI, eskalasi terbuka, tren mingguan, analisis bottleneck per tahap).
+- **Publik:** rapor SLA `/rapor`.
+- **Admin:** mode demo `/admin/demo` (majukan jam sistem, kembali ke waktu nyata).
+- Responsif (HP & desktop), mode gelap, diuji end-to-end di browser.
 
-**Berikutnya**
+**Berikutnya (Fix It, 8–10 Nov)**
 
-- Antrean petugas `/kerja`, detail & aksi `/kerja/[resi]`, input loket `/kerja/baru`
-- Dashboard pimpinan `/pantau`, rapor SLA publik `/rapor`, mode demo `/admin/demo`
+- QR code & unduh bukti resi
+- Notifikasi email perubahan status
+- Kelola layanan, SLA, libur, dan akun dari halaman admin

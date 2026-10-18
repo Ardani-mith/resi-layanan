@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApplication, performAction, performCitizenAction, verifyApplicant } from "@/lib/applications";
+import { advanceClock, getSystem, resetClock } from "@/lib/clock";
 import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
 import { DAY_MS } from "@/lib/sla";
@@ -189,6 +190,25 @@ describe("aksi petugas", () => {
   });
 });
 
+describe("mode demo", () => {
+  it("reset jam membatalkan eskalasi simulasi, tapi audit log tetap", async () => {
+    const app = await newApplication(clockAt());
+    await advanceClock(3 * DAY_MS);
+    expect((await getSystem()).clockOffsetMs).toBe(3 * DAY_MS);
+
+    // Jam sistem +3 hari → eskalasi tercatat dengan tanggal "masa depan".
+    const future = new Date(Date.now() + 3 * DAY_MS);
+    const lean = await Application.findOne({ resi: app.resi }).lean();
+    await syncEscalations(lean, future, new Set());
+    expect((await Application.findOne({ resi: app.resi }).lean()).escalations.length).toBeGreaterThan(0);
+
+    expect(await resetClock()).toBeGreaterThanOrEqual(1);
+    expect((await getSystem()).clockOffsetMs).toBe(0);
+    expect((await Application.findOne({ resi: app.resi }).lean()).escalations).toEqual([]);
+    expect(await Event.countDocuments({ applicationId: lean._id, action: "escalated" })).toBeGreaterThan(0);
+  });
+});
+
 describe("audit log append-only", () => {
   it("events tidak bisa diubah atau dihapus lewat model", async () => {
     const event = await Event.findOne();
@@ -230,5 +250,9 @@ describe("statistik", () => {
 
     const open = openEscalations(apps, NOW);
     expect(open.some((e) => e.resi === "RL-HJ26-AKTA")).toBe(true);
+    // Satu baris per tahap: tahap yang sudah level 2 tidak muncul lagi sebagai level 1.
+    const keys = open.map((e) => `${e.resi}|${e.stepName}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(open.some((e) => e.level === 2)).toBe(true);
   });
 });

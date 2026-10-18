@@ -19,6 +19,7 @@ const dateFmt = new Intl.DateTimeFormat("id-ID", {
   year: "numeric",
 });
 const shortDateFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
+const dayMonthFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short" });
 
 const valid = (value) => value !== null && value !== undefined && !Number.isNaN(new Date(value).getTime());
 
@@ -35,6 +36,18 @@ export function formatDate(value) {
 /** "12 Okt 2026" */
 export function formatShortDate(value) {
   return valid(value) ? shortDateFmt.format(new Date(value)) : "—";
+}
+
+/** "12 Okt" */
+export function formatDayMonth(value) {
+  return valid(value) ? dayMonthFmt.format(new Date(value)) : "—";
+}
+
+/** Jam → "5 jam" / "1,5 hari" (1 hari = 24 jam kalender). */
+export function formatHours(hours) {
+  if (hours === null || hours === undefined) return "—";
+  if (hours < 24) return `${Math.round(hours)} jam`;
+  return `${(hours / 24).toLocaleString("id-ID", { maximumFractionDigits: 1 })} hari`;
 }
 
 const MINUTE = 60_000;

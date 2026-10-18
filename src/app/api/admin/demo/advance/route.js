@@ -13,8 +13,8 @@ export const POST = route(async (request) => {
   const { data, error } = await parseBody(request, advanceSchema);
   if (error) return error;
 
-  if (data.reset) await resetClock();
-  else await advanceClock(data.days * DAY_MS);
+  const cancelled = data.reset ? await resetClock() : 0;
+  if (!data.reset) await advanceClock(data.days * DAY_MS);
 
   const clock = await getClock();
   const escalated = await syncOverdue(clock.now, clock.holidays);
@@ -23,5 +23,6 @@ export const POST = route(async (request) => {
     offsetDays: clock.clockOffsetMs / DAY_MS,
     now: clock.now,
     escalated,
+    cancelled,
   });
 });

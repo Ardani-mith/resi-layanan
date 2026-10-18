@@ -30,6 +30,11 @@
   --pause: #6b5bb5;
   --pause-soft: #efecfb;
 
+  /* Grafik: satu hue (data satu seri), divalidasi dataviz validate_palette per mode. */
+  --chart: #0b5cad;
+  --chart-track: #e6eef8;
+  --grid: #e7ecf3;
+
   --radius: 14px;
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
 }
@@ -59,6 +64,10 @@
     --pause: #a99cf0;
     --pause-soft: #241f3f;
 
+    --chart: #4a92dd;
+    --chart-track: #1b2a42;
+    --grid: #1f2b40;
+
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
   }
 }
@@ -84,6 +93,9 @@
   --color-late-soft: var(--late-soft);
   --color-pause: var(--pause);
   --color-pause-soft: var(--pause-soft);
+  --color-chart: var(--chart);
+  --color-chart-track: var(--chart-track);
+  --color-grid: var(--grid);
   --radius-card: var(--radius);
   --shadow-card: var(--shadow);
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;

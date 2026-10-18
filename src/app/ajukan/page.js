@@ -1,15 +1,12 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
-import ApplyForm from "@/components/ApplyForm";
-import { dbConnect } from "@/lib/db";
-import { listActiveServices } from "@/lib/services";
+import ApplyForm from "@/components/application/ApplyForm";
+import Skeleton from "@/components/ui/Skeleton";
+import { getActiveServices } from "@/lib/dal";
 
 export const metadata = { title: "Ajukan permohonan" };
 
 async function ApplyLoader({ searchParams }) {
-  await connection();
-  const [{ layanan }] = await Promise.all([searchParams, dbConnect()]);
-  const services = await listActiveServices();
+  const [{ layanan }, services] = await Promise.all([searchParams, getActiveServices()]);
   return <ApplyForm services={services} initialSlug={layanan} />;
 }
 
@@ -21,7 +18,7 @@ export default function ApplyPage({ searchParams }) {
         Isi sekali, dapat nomor resi, lalu pantau setiap tahap dan tenggatnya tanpa perlu datang bertanya.
       </p>
       <div className="mt-6">
-        <Suspense fallback={<div className="h-96 animate-pulse rounded-card bg-surface" aria-busy="true" />}>
+        <Suspense fallback={<Skeleton />}>
           <ApplyLoader searchParams={searchParams} />
         </Suspense>
       </div>

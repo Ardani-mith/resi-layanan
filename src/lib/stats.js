@@ -107,6 +107,7 @@ export function computeStats(apps, services, now, { weeks = 8 } = {}) {
         id: String(service._id),
         slug: service.slug,
         name: service.name,
+        targetDays: service.steps?.reduce((sum, step) => sum + (step.slaDays || 0), 0) ?? null,
         ...summarize(own, now),
         steps: stepBreakdown(own, now),
       };
@@ -115,12 +116,19 @@ export function computeStats(apps, services, now, { weeks = 8 } = {}) {
   };
 }
 
-/** Eskalasi yang belum selesai, paling parah & paling lama dulu. Khusus petugas. */
+/**
+ * Eskalasi yang belum selesai, satu baris per tahap dengan level tertingginya
+ * (tahap di level 2 tidak muncul dua kali). Paling parah & paling lama dulu. Khusus petugas.
+ */
 export function openEscalations(apps, now) {
   const rows = [];
   for (const app of apps) {
+    const highest = new Map();
     for (const esc of app.escalations ?? []) {
       if (esc.resolvedAt) continue;
+      if ((highest.get(esc.stepKey)?.level ?? 0) < esc.level) highest.set(esc.stepKey, esc);
+    }
+    for (const esc of highest.values()) {
       const step = app.steps.find((s) => s.key === esc.stepKey);
       rows.push({
         resi: app.resi,

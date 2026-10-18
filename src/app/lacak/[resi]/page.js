@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import ResiSearch from "@/components/ResiSearch";
+import ResiSearch from "@/components/application/ResiSearch";
+import Skeleton from "@/components/ui/Skeleton";
 import { site } from "@/config/site";
-import { loadByResi } from "@/lib/applications";
-import { getClock } from "@/lib/clock";
-import { dbConnect } from "@/lib/db";
-import { publicView } from "@/lib/present";
+import { getClockInfo, getTracking } from "@/lib/dal";
 import { isValidResi, normalizeResi } from "@/lib/resi-format";
 import TrackView from "./TrackView";
 
@@ -26,8 +24,8 @@ function Problem({ title, body }) {
 function TrackSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Memuat status permohonan">
-      <div className="h-52 animate-pulse rounded-card bg-surface" />
-      <div className="h-80 animate-pulse rounded-card bg-surface" />
+      <Skeleton className="h-52" />
+      <Skeleton className="h-80" />
     </div>
   );
 }
@@ -47,10 +45,8 @@ async function Tracking({ params }) {
   }
   if (resi !== raw) redirect(`/lacak/${resi}`);
 
-  await dbConnect();
-  const clock = await getClock();
-  const app = await loadByResi(resi, clock);
-  if (!app) {
+  const [data, clock] = await Promise.all([getTracking(resi), getClockInfo()]);
+  if (!data) {
     return (
       <Problem
         title="Resi tidak ditemukan"
@@ -59,7 +55,7 @@ async function Tracking({ params }) {
     );
   }
 
-  return <TrackView data={publicView(app, clock)} serverNow={clock.now.toISOString()} offsetMs={clock.clockOffsetMs} />;
+  return <TrackView data={data} serverNow={clock.now} offsetMs={clock.offsetMs} />;
 }
 
 export default function TrackPage({ params }) {

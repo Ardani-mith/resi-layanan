@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import LogoutButton from "@/components/LogoutButton";
+import LogoutButton from "@/components/layout/LogoutButton";
 import { site } from "@/config/site";
 import { ROLE_LABELS } from "@/lib/roles";
-import { getSession } from "@/lib/session";
+import { getCurrentUser } from "@/lib/dal";
 
 const STAFF_LINKS = {
   petugas_loket: [["/kerja", "Antrean"], ["/kerja/baru", "Input loket"]],
@@ -38,7 +38,7 @@ function GuestLinks() {
 // Membaca cookie = data saat request; di Cache Components harus di dalam <Suspense>
 // supaya kerangka navbar tetap bisa di-prerender.
 async function SessionLinks() {
-  const user = await getSession();
+  const user = await getCurrentUser();
   if (!user) return <GuestLinks />;
   return (
     <>
