@@ -33,6 +33,17 @@ Cek: http://localhost:3000/api/health → `{"status":"ok","db":"connected"}`.
 - [ ] Coba di Chrome, Edge, Firefox, dan HP
 - [ ] Siapkan cadangan offline: `npm run build && npm start` + MongoDB lokal
 
+## 4b. Screenshot untuk PDF / proposal
+
+Animasi landing page (judul naik, kartu melayang) bisa terulang saat Chrome mengambil
+screenshot halaman penuh, sehingga judul tampak kosong. Sebelum capture:
+
+1. DevTools → Ctrl/Cmd+Shift+P → ketik **"Emulate CSS prefers-reduced-motion: reduce"**.
+2. Ctrl/Cmd+Shift+P → **"Capture full size screenshot"**.
+
+Dengan pengaturan itu semua animasi langsung di keadaan akhir (ini juga yang dilihat
+pengguna yang memilih "kurangi gerakan").
+
 ## 5. Alur demo (sesuai skrip di handoff)
 
 1. Landing → "Kalau paket bisa dilacak, kenapa KTP tidak?"

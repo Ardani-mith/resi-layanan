@@ -1,5 +1,6 @@
 // SEMUA teks landing page ada di sini. Urutan bagian mengikuti pitch deck:
-// masalah → cara kerja → fitur → penutup.
+// hero (cek resi) → rapor ringkas → masalah → cara kerja → fitur → penutup.
+// Ikon ditulis sebagai nama (lihat ICONS di src/app/page.js) agar config tetap data polos.
 
 export const site = {
   name: "Resi Layanan",
@@ -11,9 +12,28 @@ export const site = {
 
   hero: {
     eyebrow: "Pelacakan layanan publik",
-    title: "Tahu pasti permohonan Anda sampai di mana, dan kapan selesai.",
+    // Satu elemen = satu baris yang dianimasikan muncul bergantian.
+    titleLines: ["Tahu pasti permohonan", "Anda sampai di mana,", "dan kapan selesai."],
     body: "Masukkan nomor resi dari loket atau pengajuan online. Tanpa login, tanpa antre bertanya.",
     exampleResi: "RL-HJ26-AKTA",
+    highlights: [
+      { icon: "lock", text: "Nama pemohon disamarkan" },
+      { icon: "timer", text: "Tenggat tiap tahap terlihat" },
+      { icon: "bell", text: "Terlambat? Otomatis naik ke atasan" },
+    ],
+    // Isi cuplikan halaman lacak di hero (ilustrasi, bukan data asli).
+    preview: {
+      service: "Akta Kelahiran",
+      applicant: "Si*** R***",
+      officerNote: "Berkas lengkap dan sesuai.",
+      escalationNote: "Lewat tenggat? Otomatis diteruskan ke Kepala Seksi.",
+    },
+  },
+
+  summary: {
+    eyebrow: "Rapor SLA hari ini",
+    title: "Janji waktu yang bisa dicek siapa pun.",
+    cta: "Lihat rapor lengkap",
   },
 
   // VERIFIKASI ULANG angka & sumber sebelum submit (lihat docs/HANDOFF-WIA.md §2).
@@ -37,21 +57,25 @@ export const site = {
   },
 
   howItWorks: {
-    title: "Cara kerja",
+    title: "Seperti melacak paket, tapi untuk dokumen kependudukan.",
     steps: [
       {
+        icon: "file",
         title: "Ajukan, dapat resi",
         body: "Online atau di loket. Nomor resi acak dan unik, misalnya RL-AB3K-7XQ9.",
       },
       {
+        icon: "timer",
         title: "Setiap tahap punya tenggat",
         body: "Verifikasi, proses, tanda tangan, cetak. Tenggat dihitung dalam hari kerja dan tampil ke warga.",
       },
       {
+        icon: "bell",
         title: "Terlambat? Naik otomatis",
         body: "Tahap yang lewat tenggat ditandai merah dan dieskalasi ke Kepala Seksi, lalu Kepala Bidang.",
       },
       {
+        icon: "star",
         title: "Selesai, beri penilaian",
         body: "Warga memberi rating, dan kinerja tiap layanan terbuka di rapor SLA publik.",
       },
@@ -62,31 +86,37 @@ export const site = {
     title: "Untuk warga, petugas, dan pimpinan",
     items: [
       {
+        icon: "phone",
         role: "Warga",
         title: "Lacak seperti paket",
         body: "Timeline per tahap, hitung mundur tenggat, catatan petugas, dan estimasi selesai. Nama disamarkan; detail terbuka dengan 4 digit HP.",
       },
       {
+        icon: "fix",
         role: "Warga",
         title: "Perbaikan tanpa mulai dari nol",
         body: "Jika berkas kurang, petugas menulis apa yang perlu diperbaiki. Jam SLA instansi berhenti sampai warga melengkapi.",
       },
       {
+        icon: "queue",
         role: "Petugas",
         title: "Antrean urut paling mendesak",
         body: "Setiap petugas hanya melihat tahap miliknya, diurutkan dari sisa waktu tersempit.",
       },
       {
+        icon: "dashboard",
         role: "Pimpinan",
         title: "Eskalasi & bottleneck",
         body: "Daftar tahap yang terlambat, tahap paling sering molor, dan persentase tepat waktu per layanan.",
       },
       {
+        icon: "chart",
         role: "Publik",
         title: "Rapor SLA terbuka",
         body: "Siapa pun bisa melihat seberapa sering instansi menepati janjinya.",
       },
       {
+        icon: "shield",
         role: "Auditor",
         title: "Jejak tak bisa diubah",
         body: "Setiap aksi tercatat di audit log append-only: siapa, kapan, dan apa.",

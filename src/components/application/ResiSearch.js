@@ -5,8 +5,20 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { isValidResi, normalizeResi } from "@/lib/resi-format";
 
+// "hero" = di atas latar gelap landing page: teks bantuan terang, input lebih besar.
+const VARIANTS = {
+  default: { helper: "text-muted", error: "text-late", example: "text-brand", input: "min-h-13" },
+  hero: {
+    helper: "text-white/70",
+    error: "text-[#ffb4ab]",
+    example: "text-white",
+    input: "min-h-14 shadow-lg",
+  },
+};
+
 /** Form cek resi: validasi format di browser, lalu buka /lacak/[resi]. */
-export default function ResiSearch({ example, autoFocus = false }) {
+export default function ResiSearch({ example, autoFocus = false, variant = "default" }) {
+  const tone = VARIANTS[variant];
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
@@ -41,23 +53,29 @@ export default function ResiSearch({ example, autoFocus = false }) {
           autoFocus={autoFocus}
           aria-invalid={Boolean(error)}
           aria-describedby="resi-message"
-          className="min-h-13 flex-1 rounded-xl border border-line bg-surface px-4 font-mono text-lg tracking-wider uppercase outline-none placeholder:text-muted/60 focus:border-brand aria-invalid:border-late"
+          className={cn(
+            "flex-1 rounded-xl border border-line bg-surface px-4 font-mono text-lg tracking-wider uppercase outline-none placeholder:text-muted/60 focus:border-brand aria-invalid:border-late",
+            tone.input,
+          )}
         />
         <button
           type="submit"
-          className="min-h-13 rounded-xl bg-brand px-6 font-semibold text-on-brand hover:bg-brand-strong"
+          className={cn(
+            "rounded-xl bg-brand px-6 font-semibold text-on-brand hover:bg-brand-strong",
+            tone.input,
+          )}
         >
           Lacak
         </button>
       </div>
-      <p id="resi-message" className={cn("mt-2 text-sm", error ? "text-late" : "text-muted")}>
+      <p id="resi-message" className={cn("mt-2 text-sm", error ? tone.error : tone.helper)}>
         {error || (
           <>
             Coba resi demo{" "}
             <button
               type="button"
               onClick={() => setValue(example)}
-              className="font-mono font-semibold text-brand underline-offset-2 hover:underline"
+              className={cn("font-mono font-semibold underline-offset-2 hover:underline", tone.example)}
             >
               {example}
             </button>

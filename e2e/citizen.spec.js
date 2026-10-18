@@ -11,7 +11,9 @@ test("cek resi dari beranda, lalu buka detail dengan 4 digit HP", async ({ openP
   await page.waitForURL("**/lacak/RL-HJ26-AKTA");
 
   await expect(page.getByText(/melewati tenggat/).first()).toBeVisible();
-  await expect(page.getByText("Si*** R***")).toBeVisible();
+  // filter visible: Next 16 menyimpan halaman sebelumnya (beranda, yang memuat cuplikan
+  // dengan teks serupa) secara tersembunyi agar navigasi "kembali" instan.
+  await expect(page.getByText("Si*** R***").filter({ visible: true })).toBeVisible();
 
   await page.locator("#verify-last4").fill("0000");
   await page.getByRole("button", { name: "Tampilkan detail" }).click();

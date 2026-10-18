@@ -6,6 +6,8 @@ const VARIANTS = {
   secondary: "border border-line bg-surface text-text hover:bg-surface-2",
   danger: "bg-late text-surface hover:opacity-90",
   ghost: "text-brand hover:bg-brand-soft",
+  // Untuk latar gelap (hero & penutup landing page).
+  inverse: "border border-white/25 text-white hover:bg-white/10",
 };
 
 /** Class tombol; `extra` boleh kondisional dan menimpa bawaan bila bentrok (mis. "w-full", "px-6"). */
