@@ -1,0 +1,60 @@
+// Format tanggal/durasi untuk UI. Zona waktu selalu Asia/Jakarta (WIB) secara
+// eksplisit supaya hasil render server (UTC di Vercel) sama persis dengan browser.
+
+const TZ = "Asia/Jakarta";
+
+const dateTimeFmt = new Intl.DateTimeFormat("id-ID", {
+  timeZone: TZ,
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+const dateFmt = new Intl.DateTimeFormat("id-ID", {
+  timeZone: TZ,
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+const shortDateFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
+
+const valid = (value) => value !== null && value !== undefined && !Number.isNaN(new Date(value).getTime());
+
+/** "Sen, 12 Okt 14.30" */
+export function formatDateTime(value) {
+  return valid(value) ? `${dateTimeFmt.format(new Date(value))} WIB` : "—";
+}
+
+/** "Senin, 12 Oktober 2026" */
+export function formatDate(value) {
+  return valid(value) ? dateFmt.format(new Date(value)) : "—";
+}
+
+/** "12 Okt 2026" */
+export function formatShortDate(value) {
+  return valid(value) ? shortDateFmt.format(new Date(value)) : "—";
+}
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/** Durasi ringkas, dua satuan terbesar: "2 hari 4 jam", "3 jam 20 menit", "kurang dari 1 menit". */
+export function formatDuration(ms) {
+  const abs = Math.abs(ms ?? 0);
+  if (abs < MINUTE) return "kurang dari 1 menit";
+  const days = Math.floor(abs / DAY);
+  const hours = Math.floor((abs % DAY) / HOUR);
+  const minutes = Math.floor((abs % HOUR) / MINUTE);
+  const parts = [];
+  if (days) parts.push(`${days} hari`);
+  if (hours) parts.push(`${hours} jam`);
+  if (!days && minutes) parts.push(`${minutes} menit`);
+  return parts.slice(0, 2).join(" ");
+}
+
+export function formatPercent(ratio) {
+  return ratio === null || ratio === undefined ? "—" : `${Math.round(ratio * 100)}%`;
+}

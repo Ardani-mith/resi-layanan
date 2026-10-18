@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
+/*
+  Design tokens Resi Layanan. Semua warna lewat variabel ini (bg-brand, text-muted,
+  border-line, bg-late-soft, dst.) supaya mode gelap cukup diatur di satu tempat.
+  Warna status tahap: ok = selesai/tepat waktu, run = berjalan, warn = mendekati
+  tenggat, late = terlambat/eskalasi, pause = dijeda (perlu perbaikan).
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-2: #eef2f7;
+  --text: #0f1b2d;
+  --muted: #5b6b80;
+  --line: #dbe3ee;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --brand: #0b5cad;
+  --brand-strong: #084a8c;
+  --brand-soft: #e6f0fb;
+  --on-brand: #ffffff;
+
+  --ok: #13795b;
+  --ok-soft: #e3f5ee;
+  --run: #0b5cad;
+  --run-soft: #e6f0fb;
+  --warn: #a15c00;
+  --warn-soft: #fdf1dc;
+  --late: #c0362c;
+  --late-soft: #fde8e6;
+  --pause: #6b5bb5;
+  --pause-soft: #efecfb;
+
+  --radius: 14px;
+  --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0b1220;
+    --surface: #111a2b;
+    --surface-2: #18233a;
+    --text: #e8eef7;
+    --muted: #93a3b8;
+    --line: #24324b;
+
+    --brand: #5aa2ec;
+    --brand-strong: #84bbf2;
+    --brand-soft: #142a47;
+    --on-brand: #06101f;
+
+    --ok: #4cc59a;
+    --ok-soft: #0f2e25;
+    --run: #5aa2ec;
+    --run-soft: #142a47;
+    --warn: #f0b44c;
+    --warn-soft: #33270f;
+    --late: #ff7b70;
+    --late-soft: #3a1714;
+    --pause: #a99cf0;
+    --pause-soft: #241f3f;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-run: var(--run);
+  --color-run-soft: var(--run-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-late: var(--late);
+  --color-late-soft: var(--late-soft);
+  --color-pause: var(--pause);
+  --color-pause-soft: var(--pause-soft);
+  --radius-card: var(--radius);
+  --shadow-card: var(--shadow);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
