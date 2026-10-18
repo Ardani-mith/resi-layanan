@@ -9,7 +9,9 @@ export default function Error({ reset }) {
       <p className="mt-2 text-muted">Halaman ini gagal dimuat. Coba lagi sebentar.</p>
       <div className="mt-6 flex justify-center gap-3">
         <Button onClick={() => reset()}>Coba lagi</Button>
-        <Button href="/" variant="secondary">Beranda</Button>
+        <Button href="/" variant="secondary">
+          Beranda
+        </Button>
       </div>
     </div>
   );

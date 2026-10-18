@@ -14,9 +14,7 @@ export default function LoginPage() {
           <LoginForm />
         </Suspense>
       </div>
-      <p className="mt-4 text-sm text-muted">
-        Warga tidak perlu akun: cukup lacak dengan nomor resi.
-      </p>
+      <p className="mt-4 text-sm text-muted">Warga tidak perlu akun: cukup lacak dengan nomor resi.</p>
     </div>
   );
 }

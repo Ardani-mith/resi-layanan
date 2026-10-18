@@ -6,9 +6,14 @@ export const RESI_PATTERN = /^RL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 
 /** Rapikan input warga: huruf besar, spasi dibuang, "RL" & tanda hubung boleh lupa. */
 export function normalizeResi(input) {
-  const raw = String(input ?? "").toUpperCase().replace(/[\s-]/g, "");
+  const raw = String(input ?? "")
+    .toUpperCase()
+    .replace(/[\s-]/g, "");
   const body = raw.startsWith("RL") ? raw.slice(2) : raw;
-  if (body.length !== 8) return String(input ?? "").trim().toUpperCase();
+  if (body.length !== 8)
+    return String(input ?? "")
+      .trim()
+      .toUpperCase();
   return `RL-${body.slice(0, 4)}-${body.slice(4)}`;
 }
 

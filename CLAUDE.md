@@ -6,8 +6,11 @@ Konteks lomba, jadwal, spesifikasi, dan prioritas: `../docs/HANDOFF-WIA.md`.
 
 ## Perintah
 
+- `npm run check`: lint + cek format + tes unit/integrasi. Jalankan sebelum commit.
 - `npm test`: Vitest (unit + integrasi dengan MongoDB in-memory, tidak butuh Atlas)
-- `npm run lint`, `npm run build`
+- `npm run test:e2e`: Playwright di Google Chrome. Server khusus (`scripts/e2e-server.mjs`): MongoDB in-memory + seed segar + build di `.next-e2e`, jadi aman walau `npm run dev` sedang berjalan dan tidak menyentuh Atlas.
+- `npm run lint:fix` (termasuk urutan import), `npm run format` (Prettier + urutan class Tailwind)
+- `npm run build`
 - `npm run seed`: hapus & isi ulang DB dari `.env.local`
 
 ## Struktur folder
@@ -19,15 +22,18 @@ src/
 │   ├── application/      # domain permohonan: ApplyForm, ResiSearch, StatusBadge, Timeline
 │   ├── charts/           # ColumnChart, Meter, StatTile, trend
 │   ├── layout/           # Navbar, Footer, LogoutButton, DemoClockBanner
-│   └── ui/               # Button, Field, Skeleton
+│   └── ui/               # Alert, Button, Field, Skeleton
 ├── hooks/                # useNow, useAutoRefresh (client)
 ├── config/site.js        # semua teks landing
 ├── lib/                  # logika & akses data (lihat Arsitektur)
 ├── models/               # skema Mongoose
 └── proxy.js
-scripts/                  # seed & data demo
+scripts/                  # seed, data demo, server e2e
 tests/                    # Vitest
+e2e/                      # Playwright (fixtures.js: openPage per peran, gagal jika ada error browser/5xx)
 ```
+
+Kode dirapikan otomatis: ESLint (`simple-import-sort`: side-effect → node: → paket → `@/` → relatif, tanpa baris kosong) dan Prettier (lebar 110, plugin Tailwind). Daftar data panjang boleh `// prettier-ignore` agar tetap ringkas.
 
 Konvensi: komponen PascalCase, hook `useXxx`, modul lib huruf kecil (kebab-case jika dua kata). Kode & nama berkas berbahasa Inggris, teks UI & komentar berbahasa Indonesia.
 
@@ -36,7 +42,10 @@ Konvensi: komponen PascalCase, hook `useXxx`, modul lib huruf kecil (kebab-case 
 - `src/lib/` berisi logika murni yang bisa diuji tanpa DB: `sla.js` (hari kerja WIB, jeda, estimasi), `workflow.js` (mesin status, `applyAction`), `escalation.js` (`pendingEscalations` murni + `syncEscalations` ke DB), `present.js` (bentuk data publik/terverifikasi/petugas, satu-satunya tempat aturan privasi), `stats.js`.
 - `src/lib/dal.js` (Data Access Layer, server-only) adalah satu pintu baca data untuk Server Component **dan** route API: `getTracking`, `getQueue`, `getStaffApplication`, `getStats`, `getActiveServices`, `getClockInfo`. Setiap fungsi menyambungkan DB dan mengambil jam sendiri. Halaman petugas memanggil `requireStaffPage(roles, from)` (redirect), sedangkan route API memakai `requireUser(roles)` (401/403).
 - `src/lib/applications.js` berisi operasi tulis (create/aksi/verifikasi HP). Route API cukup tipis: `route()` + `requireUser()` + `parseBody()` dari `lib/api.js`.
-- Mutasi dari UI: `fetch` ke route API, lalu `router.refresh()`. Data halaman selalu dari Server Component (tanpa fetch di client saat load).
+- Mutasi dari UI: `postJson()` (`lib/http.js`, tidak pernah throw, hasil `{ ok, data }` / `{ ok: false, error: { message, fields } }`) ke route API, lalu `router.refresh()` atau pindah halaman. Data halaman selalu dari Server Component (tanpa fetch di client saat load).
+- Class Tailwind kondisional: `cn()` (`lib/cn.js`, clsx + tailwind-merge yang sudah mengenal token warna kustom). Pesan form: `<Alert tone="error|success|warning">`. Ikon: `lucide-react` dengan `aria-hidden`.
+- Form yang memuat data sensitif (login, pengajuan, catatan petugas, 4 digit HP) wajib `method="post"`: kalau terkirim sebelum hydration, data tidak bocor ke URL.
+- Setelah aksi di `/kerja/[resi]`, petugas dikembalikan ke `/kerja?selesai=RESI&aksi=...` dengan konfirmasi (panel aksi bisa hilang karena tahap pindah peran).
 - Model dan modul `lib/` yang dipakai `scripts/` wajib memakai import relatif berekstensi `.js` (bukan `@/`), karena seed dijalankan dengan Node biasa.
 - `lib/session.js` dan `lib/api.js` bersifat `server-only`. `proxy.js` hanya boleh mengimpor `lib/jwt.js` dan `lib/roles.js`.
 

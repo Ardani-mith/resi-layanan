@@ -111,10 +111,7 @@ export function queueItem(app, now) {
     stepState: step ? stepState(step, now) : null,
     dueAt: step?.dueAt ?? null,
     remainingMs: step ? remainingMs(step, now) : null,
-    escalationLevel: Math.max(
-      0,
-      ...(app.escalations ?? []).filter((e) => !e.resolvedAt).map((e) => e.level)
-    ),
+    escalationLevel: Math.max(0, ...(app.escalations ?? []).filter((e) => !e.resolvedAt).map((e) => e.level)),
     createdAt: app.createdAt,
   };
 }

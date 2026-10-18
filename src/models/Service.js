@@ -9,7 +9,7 @@ const stepTemplateSchema = new mongoose.Schema(
     // Hari kerja. null = tanpa tenggat (mis. menunggu warga mengambil dokumen).
     slaDays: { type: Number, min: 0, default: null },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const serviceSchema = new mongoose.Schema(
@@ -26,7 +26,7 @@ const serviceSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Service || mongoose.model("Service", serviceSchema);

@@ -1,30 +1,20 @@
 "use client";
 
+import { Check, Copy, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
 import DemoClockBanner from "@/components/layout/DemoClockBanner";
+import Alert from "@/components/ui/Alert";
 import { buttonClass } from "@/components/ui/Button";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { postJson } from "@/lib/http";
 
 const REFRESH_MS = 20_000;
 const OPEN = ["diajukan", "diproses", "siap_diambil", "perlu_perbaikan"];
-
-/** POST ke /api/track/[resi]; mengembalikan { data } atau { error: { message, fields } }. */
-async function trackAction(resi, body) {
-  try {
-    const res = await fetch(`/api/track/${resi}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    return await res.json();
-  } catch {
-    return { error: { message: "Tidak bisa terhubung ke server. Periksa koneksi Anda." } };
-  }
-}
 
 function CopyResi({ resi }) {
   const [copied, setCopied] = useState(false);
@@ -38,8 +28,13 @@ function CopyResi({ resi }) {
     }
   }
   return (
-    <button type="button" onClick={copy} className="rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft">
-      {copied ? "Tersalin ✓" : "Salin"}
+    <button
+      type="button"
+      onClick={copy}
+      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft"
+    >
+      {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
+      {copied ? "Tersalin" : "Salin"}
     </button>
   );
 }
@@ -48,7 +43,9 @@ function CopyResi({ resi }) {
 function Last4Field({ value, onChange, error, id }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">4 digit terakhir nomor HP pemohon</label>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+        4 digit terakhir nomor HP pemohon
+      </label>
       <input
         id={id}
         value={value}
@@ -60,29 +57,33 @@ function Last4Field({ value, onChange, error, id }) {
         aria-describedby={error ? `${id}-error` : undefined}
         className="min-h-11 w-32 rounded-xl border border-line bg-surface px-3 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-brand aria-invalid:border-late"
       />
-      {error && <p id={`${id}-error`} className="mt-1 text-sm text-late">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-sm text-late">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
+const BANNER_TONES = {
+  late: "border-late bg-late-soft",
+  pause: "border-pause bg-pause-soft",
+  ok: "border-ok bg-ok-soft",
+};
+
 function Banner({ tone, title, children }) {
-  const tones = {
-    late: "border-late bg-late-soft",
-    pause: "border-pause bg-pause-soft",
-    ok: "border-ok bg-ok-soft",
-    reject: "border-late bg-late-soft",
-  };
   return (
-    <section className={`rounded-card border-l-4 p-4 ${tones[tone]}`}>
+    <section className={cn("rounded-card border-l-4 p-4", BANNER_TONES[tone])}>
       <h2 className="font-bold">{title}</h2>
       <div className="mt-1 text-sm">{children}</div>
     </section>
   );
 }
 
+/** Error dari server hanya tampil di bawah form yang mengirimnya. */
 function FormError({ errors, action }) {
-  if (!errors.form || errors.formAction !== action) return null;
-  return <p role="alert" className="w-full rounded-xl bg-late-soft px-3 py-2 text-sm text-late">{errors.form}</p>;
+  return <Alert className="w-full">{errors.formAction === action && errors.form}</Alert>;
 }
 
 export default function TrackView({ data, serverNow, offsetMs }) {
@@ -107,15 +108,15 @@ export default function TrackView({ data, serverNow, offsetMs }) {
     }
     setPending(action);
     setErrors({});
-    const body = await trackAction(data.resi, { action, phoneLast4: last4, ...extra });
+    const res = await postJson(`/api/track/${data.resi}`, { action, phoneLast4: last4, ...extra });
     setPending(null);
-    if (body.error) {
-      const fields = body.error.fields ?? {};
+    if (!res.ok) {
+      const { fields, message } = res.error;
       // Error per-field tampil di field-nya; selebihnya di bawah form yang dikirim.
-      setErrors({ ...fields, form: fields.phoneLast4 ? null : body.error.message, formAction: action });
+      setErrors({ ...fields, form: fields.phoneLast4 ? null : message, formAction: action });
       return false;
     }
-    setDetail(body.data);
+    setDetail(res.data);
     if (action !== "verify") router.refresh();
     return true;
   }
@@ -141,7 +142,11 @@ export default function TrackView({ data, serverNow, offsetMs }) {
         <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <div className="col-span-2 sm:col-span-1">
             <dt className="text-muted">
-              {data.status === "selesai" ? "Selesai" : data.status === "ditolak" ? "Ditolak" : "Perkiraan selesai"}
+              {data.status === "selesai"
+                ? "Selesai"
+                : data.status === "ditolak"
+                  ? "Ditolak"
+                  : "Perkiraan selesai"}
             </dt>
             <dd className="text-base font-semibold">
               {data.completedAt
@@ -153,7 +158,9 @@ export default function TrackView({ data, serverNow, offsetMs }) {
           </div>
           <div className="col-span-2 sm:col-span-1">
             <dt className="text-muted">Tahap saat ini</dt>
-            <dd className="font-semibold">{data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName}</dd>
+            <dd className="font-semibold">
+              {data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName}
+            </dd>
           </div>
           <div>
             <dt className="text-muted">Pemohon</dt>
@@ -170,13 +177,13 @@ export default function TrackView({ data, serverNow, offsetMs }) {
       {/* Situasi khusus */}
       {data.isLate && (
         <Banner tone="late" title={`Tahap "${current?.name}" melewati tenggat`}>
-          Keterlambatan ini tercatat dan {data.isEscalated ? "sudah diteruskan otomatis" : "akan diteruskan"} ke
-          atasan petugas. Anda tidak perlu melapor ulang.
+          Keterlambatan ini tercatat dan {data.isEscalated ? "sudah diteruskan otomatis" : "akan diteruskan"}{" "}
+          ke atasan petugas. Anda tidak perlu melapor ulang.
         </Banner>
       )}
 
       {data.status === "ditolak" && (
-        <Banner tone="reject" title="Permohonan ditolak">
+        <Banner tone="late" title="Permohonan ditolak">
           <p className="font-medium">{data.rejectionReason}</p>
           <p className="mt-2 text-muted">Jika alasan ini keliru, datangi loket dengan membawa nomor resi.</p>
         </Banner>
@@ -197,13 +204,17 @@ export default function TrackView({ data, serverNow, offsetMs }) {
             konfirmasi di bawah agar proses berlanjut.
           </p>
           <form
+            method="post"
             className="mt-4 flex flex-wrap items-end gap-3"
             onSubmit={async (e) => {
               e.preventDefault();
-              if (await send("resubmit")) setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
+              if (await send("resubmit"))
+                setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
             }}
           >
-            {!verified && <Last4Field id="fix-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />}
+            {!verified && (
+              <Last4Field id="fix-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+            )}
             <button type="submit" disabled={pending === "resubmit"} className={buttonClass("primary")}>
               {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
             </button>
@@ -212,9 +223,9 @@ export default function TrackView({ data, serverNow, offsetMs }) {
         </section>
       )}
 
-      {notice && (
-        <p role="status" className="rounded-card bg-ok-soft px-4 py-3 text-sm font-medium text-ok">{notice}</p>
-      )}
+      <Alert tone="success" className="rounded-card px-4 py-3">
+        {notice}
+      </Alert>
 
       {/* Timeline */}
       <section className="rounded-card border border-line bg-surface p-5">
@@ -228,6 +239,7 @@ export default function TrackView({ data, serverNow, offsetMs }) {
           <h2 className="text-lg font-bold">Bagaimana pelayanan kami?</h2>
           <p className="mt-1 text-sm text-muted">Penilaian Anda tampil di rapor SLA publik.</p>
           <form
+            method="post"
             className="mt-4 space-y-4"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -248,16 +260,21 @@ export default function TrackView({ data, serverNow, offsetMs }) {
                     onClick={() => setScore(n)}
                     aria-label={`${n} bintang`}
                     aria-pressed={score === n}
-                    className={`grid size-11 place-items-center rounded-xl text-2xl ${n <= score ? "text-warn" : "text-line"} hover:bg-surface-2`}
+                    className="grid size-11 place-items-center rounded-xl hover:bg-surface-2"
                   >
-                    ★
+                    <Star
+                      aria-hidden
+                      className={cn("size-7", n <= score ? "fill-warn text-warn" : "text-line")}
+                    />
                   </button>
                 ))}
               </div>
               {errors.score && <p className="mt-1 text-sm text-late">{errors.score}</p>}
             </fieldset>
             <div>
-              <label htmlFor="comment" className="mb-1.5 block text-sm font-medium">Komentar (opsional)</label>
+              <label htmlFor="comment" className="mb-1.5 block text-sm font-medium">
+                Komentar (opsional)
+              </label>
               <textarea
                 id="comment"
                 value={comment}
@@ -267,7 +284,9 @@ export default function TrackView({ data, serverNow, offsetMs }) {
                 className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
               />
             </div>
-            {!verified && <Last4Field id="rate-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />}
+            {!verified && (
+              <Last4Field id="rate-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+            )}
             <button type="submit" disabled={pending === "rate"} className={buttonClass("primary")}>
               {pending === "rate" ? "Mengirim…" : "Kirim penilaian"}
             </button>
@@ -281,25 +300,43 @@ export default function TrackView({ data, serverNow, offsetMs }) {
         <h2 className="text-lg font-bold">Detail pemohon</h2>
         {verified ? (
           <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt className="text-muted">Nama</dt><dd className="font-medium">{detail.applicant.name}</dd></div>
-            <div><dt className="text-muted">Nomor HP</dt><dd className="font-mono">{detail.applicant.phoneMasked}</dd></div>
-            {detail.applicant.email && <div><dt className="text-muted">Email</dt><dd>{detail.applicant.email}</dd></div>}
+            <div>
+              <dt className="text-muted">Nama</dt>
+              <dd className="font-medium">{detail.applicant.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Nomor HP</dt>
+              <dd className="font-mono">{detail.applicant.phoneMasked}</dd>
+            </div>
+            {detail.applicant.email && (
+              <div>
+                <dt className="text-muted">Email</dt>
+                <dd>{detail.applicant.email}</dd>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <dt className="text-muted">Persyaratan yang dinyatakan lengkap</dt>
               <dd>
                 {detail.requirementsChecked.length ? (
-                  <ul className="mt-1 list-inside list-disc">{detail.requirementsChecked.map((r) => <li key={r}>{r}</li>)}</ul>
-                ) : "—"}
+                  <ul className="mt-1 list-inside list-disc">
+                    {detail.requirementsChecked.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  "—"
+                )}
               </dd>
             </div>
           </dl>
         ) : (
           <>
             <p className="mt-1 text-sm text-muted">
-              Demi privasi, nama lengkap dan data pemohon hanya tampil setelah memasukkan 4 digit terakhir nomor HP
-              yang didaftarkan.
+              Demi privasi, nama lengkap dan data pemohon hanya tampil setelah memasukkan 4 digit terakhir
+              nomor HP yang didaftarkan.
             </p>
             <form
+              method="post"
               className="mt-4 flex flex-wrap items-end gap-3"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -317,7 +354,9 @@ export default function TrackView({ data, serverNow, offsetMs }) {
       </section>
 
       <p className="text-center text-xs text-muted">
-        {isOpen ? "Halaman ini memperbarui status secara otomatis." : "Simpan tautan halaman ini sebagai bukti."}
+        {isOpen
+          ? "Halaman ini memperbarui status secara otomatis."
+          : "Simpan tautan halaman ini sebagai bukti."}
       </p>
     </div>
   );

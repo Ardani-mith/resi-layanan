@@ -66,7 +66,15 @@ function startStep(step, now, holidays) {
 }
 
 /** Objek permohonan baru; tahapan disalin dari template layanan (snapshot). */
-export function buildApplication({ service, applicant, channel, resi, now, holidays, requirementsChecked = [] }) {
+export function buildApplication({
+  service,
+  applicant,
+  channel,
+  resi,
+  now,
+  holidays,
+  requirementsChecked = [],
+}) {
   const steps = service.steps.map((s) => ({
     key: s.key,
     name: s.name,

@@ -1,0 +1,8 @@
+node_modules
+.next
+.next-*
+package-lock.json
+playwright-report
+test-results
+# Dokumen ditulis manual (tabel & daftar sengaja dirapikan sendiri); AGENTS.md dibuat ulang oleh Next.
+*.md

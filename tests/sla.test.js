@@ -165,7 +165,12 @@ describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   });
 
   it("resume tanpa jeda tidak mengubah apa pun", () => {
-    const step = { startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-14T10:00:00"), pausedMs: 0, pausedAt: null };
+    const step = {
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-14T10:00:00"),
+      pausedMs: 0,
+      pausedAt: null,
+    };
     resumeStep(step, wib("2026-10-20T10:00:00"));
     expect(step.dueAt).toEqual(wib("2026-10-14T10:00:00"));
     expect(step.pausedMs).toBe(0);
@@ -199,8 +204,18 @@ describe("simulasi waktu demo", () => {
 
 describe("estimateCompletion", () => {
   const steps = () => [
-    { slaDays: 1, startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-13T10:00:00"), completedAt: wib("2026-10-12T15:00:00") },
-    { slaDays: 2, startedAt: wib("2026-10-12T15:00:00"), dueAt: wib("2026-10-14T15:00:00"), completedAt: null },
+    {
+      slaDays: 1,
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-13T10:00:00"),
+      completedAt: wib("2026-10-12T15:00:00"),
+    },
+    {
+      slaDays: 2,
+      startedAt: wib("2026-10-12T15:00:00"),
+      dueAt: wib("2026-10-14T15:00:00"),
+      completedAt: null,
+    },
     { slaDays: 3, startedAt: null, dueAt: null, completedAt: null },
     { slaDays: null, startedAt: null, dueAt: null, completedAt: null },
   ];

@@ -6,6 +6,7 @@ import StatTile from "@/components/charts/StatTile";
 import { weeklyOnTime } from "@/components/charts/trend";
 import DemoClockBanner from "@/components/layout/DemoClockBanner";
 import Skeleton from "@/components/ui/Skeleton";
+import { cn } from "@/lib/cn";
 import { getClockInfo, getStats, requireStaffPage } from "@/lib/dal";
 import { formatDuration, formatHours, formatPercent } from "@/lib/format";
 
@@ -34,17 +35,29 @@ async function Dashboard() {
       <DemoClockBanner offsetMs={clock.offsetMs} />
 
       <section aria-label="Ringkasan" className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatTile label="Sedang berjalan" value={overall.open} note={`${overall.waitingFix} menunggu perbaikan warga`} />
+        <StatTile
+          label="Sedang berjalan"
+          value={overall.open}
+          note={`${overall.waitingFix} menunggu perbaikan warga`}
+        />
         <StatTile
           label="Terlambat sekarang"
           value={overall.overdueNow}
           note={`${escalations.length} eskalasi terbuka`}
           tone={overall.overdueNow > 0 ? "late" : undefined}
         />
-        <StatTile label="Selesai tepat waktu" value={formatPercent(overall.onTimeRate)} note={`dari ${overall.completed} permohonan selesai`} />
+        <StatTile
+          label="Selesai tepat waktu"
+          value={formatPercent(overall.onTimeRate)}
+          note={`dari ${overall.completed} permohonan selesai`}
+        />
         <StatTile
           label="Rata-rata lama layanan"
-          value={overall.avgCompletionDays === null ? "—" : `${overall.avgCompletionDays.toLocaleString("id-ID")} hari`}
+          value={
+            overall.avgCompletionDays === null
+              ? "—"
+              : `${overall.avgCompletionDays.toLocaleString("id-ID")} hari`
+          }
           note="kalender, tanpa waktu tunggu perbaikan"
         />
         <StatTile
@@ -56,26 +69,42 @@ async function Dashboard() {
 
       <section className="rounded-card border border-line bg-surface" aria-labelledby="esc-title">
         <div className="border-b border-line p-5">
-          <h2 id="esc-title" className="text-lg font-bold">Eskalasi terbuka</h2>
-          <p className="text-sm text-muted">Level 1 diteruskan ke Kepala Seksi; lewat 3 hari kerja naik ke Kepala Bidang.</p>
+          <h2 id="esc-title" className="text-lg font-bold">
+            Eskalasi terbuka
+          </h2>
+          <p className="text-sm text-muted">
+            Level 1 diteruskan ke Kepala Seksi; lewat 3 hari kerja naik ke Kepala Bidang.
+          </p>
         </div>
         {escalations.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-left text-sm">
               <thead className="text-muted">
                 <tr>
-                  <th scope="col" className="px-5 py-2 font-medium">Resi</th>
-                  <th scope="col" className="px-5 py-2 font-medium">Tahap</th>
-                  <th scope="col" className="px-5 py-2 font-medium">Pemohon</th>
-                  <th scope="col" className="px-5 py-2 font-medium">Level</th>
-                  <th scope="col" className="px-5 py-2 text-right font-medium">Terlambat</th>
+                  <th scope="col" className="px-5 py-2 font-medium">
+                    Resi
+                  </th>
+                  <th scope="col" className="px-5 py-2 font-medium">
+                    Tahap
+                  </th>
+                  <th scope="col" className="px-5 py-2 font-medium">
+                    Pemohon
+                  </th>
+                  <th scope="col" className="px-5 py-2 font-medium">
+                    Level
+                  </th>
+                  <th scope="col" className="px-5 py-2 text-right font-medium">
+                    Terlambat
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {escalations.map((e) => (
                   <tr key={`${e.resi}-${e.stepName}-${e.level}`} className="border-t border-line">
                     <td className="px-5 py-2.5">
-                      <Link href={`/kerja/${e.resi}`} className="font-mono text-brand hover:underline">{e.resi}</Link>
+                      <Link href={`/kerja/${e.resi}`} className="font-mono text-brand hover:underline">
+                        {e.resi}
+                      </Link>
                     </td>
                     <td className="px-5 py-2.5">
                       {e.stepName}
@@ -83,11 +112,18 @@ async function Dashboard() {
                     </td>
                     <td className="px-5 py-2.5">{e.applicantName}</td>
                     <td className="px-5 py-2.5">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${e.level === 2 ? "bg-late text-surface" : "bg-late-soft text-late"}`}>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          e.level === 2 ? "bg-late text-surface" : "bg-late-soft text-late",
+                        )}
+                      >
                         {e.level} · {e.target}
                       </span>
                     </td>
-                    <td className="px-5 py-2.5 text-right tabular-nums">{e.lateMs ? formatDuration(e.lateMs) : "—"}</td>
+                    <td className="px-5 py-2.5 text-right tabular-nums">
+                      {e.lateMs ? formatDuration(e.lateMs) : "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -107,8 +143,13 @@ async function Dashboard() {
 
       <section aria-labelledby="bottleneck-title" className="space-y-3">
         <div>
-          <h2 id="bottleneck-title" className="text-lg font-bold">Analisis bottleneck per tahap</h2>
-          <p className="text-sm text-muted">Rata-rata lama pengerjaan (tanpa waktu jeda) dibanding target, dan seberapa sering tahap itu terlambat.</p>
+          <h2 id="bottleneck-title" className="text-lg font-bold">
+            Analisis bottleneck per tahap
+          </h2>
+          <p className="text-sm text-muted">
+            Rata-rata lama pengerjaan (tanpa waktu jeda) dibanding target, dan seberapa sering tahap itu
+            terlambat.
+          </p>
         </div>
         <div className="space-y-4">
           {services.map((service) => {
@@ -118,17 +159,26 @@ async function Dashboard() {
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                   <h3 className="font-bold">{service.name}</h3>
                   <p className="text-sm text-muted">
-                    {formatPercent(service.onTimeRate)} tepat waktu · target {service.targetDays} hari kerja · {service.open} berjalan
+                    {formatPercent(service.onTimeRate)} tepat waktu · target {service.targetDays} hari kerja ·{" "}
+                    {service.open} berjalan
                   </p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="mt-3 w-full min-w-[34rem] table-fixed text-left text-sm">
                     <thead className="text-muted">
                       <tr>
-                        <th scope="col" className="pb-2 font-medium">Tahap</th>
-                        <th scope="col" className="w-32 pb-2 font-medium">Target</th>
-                        <th scope="col" className="w-44 pb-2 font-medium">Rata-rata pengerjaan</th>
-                        <th scope="col" className="w-52 pb-2 font-medium">Selesai terlambat</th>
+                        <th scope="col" className="pb-2 font-medium">
+                          Tahap
+                        </th>
+                        <th scope="col" className="w-32 pb-2 font-medium">
+                          Target
+                        </th>
+                        <th scope="col" className="w-44 pb-2 font-medium">
+                          Rata-rata pengerjaan
+                        </th>
+                        <th scope="col" className="w-52 pb-2 font-medium">
+                          Selesai terlambat
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -137,10 +187,14 @@ async function Dashboard() {
                           <td className="py-2.5 pr-3">
                             {step.name}
                             {step.key === worst && (
-                              <span className="ml-2 rounded bg-late-soft px-1.5 py-0.5 text-[11px] font-semibold text-late">bottleneck</span>
+                              <span className="ml-2 rounded bg-late-soft px-1.5 py-0.5 text-[11px] font-semibold text-late">
+                                bottleneck
+                              </span>
                             )}
                             {step.overdueNow > 0 && (
-                              <span className="block text-xs text-late">{step.overdueNow} sedang terlambat</span>
+                              <span className="block text-xs text-late">
+                                {step.overdueNow} sedang terlambat
+                              </span>
                             )}
                           </td>
                           <td className="py-2.5 pr-3 text-muted tabular-nums">
@@ -148,7 +202,11 @@ async function Dashboard() {
                           </td>
                           <td className="py-2.5 pr-3 tabular-nums">{formatHours(step.avgHours)}</td>
                           <td className="py-2.5">
-                            <Meter value={step.slaDays ? step.lateRate : null} label={`Tingkat terlambat ${step.name}`} severity />
+                            <Meter
+                              value={step.slaDays ? step.lateRate : null}
+                              label={`Tingkat terlambat ${step.name}`}
+                              severity
+                            />
                           </td>
                         </tr>
                       ))}

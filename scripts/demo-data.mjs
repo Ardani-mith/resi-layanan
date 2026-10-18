@@ -2,7 +2,7 @@
 // Permohonan dibuat dengan MENJALANKAN alur kerja sungguhan (workflow.js) pada waktu
 // mundur, jadi timeline, keterlambatan, eskalasi, dan audit log-nya konsisten.
 
-import { escalationThreshold, ESCALATION_LEVELS, pendingEscalations } from "../src/lib/escalation.js";
+import { ESCALATION_LEVELS, escalationThreshold, pendingEscalations } from "../src/lib/escalation.js";
 import { DAY_MS, isWorkday } from "../src/lib/sla.js";
 import { applyAction, applyRating, buildApplication } from "../src/lib/workflow.js";
 
@@ -75,13 +75,33 @@ export const USERS = [
   { name: "Admin Sistem", email: "admin@resi.demo", role: "admin", unit: "Bidang PIAK" },
   { name: "Rina Kusumawati", email: "loket@resi.demo", role: "petugas_loket", unit: "Loket Pelayanan" },
   { name: "Yusuf Hidayat", email: "loket2@resi.demo", role: "petugas_loket", unit: "Loket Pelayanan" },
-  { name: "Dimas Prasetyo", email: "teknis@resi.demo", role: "petugas_teknis", unit: "Seksi Pengolahan Data" },
-  { name: "Lestari Wulandari", email: "teknis2@resi.demo", role: "petugas_teknis", unit: "Seksi Pengolahan Data" },
+  {
+    name: "Dimas Prasetyo",
+    email: "teknis@resi.demo",
+    role: "petugas_teknis",
+    unit: "Seksi Pengolahan Data",
+  },
+  {
+    name: "Lestari Wulandari",
+    email: "teknis2@resi.demo",
+    role: "petugas_teknis",
+    unit: "Seksi Pengolahan Data",
+  },
   { name: "Drs. Hendra Gunawan", email: "pimpinan@resi.demo", role: "pimpinan", unit: "Kepala Dinas" },
 ];
 
-const FIRST = ["Siti", "Budi", "Ahmad", "Dewi", "Rizky", "Nur", "Agus", "Fitri", "Andi", "Putri", "Hendra", "Ayu", "Fajar", "Indah", "Bayu", "Maya", "Rudi", "Sri", "Taufik", "Wulan", "Eko", "Ratna", "Joko", "Lina", "Arif", "Yuni", "Galih", "Nadia"];
-const LAST = ["Rahmawati", "Santoso", "Hidayat", "Lestari", "Pratama", "Aini", "Setiawan", "Handayani", "Saputra", "Maharani", "Kurniawan", "Anggraini", "Nugroho", "Permata", "Wibowo", "Susanti", "Firmansyah", "Puspita", "Hakim", "Utami"];
+// prettier-ignore
+const FIRST = [
+  "Siti", "Budi", "Ahmad", "Dewi", "Rizky", "Nur", "Agus", "Fitri", "Andi", "Putri", "Hendra", "Ayu",
+  "Fajar", "Indah", "Bayu", "Maya", "Rudi", "Sri", "Taufik", "Wulan", "Eko", "Ratna", "Joko", "Lina",
+  "Arif", "Yuni", "Galih", "Nadia",
+];
+// prettier-ignore
+const LAST = [
+  "Rahmawati", "Santoso", "Hidayat", "Lestari", "Pratama", "Aini", "Setiawan", "Handayani",
+  "Saputra", "Maharani", "Kurniawan", "Anggraini", "Nugroho", "Permata", "Wibowo", "Susanti",
+  "Firmansyah", "Puspita", "Hakim", "Utami",
+];
 
 const FIX_NOTES = [
   "Fotokopi buku nikah orang tua belum dilampirkan. Silakan unggah ulang atau bawa ke loket.",
@@ -210,21 +230,45 @@ class Sim {
       const threshold = escalationThreshold(this.step.dueAt, afterWorkdays, this.holidays);
       const at = new Date(Math.min(threshold.getTime() + 5 * 60_000, t.getTime()));
       this.app.escalations.push({ ...esc, createdAt: at });
-      this.events.push({ actorName: "Sistem", actorRole: "sistem", action: "escalated", payload: { stepKey: esc.stepKey, level: esc.level, target: esc.target }, at });
+      this.events.push({
+        actorName: "Sistem",
+        actorRole: "sistem",
+        action: "escalated",
+        payload: { stepKey: esc.stepKey, level: esc.level, target: esc.target },
+        at,
+      });
     }
   }
 
   act(action, at, notes = {}) {
     this.escalateUntil(at);
     const actor = this.actors(this.step.role);
-    const { payload } = applyAction(this.app, { action, actor: { id: actor._id, name: actor.name, role: actor.role }, now: at, holidays: this.holidays, ...notes });
-    this.events.push({ actorId: actor._id, actorName: actor.name, actorRole: actor.role, action, payload, at });
+    const { payload } = applyAction(this.app, {
+      action,
+      actor: { id: actor._id, name: actor.name, role: actor.role },
+      now: at,
+      holidays: this.holidays,
+      ...notes,
+    });
+    this.events.push({
+      actorId: actor._id,
+      actorName: actor.name,
+      actorRole: actor.role,
+      action,
+      payload,
+      at,
+    });
     this.time = at;
     this.app.updatedAt = at;
   }
 
   citizenResume(at) {
-    const { payload } = applyAction(this.app, { action: "resume", actor: { id: null, name: "Warga", role: "warga" }, now: at, holidays: this.holidays });
+    const { payload } = applyAction(this.app, {
+      action: "resume",
+      actor: { id: null, name: "Warga", role: "warga" },
+      now: at,
+      holidays: this.holidays,
+    });
     this.events.push({ actorName: "Warga", actorRole: "warga", action: "resume", payload, at });
     this.time = at;
     this.app.updatedAt = at;
@@ -251,12 +295,25 @@ class Sim {
 
   /** `hours` jam setelah aksi terakhir, digeser ke jam kerja. */
   later(hours, rng) {
-    return toOfficeHours(new Date(this.time.getTime() + hours * HOUR_MS), rng, this.holidays, this.time, this.limit);
+    return toOfficeHours(
+      new Date(this.time.getTime() + hours * HOUR_MS),
+      rng,
+      this.holidays,
+      this.time,
+      this.limit,
+    );
   }
 }
 
 /** Seluruh data permohonan demo relatif terhadap `now`. */
-export function buildDemoApplications({ services, users, now, holidays = new Set(HOLIDAYS), count = 60, seed = 2026 }) {
+export function buildDemoApplications({
+  services,
+  users,
+  now,
+  holidays = new Set(HOLIDAYS),
+  count = 60,
+  seed = 2026,
+}) {
   const rng = createRng(seed);
   const pick = (list) => list[Math.floor(rng() * list.length)];
   const byRole = (role) => users.filter((u) => u.role === role);
@@ -305,26 +362,42 @@ export function buildDemoApplications({ services, users, now, holidays = new Set
   };
 
   // 1) Akta kelahiran terlambat di tahap entri data → eskalasi level 1 (belum level 2).
-  lateCase(
-    { resi: "RL-HJ26-AKTA", slug: "akta-kelahiran", name: "Siti Rahmawati", last4: "1234" },
-    1,
-    1,
-    { publicNote: "Berkas lengkap dan sesuai." }
-  );
+  lateCase({ resi: "RL-HJ26-AKTA", slug: "akta-kelahiran", name: "Siti Rahmawati", last4: "1234" }, 1, 1, {
+    publicNote: "Berkas lengkap dan sesuai.",
+  });
   // 2) Perubahan KK menunggu perbaikan dari warga.
   {
-    const sim = fixed({ resi: "RL-HJ26-PRBK", slug: "perubahan-kk", name: "Budi Santoso", last4: "5678", createdAt: 2 });
+    const sim = fixed({
+      resi: "RL-HJ26-PRBK",
+      slug: "perubahan-kk",
+      name: "Budi Santoso",
+      last4: "5678",
+      createdAt: 2,
+    });
     sim.act("request_fix", sim.later(2, rng), { publicNote: FIX_NOTES[2] });
   }
   // 3) KTP-el selesai, belum diberi rating (untuk demo rating).
   {
-    const sim = fixed({ resi: "RL-HJ26-SLSE", slug: "perekaman-ktp-el", name: "Dewi Lestari", last4: "4321", createdAt: 12, channel: "loket" });
+    const sim = fixed({
+      resi: "RL-HJ26-SLSE",
+      slug: "perekaman-ktp-el",
+      name: "Dewi Lestari",
+      last4: "4321",
+      createdAt: 12,
+      channel: "loket",
+    });
     for (const f of [0.4, 0.7, 0.8]) sim.act("complete", sim.finishTime(f, rng));
     sim.act("complete", sim.later(36, rng), { publicNote: "KTP-el sudah diserahkan kepada pemohon." });
   }
   // 4) Ditolak dengan alasan yang terlihat warga.
   {
-    const sim = fixed({ resi: "RL-HJ26-TLAK", slug: "perekaman-ktp-el", name: "Rizky Pratama", last4: "8765", createdAt: 5 });
+    const sim = fixed({
+      resi: "RL-HJ26-TLAK",
+      slug: "perekaman-ktp-el",
+      name: "Rizky Pratama",
+      last4: "8765",
+      createdAt: 5,
+    });
     sim.act("reject", sim.later(4, rng), { publicNote: REJECT_NOTES[1] });
   }
   // 5) Kasus terlambat tambahan supaya dashboard pimpinan selalu berisi, termasuk
@@ -419,4 +492,3 @@ export function buildDemoApplications({ services, users, now, holidays = new Set
 
   return sims.map((sim) => ({ app: sim.app, events: sim.events }));
 }
-

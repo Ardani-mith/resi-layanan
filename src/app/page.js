@@ -1,11 +1,18 @@
 import ResiSearch from "@/components/application/ResiSearch";
 import Button from "@/components/ui/Button";
 import { site } from "@/config/site";
+import { cn } from "@/lib/cn";
 
 function Section({ id, title, children, className = "" }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className={`mx-auto max-w-6xl px-4 py-14 ${className}`}>
-      <h2 id={`${id}-title`} className="mb-8 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className={cn("mx-auto max-w-6xl px-4 py-14", className)}
+    >
+      <h2 id={`${id}-title`} className="mb-8 text-2xl font-bold tracking-tight sm:text-3xl">
+        {title}
+      </h2>
       {children}
     </section>
   );
@@ -19,7 +26,9 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <p className="mb-3 text-sm font-semibold tracking-wide text-brand uppercase">{hero.eyebrow}</p>
-            <h1 className="text-3xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">{hero.title}</h1>
+            <h1 className="text-3xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">
+              {hero.title}
+            </h1>
             <p className="mt-4 max-w-xl text-lg text-muted">{hero.body}</p>
             <div className="mt-8 max-w-xl">
               <ResiSearch example={hero.exampleResi} />
@@ -36,7 +45,7 @@ export default function Home() {
                 ["Pencetakan akta", "Menunggu", "bg-line"],
               ].map(([name, state, dot]) => (
                 <li key={name} className="flex items-start gap-3">
-                  <span className={`mt-1.5 size-3 shrink-0 rounded-full ${dot}`} />
+                  <span className={cn("mt-1.5 size-3 shrink-0 rounded-full", dot)} />
                   <span>
                     <span className="block font-medium">{name}</span>
                     <span className="text-sm text-muted">{state}</span>
@@ -66,7 +75,9 @@ export default function Home() {
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {howItWorks.steps.map((step, i) => (
             <li key={step.title} className="rounded-card border border-line bg-surface p-5">
-              <span className="grid size-9 place-items-center rounded-full bg-brand-soft font-bold text-brand">{i + 1}</span>
+              <span className="grid size-9 place-items-center rounded-full bg-brand-soft font-bold text-brand">
+                {i + 1}
+              </span>
               <h3 className="mt-4 font-bold">{step.title}</h3>
               <p className="mt-1 text-sm text-muted">{step.body}</p>
             </li>
@@ -92,7 +103,9 @@ export default function Home() {
           <p className="mx-auto mt-3 max-w-2xl text-muted">{closing.body}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button href="/ajukan">Ajukan permohonan</Button>
-            <Button href="/rapor" variant="secondary">Lihat rapor SLA</Button>
+            <Button href="/rapor" variant="secondary">
+              Lihat rapor SLA
+            </Button>
           </div>
         </div>
       </section>

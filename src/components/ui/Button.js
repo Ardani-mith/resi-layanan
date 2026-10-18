@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "@/lib/cn";
 
 const VARIANTS = {
   primary: "bg-brand text-on-brand hover:bg-brand-strong",
@@ -7,11 +8,16 @@ const VARIANTS = {
   ghost: "text-brand hover:bg-brand-soft",
 };
 
-export function buttonClass(variant = "primary", extra = "") {
-  return `inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${VARIANTS[variant]} ${extra}`;
+/** Class tombol; `extra` boleh kondisional dan menimpa bawaan bila bentrok (mis. "w-full", "px-6"). */
+export function buttonClass(variant = "primary", ...extra) {
+  return cn(
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+    VARIANTS[variant],
+    ...extra,
+  );
 }
 
-export default function Button({ variant = "primary", className = "", href, ...props }) {
+export default function Button({ variant = "primary", className, href, ...props }) {
   if (href) return <Link href={href} className={buttonClass(variant, className)} {...props} />;
   return <button type="button" className={buttonClass(variant, className)} {...props} />;
 }

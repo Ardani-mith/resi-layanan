@@ -25,7 +25,7 @@ eventSchema.pre(
     "deleteMany",
     "findOneAndDelete",
   ],
-  appendOnly
+  appendOnly,
 );
 eventSchema.pre("save", function () {
   if (!this.isNew) appendOnly();

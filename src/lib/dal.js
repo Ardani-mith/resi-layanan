@@ -122,7 +122,9 @@ export async function getStats({ internal = false } = {}) {
 
   const [apps, services] = await Promise.all([
     Application.find()
-      .select("resi serviceId serviceName applicant.name status currentStep steps escalations rating createdAt completedAt")
+      .select(
+        "resi serviceId serviceName applicant.name status currentStep steps escalations rating createdAt completedAt",
+      )
       .lean(),
     Service.find({ isActive: true }).sort({ order: 1, name: 1 }).select("name slug steps.slaDays").lean(),
   ]);

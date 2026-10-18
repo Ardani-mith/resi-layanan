@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { useNow } from "@/hooks/useNow";
+import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 const REFRESH_MS = 30_000;
@@ -34,7 +35,7 @@ function Row({ item, now }) {
         href={`/kerja/${item.resi}`}
         className="grid gap-x-4 gap-y-1 px-4 py-3 hover:bg-surface-2 md:grid-cols-[10rem_1fr_1fr_auto] md:items-center"
       >
-        <span className={`w-fit rounded-lg px-2 py-1 text-xs font-semibold ${TONE[u.tone]}`}>{u.text}</span>
+        <span className={cn("w-fit rounded-lg px-2 py-1 text-xs font-semibold", TONE[u.tone])}>{u.text}</span>
         <span className="min-w-0">
           <span className="block font-mono text-sm tracking-wide">{item.resi}</span>
           <span className="block truncate text-sm text-muted">{item.serviceName}</span>
@@ -61,9 +62,19 @@ function Row({ item, now }) {
 export default function QueueBoard({ items, counts, role, now: serverNow, offsetMs }) {
   const seesAll = role === "pimpinan" || role === "admin";
   const tabs = [
-    { key: "mine", label: "Tugas saya", count: counts.mine, match: (i) => i.mine && i.status !== "perlu_perbaikan" },
+    {
+      key: "mine",
+      label: "Tugas saya",
+      count: counts.mine,
+      match: (i) => i.mine && i.status !== "perlu_perbaikan",
+    },
     { key: "late", label: "Terlambat", count: counts.overdue, match: (i) => i.stepState === "terlambat" },
-    { key: "fix", label: "Menunggu perbaikan", count: counts.waitingFix, match: (i) => i.status === "perlu_perbaikan" },
+    {
+      key: "fix",
+      label: "Menunggu perbaikan",
+      count: counts.waitingFix,
+      match: (i) => i.status === "perlu_perbaikan",
+    },
     ...(seesAll ? [{ key: "all", label: "Semua", count: counts.total, match: () => true }] : []),
   ];
 
@@ -79,7 +90,7 @@ export default function QueueBoard({ items, counts, role, now: serverNow, offset
       active.match(i) &&
       (!deferredQuery ||
         i.resi.toLowerCase().includes(deferredQuery) ||
-        i.applicantName.toLowerCase().includes(deferredQuery))
+        i.applicantName.toLowerCase().includes(deferredQuery)),
   );
 
   return (
@@ -92,9 +103,10 @@ export default function QueueBoard({ items, counts, role, now: serverNow, offset
               type="button"
               aria-pressed={t.key === active.key}
               onClick={() => setTab(t.key)}
-              className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap ${
-                t.key === active.key ? "bg-brand-soft text-brand" : "text-muted hover:bg-surface-2"
-              }`}
+              className={cn(
+                "shrink-0 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap",
+                t.key === active.key ? "bg-brand-soft text-brand" : "text-muted hover:bg-surface-2",
+              )}
             >
               {t.label} <span className="ml-1 tabular-nums opacity-80">{t.count}</span>
             </button>
@@ -114,11 +126,13 @@ export default function QueueBoard({ items, counts, role, now: serverNow, offset
 
       {visible.length ? (
         <ul className="divide-y divide-line">
-          {visible.map((item) => <Row key={item.resi} item={item} now={now} />)}
+          {visible.map((item) => (
+            <Row key={item.resi} item={item} now={now} />
+          ))}
         </ul>
       ) : (
         <p className="px-4 py-12 text-center text-muted">
-          {deferredQuery ? "Tidak ada yang cocok dengan pencarian." : "Tidak ada permohonan di daftar ini. 🎉"}
+          {deferredQuery ? "Tidak ada yang cocok dengan pencarian." : "Tidak ada permohonan di daftar ini."}
         </p>
       )}
     </section>

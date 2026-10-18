@@ -3,7 +3,7 @@
 // daripada pipeline $group yang panjang.
 
 import { DAY_MS, finishedLate, isOverdue, workedMs } from "./sla.js";
-import { STATUS, RUNNING_STATUSES, OPEN_STATUSES } from "./workflow.js";
+import { OPEN_STATUSES, RUNNING_STATUSES, STATUS } from "./workflow.js";
 
 const WEEK_MS = 7 * DAY_MS;
 
@@ -59,7 +59,15 @@ function stepBreakdown(apps, now) {
   for (const app of apps) {
     for (const step of app.steps) {
       if (!step.startedAt) continue;
-      const row = byKey.get(step.key) ?? { key: step.key, name: step.name, slaDays: step.slaDays, durations: [], done: 0, late: 0, overdueNow: 0 };
+      const row = byKey.get(step.key) ?? {
+        key: step.key,
+        name: step.name,
+        slaDays: step.slaDays,
+        durations: [],
+        done: 0,
+        late: 0,
+        overdueNow: 0,
+      };
       if (step.completedAt) {
         row.done += 1;
         row.durations.push(workedMs(step, now));

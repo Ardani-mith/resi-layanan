@@ -19,7 +19,7 @@ Prasyarat: Node.js 20.9+ dan database MongoDB (Atlas M0 gratis sudah cukup).
 
 ```bash
 # Sudah punya foldernya? Lewati 2 baris ini, cukup cd ke folder proyek.
-git clone https://github.com/Ardani-mith/frontend-codecraft-new.git resi-layanan
+git clone https://github.com/Ardani-mith/resi-layanan.git
 cd resi-layanan
 npm install
 cp .env.example .env.local   # isi MONGODB_URI, SESSION_SECRET, DEMO_PASSWORD
@@ -27,7 +27,15 @@ npm run seed                 # isi data demo (MENGHAPUS data lama)
 npm run dev                  # buka http://localhost:3000
 ```
 
-Perintah lain: `npm test` (unit + integrasi, tidak butuh Atlas), `npm run lint`, `npm run build`.
+Perintah lain:
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run check` | lint + cek format + tes unit/integrasi |
+| `npm test` | tes unit & integrasi (MongoDB in-memory, tidak butuh Atlas) |
+| `npm run test:e2e` | tes end-to-end di Google Chrome (database sementara, tidak menyentuh Atlas) |
+| `npm run lint:fix` / `npm run format` | rapikan kode otomatis (ESLint + Prettier) |
+| `npm run build` | build produksi |
 
 ### Akun & resi demo
 
@@ -60,7 +68,7 @@ Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
 - API: pengajuan online & loket, lacak publik, antrean per peran, aksi petugas, KPI/rapor, simulasi waktu demo.
 - Login petugas & proteksi halaman per peran.
 - Seed: 3 layanan, 6 akun, 60 permohonan hasil simulasi alur kerja nyata.
-- 70 tes otomatis (SLA, alur kerja, eskalasi, privasi, mode demo, integrasi database).
+- 75 tes unit/integrasi (SLA, alur kerja, eskalasi, privasi, mode demo, database) dan 14 tes end-to-end di browser yang memerankan skrip demo.
 - Landing page & halaman masuk petugas.
 - **Warga:** lacak `/lacak/[resi]` (timeline, hitung mundur langsung, verifikasi HP, perbaikan berkas, rating, pembaruan otomatis), pengajuan online `/ajukan` + halaman sukses.
 - **Petugas:** antrean `/kerja` (urut sisa SLA, filter, pencarian), detail & aksi `/kerja/[resi]` (selesaikan, minta perbaikan, lanjutkan, tolak, audit log), input loket `/kerja/baru`.

@@ -28,7 +28,7 @@ export async function advanceClock(ms) {
   const doc = await Setting.findOneAndUpdate(
     { key: KEY },
     { $inc: { clockOffsetMs: ms } },
-    { upsert: true, returnDocument: "after" }
+    { upsert: true, returnDocument: "after" },
   ).lean();
   return doc.clockOffsetMs;
 }
@@ -42,7 +42,7 @@ export async function resetClock() {
   await Setting.updateOne({ key: KEY }, { $set: { clockOffsetMs: 0 } }, { upsert: true });
   const { modifiedCount } = await Application.updateMany(
     { "escalations.createdAt": { $gt: new Date() } },
-    { $pull: { escalations: { createdAt: { $gt: new Date() } } } }
+    { $pull: { escalations: { createdAt: { $gt: new Date() } } } },
   );
   return modifiedCount;
 }

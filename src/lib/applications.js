@@ -19,7 +19,8 @@ export async function loadByResi(resi, clock) {
 
 export async function createApplication({ input, actor, clock }) {
   const service = await Service.findOne({ slug: input.serviceSlug, isActive: true }).lean();
-  if (!service) throw new WorkflowError("unknown_service", "Layanan tidak ditemukan atau sedang tidak dibuka.");
+  if (!service)
+    throw new WorkflowError("unknown_service", "Layanan tidak ditemukan atau sedang tidak dibuka.");
 
   const allowed = new Set(service.requirements);
   const applicant = {
@@ -81,7 +82,12 @@ export async function performAction({ resi, input, actor, clock }) {
     if (!canActOn(app, actor.role)) {
       throw new WorkflowError("forbidden", "Tahap ini bukan tugas peran Anda.");
     }
-    const { action, payload } = applyAction(app, { ...input, actor, now: clock.now, holidays: clock.holidays });
+    const { action, payload } = applyAction(app, {
+      ...input,
+      actor,
+      now: clock.now,
+      holidays: clock.holidays,
+    });
     return { action, payload, actorId: actor.id, actorName: actor.name, actorRole: actor.role };
   });
 }
@@ -110,15 +116,19 @@ export async function verifyApplicant(app, last4, now) {
 
   if (app.applicant.phone.slice(-4) === last4) {
     if (app.verifyLock?.fails) {
-      await Application.updateOne({ _id: app._id }, { $set: { "verifyLock.fails": 0, "verifyLock.until": null } });
+      await Application.updateOne(
+        { _id: app._id },
+        { $set: { "verifyLock.fails": 0, "verifyLock.until": null } },
+      );
     }
     return "ok";
   }
 
   const fails = (app.verifyLock?.fails ?? 0) + 1;
-  const update = fails >= MAX_FAILS
-    ? { $set: { "verifyLock.fails": 0, "verifyLock.until": new Date(now.getTime() + LOCK_MS) } }
-    : { $set: { "verifyLock.fails": fails } };
+  const update =
+    fails >= MAX_FAILS
+      ? { $set: { "verifyLock.fails": 0, "verifyLock.until": new Date(now.getTime() + LOCK_MS) } }
+      : { $set: { "verifyLock.fails": fails } };
   await Application.updateOne({ _id: app._id }, update);
   return fails >= MAX_FAILS ? "locked" : "wrong";
 }

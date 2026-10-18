@@ -12,7 +12,11 @@ import Setting from "../src/models/Setting.js";
 import User from "../src/models/User.js";
 import { buildDemoApplications, HOLIDAYS, SERVICES, USERS } from "./demo-data.mjs";
 
-export async function seed({ now = new Date(), password = process.env.DEMO_PASSWORD, log = console.log } = {}) {
+export async function seed({
+  now = new Date(),
+  password = process.env.DEMO_PASSWORD,
+  log = console.log,
+} = {}) {
   if (!password || password.length < 8) {
     throw new Error("DEMO_PASSWORD wajib diisi di .env.local (minimal 8 karakter).");
   }
@@ -41,9 +45,12 @@ export async function seed({ now = new Date(), password = process.env.DEMO_PASSW
   }
 
   // timestamps: false → createdAt/updatedAt hasil simulasi (mundur) tidak ditimpa waktu sekarang.
-  const apps = await Application.insertMany(built.map((b) => b.app), { timestamps: false });
+  const apps = await Application.insertMany(
+    built.map((b) => b.app),
+    { timestamps: false },
+  );
   await Event.insertMany(
-    built.flatMap(({ events }, i) => events.map((e) => ({ ...e, applicationId: apps[i]._id })))
+    built.flatMap(({ events }, i) => events.map((e) => ({ ...e, applicationId: apps[i]._id }))),
   );
 
   const byStatus = apps.reduce((acc, a) => ({ ...acc, [a.status]: (acc[a.status] ?? 0) + 1 }), {});

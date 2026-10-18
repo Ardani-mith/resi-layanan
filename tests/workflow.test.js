@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { pendingEscalations } from "@/lib/escalation";
 import { publicView, staffView } from "@/lib/present";
 import { DAY_MS } from "@/lib/sla";
-import { applyAction, applyRating, buildApplication, canActOn, statusForStep, WorkflowError } from "@/lib/workflow";
+import {
+  applyAction,
+  applyRating,
+  buildApplication,
+  canActOn,
+  statusForStep,
+  WorkflowError,
+} from "@/lib/workflow";
 
 const wib = (s) => new Date(`${s}+07:00`);
 const HOUR = 3600_000;
@@ -61,13 +68,20 @@ describe("alur normal", () => {
 
   it("complete berpindah tahap dan menghitung tenggat tahap berikutnya", () => {
     const app = newApp();
-    const event = act(app, "complete", loket, wib("2026-10-12T11:00:00"), { publicNote: "Berkas lengkap", internalNote: "cek manual" });
+    const event = act(app, "complete", loket, wib("2026-10-12T11:00:00"), {
+      publicNote: "Berkas lengkap",
+      internalNote: "cek manual",
+    });
 
     expect(event).toEqual({
       action: "complete",
       payload: { stepKey: "verifikasi", from: "diajukan", to: "diproses", publicNote: "Berkas lengkap" },
     });
-    expect(app.steps[0]).toMatchObject({ handledByName: "Rina", publicNote: "Berkas lengkap", internalNote: "cek manual" });
+    expect(app.steps[0]).toMatchObject({
+      handledByName: "Rina",
+      publicNote: "Berkas lengkap",
+      internalNote: "cek manual",
+    });
     expect(app.currentStep).toBe(1);
     expect(app.steps[1].dueAt).toEqual(wib("2026-10-14T11:00:00"));
     expect(app.currentDueAt).toEqual(app.steps[1].dueAt);
@@ -180,7 +194,13 @@ describe("eskalasi (logika murni)", () => {
   });
 
   it("akhir pekan tidak mempercepat eskalasi level 2", () => {
-    const friday = buildApplication({ service, applicant: { name: "A B", phone: "0812" }, channel: "online", resi: "x", now: wib("2026-10-15T09:00:00") });
+    const friday = buildApplication({
+      service,
+      applicant: { name: "A B", phone: "0812" },
+      channel: "online",
+      resi: "x",
+      now: wib("2026-10-15T09:00:00"),
+    });
     // Tenggat Jumat 16 Okt 09.00; Senin 19 Okt = 3 hari kalender tapi baru 1 hari kerja.
     expect(pendingEscalations(friday, wib("2026-10-19T10:00:00")).map((e) => e.level)).toEqual([1]);
     expect(pendingEscalations(friday, wib("2026-10-21T09:01:00")).map((e) => e.level)).toEqual([1, 2]);
@@ -188,7 +208,9 @@ describe("eskalasi (logika murni)", () => {
 
   it("libur ikut dihitung pada ambang level 2", () => {
     const app = newApp();
-    expect(pendingEscalations(app, wib("2026-10-16T09:01:00"), ["2026-10-14"]).map((e) => e.level)).toEqual([1]);
+    expect(pendingEscalations(app, wib("2026-10-16T09:01:00"), ["2026-10-14"]).map((e) => e.level)).toEqual([
+      1,
+    ]);
   });
 
   it("idempoten: yang sudah tercatat tidak dihitung lagi", () => {
@@ -220,7 +242,10 @@ describe("eskalasi (logika murni)", () => {
 describe("tampilan publik vs petugas", () => {
   it("publik: nama disamarkan, tanpa HP/NIK/catatan internal", () => {
     const app = newApp();
-    act(app, "complete", loket, wib("2026-10-12T11:00:00"), { publicNote: "Lengkap", internalNote: "RAHASIA" });
+    act(app, "complete", loket, wib("2026-10-12T11:00:00"), {
+      publicNote: "Lengkap",
+      internalNote: "RAHASIA",
+    });
     const view = publicView(app, { now: wib("2026-10-12T12:00:00") });
     const json = JSON.stringify(view);
 

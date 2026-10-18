@@ -1,6 +1,6 @@
 // Tanda tangan & verifikasi token sesi. Terpisah dari session.js karena proxy.js
 // juga memakainya, dan proxy tidak boleh mengimpor modul "server-only"/cookies().
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 
 export const SESSION_COOKIE = "session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 hari, dalam detik

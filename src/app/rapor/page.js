@@ -29,13 +29,21 @@ async function Report() {
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatTile label="Rata-rata lama layanan" value={days(overall.avgCompletionDays)} note="tanpa waktu tunggu perbaikan" />
+          <StatTile
+            label="Rata-rata lama layanan"
+            value={days(overall.avgCompletionDays)}
+            note="tanpa waktu tunggu perbaikan"
+          />
           <StatTile
             label="Kepuasan warga"
             value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")} / 5`}
             note={`${overall.ratingCount} penilaian`}
           />
-          <StatTile label="Sedang diproses" value={overall.open} note={`${overall.overdueNow} di antaranya terlambat`} />
+          <StatTile
+            label="Sedang diproses"
+            value={overall.open}
+            note={`${overall.overdueNow} di antaranya terlambat`}
+          />
         </div>
       </section>
 
@@ -47,17 +55,32 @@ async function Report() {
       />
 
       <section className="rounded-card border border-line bg-surface" aria-labelledby="per-layanan">
-        <h2 id="per-layanan" className="border-b border-line p-5 text-lg font-bold">Per layanan</h2>
+        <h2 id="per-layanan" className="border-b border-line p-5 text-lg font-bold">
+          Per layanan
+        </h2>
         {/* Daftar responsif: kolom berjajar di layar lebar, bertumpuk dengan label di HP. */}
-        <div aria-hidden className="hidden grid-cols-[1.4fr_1.2fr_1fr_1fr] gap-4 px-5 pt-3 text-sm text-muted sm:grid">
-          <span>Layanan</span><span>Tepat waktu</span><span>Rata-rata lama</span><span>Kepuasan</span>
+        <div
+          aria-hidden
+          className="hidden grid-cols-[1.4fr_1.2fr_1fr_1fr] gap-4 px-5 pt-3 text-sm text-muted sm:grid"
+        >
+          <span>Layanan</span>
+          <span>Tepat waktu</span>
+          <span>Rata-rata lama</span>
+          <span>Kepuasan</span>
         </div>
         <ul className="divide-y divide-line">
           {services.map((s) => (
-            <li key={s.slug} className="grid gap-x-4 gap-y-2 px-5 py-4 sm:grid-cols-[1.4fr_1.2fr_1fr_1fr] sm:items-center">
+            <li
+              key={s.slug}
+              className="grid gap-x-4 gap-y-2 px-5 py-4 sm:grid-cols-[1.4fr_1.2fr_1fr_1fr] sm:items-center"
+            >
               <div>
-                <Link href={`/ajukan?layanan=${s.slug}`} className="font-medium hover:text-brand">{s.name}</Link>
-                <span className="block text-xs text-muted">{s.completed} selesai · {s.open} berjalan</span>
+                <Link href={`/ajukan?layanan=${s.slug}`} className="font-medium hover:text-brand">
+                  {s.name}
+                </Link>
+                <span className="block text-xs text-muted">
+                  {s.completed} selesai · {s.open} berjalan
+                </span>
               </div>
               <div>
                 <span className="text-xs text-muted sm:hidden">Tepat waktu</span>
@@ -81,8 +104,8 @@ async function Report() {
       </section>
 
       <p className="text-xs text-muted">
-        Diperbarui {formatDateTime(generatedAt)}. Angka dihitung langsung dari data permohonan; tidak ada data pribadi
-        yang ditampilkan. Tenggat dihitung dalam hari kerja.
+        Diperbarui {formatDateTime(generatedAt)}. Angka dihitung langsung dari data permohonan; tidak ada data
+        pribadi yang ditampilkan. Tenggat dihitung dalam hari kerja.
       </p>
     </>
   );

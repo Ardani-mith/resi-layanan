@@ -2,14 +2,24 @@ import Link from "next/link";
 import { Suspense } from "react";
 import LogoutButton from "@/components/layout/LogoutButton";
 import { site } from "@/config/site";
-import { ROLE_LABELS } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/dal";
+import { ROLE_LABELS } from "@/lib/roles";
 
 const STAFF_LINKS = {
-  petugas_loket: [["/kerja", "Antrean"], ["/kerja/baru", "Input loket"]],
+  petugas_loket: [
+    ["/kerja", "Antrean"],
+    ["/kerja/baru", "Input loket"],
+  ],
   petugas_teknis: [["/kerja", "Antrean"]],
-  pimpinan: [["/pantau", "Pantau"], ["/kerja", "Antrean"]],
-  admin: [["/admin/demo", "Mode demo"], ["/pantau", "Pantau"], ["/kerja", "Antrean"]],
+  pimpinan: [
+    ["/pantau", "Pantau"],
+    ["/kerja", "Antrean"],
+  ],
+  admin: [
+    ["/admin/demo", "Mode demo"],
+    ["/pantau", "Pantau"],
+    ["/kerja", "Antrean"],
+  ],
 };
 
 const linkClass =
@@ -28,9 +38,15 @@ function Label({ short, full }) {
 function GuestLinks() {
   return (
     <>
-      <Link href="/rapor" className={linkClass}><Label short="Rapor" full="Rapor SLA" /></Link>
-      <Link href="/ajukan" className={linkClass}>Ajukan</Link>
-      <Link href="/masuk" className={linkClass}><Label short="Masuk" full="Masuk petugas" /></Link>
+      <Link href="/rapor" className={linkClass}>
+        <Label short="Rapor" full="Rapor SLA" />
+      </Link>
+      <Link href="/ajukan" className={linkClass}>
+        Ajukan
+      </Link>
+      <Link href="/masuk" className={linkClass}>
+        <Label short="Masuk" full="Masuk petugas" />
+      </Link>
     </>
   );
 }
@@ -43,7 +59,9 @@ async function SessionLinks() {
   return (
     <>
       {(STAFF_LINKS[user.role] ?? []).map(([href, label]) => (
-        <Link key={href} href={href} className={linkClass}>{label}</Link>
+        <Link key={href} href={href} className={linkClass}>
+          {label}
+        </Link>
       ))}
       <span className="hidden px-2 text-xs text-muted sm:inline">
         {user.name} · {ROLE_LABELS[user.role]}
@@ -57,8 +75,16 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
-        <Link href="/" className="mr-auto flex shrink-0 items-center gap-2 font-bold tracking-tight whitespace-nowrap">
-          <span aria-hidden className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-on-brand">RL</span>
+        <Link
+          href="/"
+          className="mr-auto flex shrink-0 items-center gap-2 font-bold tracking-tight whitespace-nowrap"
+        >
+          <span
+            aria-hidden
+            className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-on-brand"
+          >
+            RL
+          </span>
           <span className="hidden min-[360px]:inline">{site.name}</span>
         </Link>
         <div className="-mr-2 flex min-w-0 items-center gap-0.5 overflow-x-auto">

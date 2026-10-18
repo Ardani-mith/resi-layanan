@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { postJson } from "@/lib/http";
 
 export default function LogoutButton({ className }) {
   const router = useRouter();
@@ -9,7 +10,7 @@ export default function LogoutButton({ className }) {
 
   async function logout() {
     setPending(true);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await postJson("/api/auth/logout");
     router.replace("/");
     router.refresh();
   }

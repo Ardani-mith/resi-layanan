@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
-import User from "@/models/User";
 import { fail, ok, parseBody, route } from "@/lib/api";
 import { homeFor } from "@/lib/roles";
 import { createSession } from "@/lib/session";
 import { loginSchema } from "@/lib/validators";
+import User from "@/models/User";
 
 // Hash tiruan agar waktu respons email-tidak-terdaftar ≈ kata-sandi-salah.
 const DUMMY_HASH = "$2b$10$6ior4DJ.FZWSLJ0Fa25HmekHG9x5KIk7iKmfOuBg.up2lY/Cd2HGe";

@@ -1,10 +1,11 @@
 /** "Ardani Setiawan" → "Ar*** S***". Nama lengkap tidak pernah keluar ke tampilan publik. */
 export function maskName(name) {
-  const words = String(name ?? "").trim().split(/\s+/).filter(Boolean);
+  const words = String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   if (words.length === 0) return "***";
-  return words
-    .map((word, i) => `${word.slice(0, i === 0 ? 2 : 1)}***`)
-    .join(" ");
+  return words.map((word, i) => `${word.slice(0, i === 0 ? 2 : 1)}***`).join(" ");
 }
 
 /** "081234567890" → "0812****7890". */

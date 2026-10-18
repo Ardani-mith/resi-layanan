@@ -2,6 +2,7 @@
 
 import { STEP_STATE } from "@/components/application/StatusBadge";
 import { useNow } from "@/hooks/useNow";
+import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 /** Status tahap dihitung ulang di browser supaya "berjalan" berubah jadi "terlambat" tanpa reload. */
@@ -19,7 +20,7 @@ function Progress({ step, now }) {
   const tone = pct >= 100 ? "bg-late" : pct >= 75 ? "bg-warn" : "bg-run";
   return (
     <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-2" aria-hidden>
-      <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+      <div className={cn("h-full rounded-full", tone)} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -31,9 +32,12 @@ function StepDetail({ step, state, now }) {
       return (
         <p className="text-sm text-muted">
           {formatDateTime(step.completedAt)}
-          {due && (step.finishedLate
-            ? <span className="text-late"> · melewati tenggat</span>
-            : <span className="text-ok"> · tepat waktu</span>)}
+          {due &&
+            (step.finishedLate ? (
+              <span className="text-late"> · melewati tenggat</span>
+            ) : (
+              <span className="text-ok"> · tepat waktu</span>
+            ))}
         </p>
       );
     case "berjalan":
@@ -62,7 +66,8 @@ function StepDetail({ step, state, now }) {
     case "dijeda":
       return (
         <p className="text-sm text-muted">
-          Hitung mundur dihentikan sampai berkas dilengkapi; waktu menunggu tidak mengurangi jatah waktu instansi.
+          Hitung mundur dihentikan sampai berkas dilengkapi; waktu menunggu tidak mengurangi jatah waktu
+          instansi.
         </p>
       );
     case "menunggu":
@@ -86,13 +91,29 @@ export default function Timeline({ steps, serverNow, offsetMs = 0, staff = false
         const label = state === "berjalan" && !step.dueAt ? "Siap" : meta.label;
         const last = i === steps.length - 1;
         return (
-          <li key={step.key} className="relative flex gap-4 pb-6 last:pb-0" aria-current={step.isCurrent ? "step" : undefined}>
+          <li
+            key={step.key}
+            className="relative flex gap-4 pb-6 last:pb-0"
+            aria-current={step.isCurrent ? "step" : undefined}
+          >
             {!last && <span aria-hidden className="absolute top-6 bottom-0 left-[9px] w-0.5 bg-line" />}
-            <span aria-hidden className={`relative z-10 mt-1 size-5 shrink-0 rounded-full border-2 ${meta.dot}`} />
+            <span
+              aria-hidden
+              className={cn("relative z-10 mt-1 size-5 shrink-0 rounded-full border-2", meta.dot)}
+            />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <h3 className={`font-semibold ${state === "menunggu" || state === "dibatalkan" ? "text-muted" : ""}`}>{step.name}</h3>
-                <span className={`text-xs font-semibold tracking-wide uppercase ${meta.text}`}>{label}</span>
+                <h3
+                  className={cn(
+                    "font-semibold",
+                    (state === "menunggu" || state === "dibatalkan") && "text-muted",
+                  )}
+                >
+                  {step.name}
+                </h3>
+                <span className={cn("text-xs font-semibold tracking-wide uppercase", meta.text)}>
+                  {label}
+                </span>
               </div>
               <div className="mt-0.5">
                 <StepDetail step={step} state={state} now={now} />
@@ -107,7 +128,11 @@ export default function Timeline({ steps, serverNow, offsetMs = 0, staff = false
               {staff && (step.handledByName || step.internalNote) && (
                 <div className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">
                   {step.handledByName && <p className="text-muted">Ditangani: {step.handledByName}</p>}
-                  {step.internalNote && <p><span className="font-semibold">Internal:</span> {step.internalNote}</p>}
+                  {step.internalNote && (
+                    <p>
+                      <span className="font-semibold">Internal:</span> {step.internalNote}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -9,7 +9,7 @@ const settingSchema = new mongoose.Schema(
     // Mode demo: geser jam sistem ke depan supaya keterlambatan bisa didemokan.
     clockOffsetMs: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.Setting || mongoose.model("Setting", settingSchema);

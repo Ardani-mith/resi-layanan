@@ -1,3 +1,4 @@
+import { cn } from "@/lib/cn";
 import { STATUS_LABELS } from "@/lib/workflow";
 
 const STATUS_STYLE = {
@@ -23,10 +24,18 @@ export default function StatusBadge({ status, late = false, size = "md" }) {
   const sizing = size === "lg" ? "px-3 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <span className={`rounded-full font-semibold ${sizing} ${STATUS_STYLE[status] ?? "bg-surface-2 text-muted"}`}>
+      <span
+        className={cn(
+          "rounded-full font-semibold",
+          sizing,
+          STATUS_STYLE[status] ?? "bg-surface-2 text-muted",
+        )}
+      >
         {STATUS_LABELS[status] ?? status}
       </span>
-      {late && <span className={`rounded-full bg-late font-semibold text-surface ${sizing}`}>Terlambat</span>}
+      {late && (
+        <span className={cn("rounded-full bg-late font-semibold text-surface", sizing)}>Terlambat</span>
+      )}
     </span>
   );
 }

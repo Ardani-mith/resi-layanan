@@ -28,7 +28,7 @@ export function pendingEscalations(app, now, holidays) {
   return ESCALATION_LEVELS.filter(
     ({ level, afterWorkdays }) =>
       new Date(now) > escalationThreshold(step.dueAt, afterWorkdays, holidays) &&
-      !existing.some((e) => e.stepKey === step.key && e.level === level)
+      !existing.some((e) => e.stepKey === step.key && e.level === level),
   ).map(({ level, target }) => ({
     stepKey: step.key,
     level,
@@ -50,7 +50,7 @@ export async function syncEscalations(app, now, holidays) {
   for (const esc of pendingEscalations(app, now, holidays)) {
     const result = await Application.updateOne(
       { _id: app._id, escalations: { $not: { $elemMatch: { stepKey: esc.stepKey, level: esc.level } } } },
-      { $push: { escalations: esc } }
+      { $push: { escalations: esc } },
     );
     if (result.modifiedCount === 1) {
       await Event.create({

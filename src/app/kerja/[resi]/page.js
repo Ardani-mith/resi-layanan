@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -44,7 +45,12 @@ async function StaffDetail({ params }) {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/kerja" className="text-sm font-medium text-brand hover:underline">← Antrean</Link>
+          <Link
+            href="/kerja"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
+          >
+            <ArrowLeft aria-hidden className="size-4" /> Antrean
+          </Link>
           <p className="mt-2 font-mono text-sm tracking-wider text-muted">{app.resi}</p>
           <h1 className="text-2xl font-bold tracking-tight">{app.serviceName}</h1>
         </div>
@@ -56,9 +62,11 @@ async function StaffDetail({ params }) {
           {app.canAct ? (
             <ActionPanel resi={app.resi} status={app.status} stepName={current?.name} />
           ) : (
-            app.status !== "selesai" && app.status !== "ditolak" && (
+            app.status !== "selesai" &&
+            app.status !== "ditolak" && (
               <p className="rounded-card bg-surface-2 px-4 py-3 text-sm text-muted">
-                Tahap &ldquo;{current?.name}&rdquo; ditangani {ROLE_LABELS[current?.role] ?? "peran lain"}. Anda hanya bisa melihat.
+                Tahap &ldquo;{current?.name}&rdquo; ditangani {ROLE_LABELS[current?.role] ?? "peran lain"}.
+                Anda hanya bisa melihat.
               </p>
             )
           )}
@@ -79,16 +87,24 @@ async function StaffDetail({ params }) {
             <dl className="grid gap-3">
               <Detail label="Nama">{app.applicant.name}</Detail>
               <Detail label="Nomor HP">
-                <a href={`tel:${app.applicant.phone}`} className="font-mono text-brand hover:underline">{app.applicant.phone}</a>
+                <a href={`tel:${app.applicant.phone}`} className="font-mono text-brand hover:underline">
+                  {app.applicant.phone}
+                </a>
               </Detail>
               {app.applicant.email && <Detail label="Email">{app.applicant.email}</Detail>}
-              <Detail label="Kanal">{app.channel === "loket" ? "Loket" : "Online"} · {formatDateTime(app.createdAt)}</Detail>
+              <Detail label="Kanal">
+                {app.channel === "loket" ? "Loket" : "Online"} · {formatDateTime(app.createdAt)}
+              </Detail>
               <Detail label="Persyaratan dinyatakan lengkap">
                 {app.requirementsChecked.length ? (
                   <ul className="mt-1 list-inside list-disc text-sm font-normal">
-                    {app.requirementsChecked.map((r) => <li key={r}>{r}</li>)}
+                    {app.requirementsChecked.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
                   </ul>
-                ) : "—"}
+                ) : (
+                  "—"
+                )}
               </Detail>
             </dl>
           </Card>
@@ -98,9 +114,12 @@ async function StaffDetail({ params }) {
               <ul className="space-y-2 text-sm">
                 {app.escalations.map((e) => (
                   <li key={`${e.stepKey}-${e.level}`} className="rounded-xl bg-surface-2 px-3 py-2">
-                    <span className="font-semibold">Level {e.level} → {e.target}</span>
+                    <span className="font-semibold">
+                      Level {e.level} → {e.target}
+                    </span>
                     <span className="block text-muted">
-                      {formatDateTime(e.createdAt)} · {e.resolvedAt ? `selesai ${formatDateTime(e.resolvedAt)}` : "belum selesai"}
+                      {formatDateTime(e.createdAt)} ·{" "}
+                      {e.resolvedAt ? `selesai ${formatDateTime(e.resolvedAt)}` : "belum selesai"}
                     </span>
                   </li>
                 ))}
@@ -114,9 +133,17 @@ async function StaffDetail({ params }) {
                 <li key={i} className="border-l-2 border-line pl-3">
                   <span className="block font-medium">{EVENT_LABELS[e.action] ?? e.action}</span>
                   <span className="block text-muted">
-                    {e.actorName ?? "—"}{e.actorRole && e.actorRole !== "sistem" && e.actorRole !== "warga" ? ` (${ROLE_LABELS[e.actorRole] ?? e.actorRole})` : ""} · {formatDateTime(e.at)}
+                    {e.actorName ?? "—"}
+                    {e.actorRole && e.actorRole !== "sistem" && e.actorRole !== "warga"
+                      ? ` (${ROLE_LABELS[e.actorRole] ?? e.actorRole})`
+                      : ""}{" "}
+                    · {formatDateTime(e.at)}
                   </span>
-                  {e.payload?.publicNote && <span className="mt-0.5 block text-muted italic">&ldquo;{e.payload.publicNote}&rdquo;</span>}
+                  {e.payload?.publicNote && (
+                    <span className="mt-0.5 block text-muted italic">
+                      &ldquo;{e.payload.publicNote}&rdquo;
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>

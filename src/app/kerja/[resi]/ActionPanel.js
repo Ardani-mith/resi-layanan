@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Alert from "@/components/ui/Alert";
 import { buttonClass } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
+import { postJson } from "@/lib/http";
 
 const ACTIONS = {
   complete: {
@@ -39,11 +42,11 @@ const ACTIONS = {
 
 export default function ActionPanel({ resi, status, stepName }) {
   const router = useRouter();
-  const available = status === "perlu_perbaikan" ? ["resume", "reject"] : ["complete", "request_fix", "reject"];
+  const available =
+    status === "perlu_perbaikan" ? ["resume", "reject"] : ["complete", "request_fix", "reject"];
   const [action, setAction] = useState(null);
   const [errors, setErrors] = useState({});
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState("");
 
   const spec = action ? ACTIONS[action] : null;
 
@@ -57,39 +60,29 @@ export default function ActionPanel({ resi, status, stepName }) {
     }
     setPending(true);
     setErrors({});
-    try {
-      const res = await fetch(`/api/applications/${resi}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          publicNote: publicNote || undefined,
-          internalNote: String(form.get("internalNote") ?? "").trim() || undefined,
-        }),
-      });
-      const body = await res.json();
-      if (!res.ok) {
-        setErrors({ ...body.error.fields, form: body.error.message });
-        return;
-      }
-      setNotice(`${ACTIONS[action].label}: berhasil. Status sekarang "${body.data.statusLabel}".`);
-      setAction(null);
-      router.refresh();
-    } catch {
-      setErrors({ form: "Tidak bisa terhubung ke server. Coba lagi." });
-    } finally {
+    const res = await postJson(`/api/applications/${resi}/actions`, {
+      action,
+      publicNote: publicNote || undefined,
+      internalNote: String(form.get("internalNote") ?? "").trim() || undefined,
+    });
+    if (!res.ok) {
+      setErrors({ ...res.error.fields, form: res.error.message });
       setPending(false);
+      return;
     }
+    // Kembali ke antrean dengan konfirmasi: panel ini bisa hilang setelah aksi (tahap
+    // pindah ke peran lain), jadi pesan sukses ditampilkan di halaman antrean.
+    router.push(`/kerja?selesai=${resi}&aksi=${action}`);
   }
 
   return (
     <section className="rounded-card border-2 border-brand bg-surface p-5" aria-labelledby="action-title">
-      <h2 id="action-title" className="text-lg font-bold">Tindak lanjut</h2>
+      <h2 id="action-title" className="text-lg font-bold">
+        Tindak lanjut
+      </h2>
       <p className="text-sm text-muted">
         Tahap saat ini: <span className="font-medium text-text">{stepName}</span>
       </p>
-
-      {notice && <p role="status" className="mt-3 rounded-xl bg-ok-soft px-3 py-2 text-sm font-medium text-ok">{notice}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2">
         {available.map((key) => (
@@ -100,9 +93,11 @@ export default function ActionPanel({ resi, status, stepName }) {
             onClick={() => {
               setAction(action === key ? null : key);
               setErrors({});
-              setNotice("");
             }}
-            className={buttonClass(ACTIONS[key].variant, action === key ? "ring-2 ring-brand ring-offset-2 ring-offset-surface" : "")}
+            className={buttonClass(
+              ACTIONS[key].variant,
+              action === key && "ring-2 ring-brand ring-offset-2 ring-offset-surface",
+            )}
           >
             {ACTIONS[key].label}
           </button>
@@ -110,11 +105,13 @@ export default function ActionPanel({ resi, status, stepName }) {
       </div>
 
       {spec && (
-        <form onSubmit={submit} noValidate className="mt-5 space-y-4 border-t border-line pt-5">
+        <form method="post" onSubmit={submit} noValidate className="mt-5 space-y-4 border-t border-line pt-5">
           {spec.hint && <p className="text-sm text-muted">{spec.hint}</p>}
           {spec.publicLabel && (
             <div>
-              <label htmlFor="publicNote" className="mb-1.5 block text-sm font-medium">{spec.publicLabel}</label>
+              <label htmlFor="publicNote" className="mb-1.5 block text-sm font-medium">
+                {spec.publicLabel}
+              </label>
               <textarea
                 id="publicNote"
                 name="publicNote"
@@ -124,11 +121,17 @@ export default function ActionPanel({ resi, status, stepName }) {
                 aria-describedby={errors.publicNote ? "publicNote-error" : undefined}
                 className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand aria-invalid:border-late"
               />
-              {errors.publicNote && <p id="publicNote-error" className="mt-1 text-sm text-late">{errors.publicNote}</p>}
+              {errors.publicNote && (
+                <p id="publicNote-error" className="mt-1 text-sm text-late">
+                  {errors.publicNote}
+                </p>
+              )}
             </div>
           )}
           <div>
-            <label htmlFor="internalNote" className="mb-1.5 block text-sm font-medium">Catatan internal (hanya petugas)</label>
+            <label htmlFor="internalNote" className="mb-1.5 block text-sm font-medium">
+              Catatan internal (hanya petugas)
+            </label>
             <textarea
               id="internalNote"
               name="internalNote"
@@ -137,7 +140,7 @@ export default function ActionPanel({ resi, status, stepName }) {
               className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
             />
           </div>
-          {errors.form && <p role="alert" className="rounded-xl bg-late-soft px-3 py-2 text-sm text-late">{errors.form}</p>}
+          <Alert>{errors.form}</Alert>
           <button type="submit" disabled={pending} className={buttonClass(spec.variant)}>
             {pending ? "Menyimpan…" : spec.confirm}
           </button>

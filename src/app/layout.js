@@ -1,8 +1,8 @@
+import "./globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import { site } from "@/config/site";
-import "./globals.css";
 
 // next/font mengunduh font saat build dan menyajikannya dari domain sendiri (self-hosted).
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });

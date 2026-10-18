@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { cn } from "@/lib/cn";
 
 /** Input berlabel dengan pesan error yang terhubung lewat aria-describedby. */
 export default function Field({ label, error, hint, className = "", ...props }) {
@@ -17,7 +18,7 @@ export default function Field({ label, error, hint, className = "", ...props }) 
         {...props}
       />
       {(error || hint) && (
-        <p id={messageId} className={`mt-1 text-sm ${error ? "text-late" : "text-muted"}`}>
+        <p id={messageId} className={cn("mt-1 text-sm", error ? "text-late" : "text-muted")}>
           {error || hint}
         </p>
       )}

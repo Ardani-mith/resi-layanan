@@ -19,9 +19,7 @@ export const ROUTE_ROLES = [
 ];
 
 export function rolesForPath(pathname) {
-  const match = ROUTE_ROLES.find(
-    ([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
+  const match = ROUTE_ROLES.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   return match ? match[1] : null;
 }
 

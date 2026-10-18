@@ -1,3 +1,5 @@
+import { cn } from "@/lib/cn";
+
 /**
  * Meter rasio 0–1 dengan angka di sampingnya (nilai tidak pernah hanya lewat warna).
  * severity=true: isi berubah warna sesuai tingkat (aman → waspada → kritis) untuk
@@ -23,7 +25,10 @@ export default function Meter({ value, label, severity = false, thresholds = [0.
         aria-label={label}
         className="h-2 w-full min-w-16 overflow-hidden rounded-full bg-chart-track"
       >
-        <div className={`h-full rounded-full ${fill}`} style={{ width: `${Math.max(pct, value > 0 ? 3 : 0)}%` }} />
+        <div
+          className={cn("h-full rounded-full", fill)}
+          style={{ width: `${Math.max(pct, value > 0 ? 3 : 0)}%` }}
+        />
       </div>
       <span className="w-10 shrink-0 text-right text-sm tabular-nums">{pct}%</span>
     </div>

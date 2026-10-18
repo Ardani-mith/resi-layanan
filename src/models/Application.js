@@ -22,7 +22,7 @@ const stepSchema = new mongoose.Schema(
     publicNote: { type: String, default: null },
     internalNote: { type: String, default: null },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const escalationSchema = new mongoose.Schema(
@@ -34,7 +34,7 @@ const escalationSchema = new mongoose.Schema(
     createdAt: { type: Date, required: true },
     resolvedAt: { type: Date, default: null },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const applicationSchema = new mongoose.Schema(
@@ -63,7 +63,7 @@ const applicationSchema = new mongoose.Schema(
     rating: {
       type: new mongoose.Schema(
         { score: { type: Number, min: 1, max: 5 }, comment: String, createdAt: Date },
-        { _id: false }
+        { _id: false },
       ),
       default: null,
     },
@@ -75,7 +75,7 @@ const applicationSchema = new mongoose.Schema(
   },
   // optimisticConcurrency: save() ditolak (VersionError) jika dokumen sudah diubah
   // sejak dibaca, mencegah dua petugas menyelesaikan tahap yang sama bersamaan.
-  { timestamps: true, optimisticConcurrency: true }
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 applicationSchema.index({ status: 1, currentStep: 1 });

@@ -49,7 +49,11 @@ export const trackActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("rate"),
     phoneLast4: last4Schema,
-    score: z.number({ error: "Pilih 1–5 bintang." }).int().min(1, "Pilih 1–5 bintang.").max(5, "Pilih 1–5 bintang."),
+    score: z
+      .number({ error: "Pilih 1–5 bintang." })
+      .int()
+      .min(1, "Pilih 1–5 bintang.")
+      .max(5, "Pilih 1–5 bintang."),
     comment: trimmed(500).optional(),
   }),
 ]);

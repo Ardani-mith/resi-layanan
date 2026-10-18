@@ -18,7 +18,12 @@ const dateFmt = new Intl.DateTimeFormat("id-ID", {
   month: "long",
   year: "numeric",
 });
-const shortDateFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
+const shortDateFmt = new Intl.DateTimeFormat("id-ID", {
+  timeZone: TZ,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 const dayMonthFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short" });
 
 const valid = (value) => value !== null && value !== undefined && !Number.isNaN(new Date(value).getTime());

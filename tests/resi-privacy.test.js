@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
 import { maskName, maskPhone, normalizePhone } from "@/lib/privacy";
+import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
 import { applicationSchema, resiSchema } from "@/lib/validators";
 
 describe("resi", () => {
@@ -20,7 +20,15 @@ describe("resi", () => {
   });
 
   it("menolak format salah dan karakter ambigu", () => {
-    for (const bad of ["", "RL-ABCD", "RL-ABCD-EFG", "XX-ABCD-EFGH", "RL-AB0D-EFGH", "RL-ABCD-EFIH", "rl-abcd-efgh"]) {
+    for (const bad of [
+      "",
+      "RL-ABCD",
+      "RL-ABCD-EFG",
+      "XX-ABCD-EFGH",
+      "RL-AB0D-EFGH",
+      "RL-ABCD-EFIH",
+      "rl-abcd-efgh",
+    ]) {
       expect(isValidResi(bad)).toBe(false);
     }
   });
@@ -57,7 +65,10 @@ describe("privasi", () => {
     expect(ok.applicant.phone).toBe("081234561234");
     expect(ok.channel).toBe("online");
 
-    const bad = applicationSchema.safeParse({ ...base, applicant: { ...base.applicant, nik: "123", phone: "12345" } });
+    const bad = applicationSchema.safeParse({
+      ...base,
+      applicant: { ...base.applicant, nik: "123", phone: "12345" },
+    });
     expect(bad.success).toBe(false);
     const paths = bad.error.issues.map((i) => i.path.join("."));
     expect(paths).toContain("applicant.nik");

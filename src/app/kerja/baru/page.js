@@ -15,7 +15,9 @@ export default function LoketPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="text-2xl font-bold tracking-tight">Input warga di loket</h1>
-      <p className="mt-1 text-muted">Untuk warga yang datang langsung. Tahap verifikasi berkas langsung masuk antrean loket.</p>
+      <p className="mt-1 text-muted">
+        Untuk warga yang datang langsung. Tahap verifikasi berkas langsung masuk antrean loket.
+      </p>
       <div className="mt-6">
         <Suspense fallback={<Skeleton />}>
           <LoketForm />

@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     unit: { type: String, trim: true, default: null },
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.models.User || mongoose.model("User", userSchema);

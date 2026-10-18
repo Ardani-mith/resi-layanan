@@ -1,7 +1,7 @@
 // Tes dengan MongoDB sungguhan (in-memory): seed, eskalasi idempoten, konflik
 // petugas, audit log append-only, dan pembatas verifikasi HP.
-import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApplication, performAction, performCitizenAction, verifyApplicant } from "@/lib/applications";
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
@@ -15,7 +15,10 @@ import Service from "@/models/Service";
 import { seed } from "../scripts/seed.mjs";
 
 const NOW = new Date("2026-10-19T03:00:00Z"); // Senin 10.00 WIB
-const clockAt = (offsetDays = 0) => ({ now: new Date(NOW.getTime() + offsetDays * DAY_MS), holidays: new Set() });
+const clockAt = (offsetDays = 0) => ({
+  now: new Date(NOW.getTime() + offsetDays * DAY_MS),
+  holidays: new Set(),
+});
 
 let mongod;
 let users;
@@ -56,7 +59,8 @@ describe("seed", () => {
     expect(apps).toHaveLength(60);
 
     const statuses = new Set(apps.map((a) => a.status));
-    for (const s of ["diajukan", "diproses", "selesai", "perlu_perbaikan", "ditolak"]) expect(statuses).toContain(s);
+    for (const s of ["diajukan", "diproses", "selesai", "perlu_perbaikan", "ditolak"])
+      expect(statuses).toContain(s);
 
     const oldest = Math.min(...apps.map((a) => new Date(a.createdAt).getTime()));
     expect(NOW - oldest).toBeGreaterThan(20 * DAY_MS);
@@ -68,7 +72,7 @@ describe("seed", () => {
 
   it("resi demo ada dengan kondisi yang dijanjikan", async () => {
     const byResi = Object.fromEntries(
-      (await Application.find({ resi: /^RL-HJ26-/ }).lean()).map((a) => [a.resi, a])
+      (await Application.find({ resi: /^RL-HJ26-/ }).lean()).map((a) => [a.resi, a]),
     );
     expect(byResi["RL-HJ26-AKTA"].status).toBe("diproses");
     expect(NOW - byResi["RL-HJ26-AKTA"].currentDueAt).toBeGreaterThan(0);
@@ -110,16 +114,22 @@ describe("pengajuan", () => {
       createApplication({
         input: { serviceSlug: "tidak-ada", channel: "online", applicant: {}, requirementsChecked: [] },
         clock: clockAt(),
-      })
+      }),
     ).rejects.toThrow(/Layanan tidak ditemukan/);
   });
 
   it("riwayat permohonan tidak berubah saat template layanan diubah", async () => {
     const app = await newApplication();
-    await Service.updateOne({ slug: "akta-kelahiran" }, { $set: { "steps.1.slaDays": 10, "steps.1.name": "Diganti" } });
+    await Service.updateOne(
+      { slug: "akta-kelahiran" },
+      { $set: { "steps.1.slaDays": 10, "steps.1.name": "Diganti" } },
+    );
     const stored = await Application.findOne({ resi: app.resi }).lean();
     expect(stored.steps[1]).toMatchObject({ name: "Entri & validasi data", slaDays: 2 });
-    await Service.updateOne({ slug: "akta-kelahiran" }, { $set: { "steps.1.slaDays": 2, "steps.1.name": "Entri & validasi data" } });
+    await Service.updateOne(
+      { slug: "akta-kelahiran" },
+      { $set: { "steps.1.slaDays": 2, "steps.1.name": "Entri & validasi data" } },
+    );
   });
 });
 
@@ -128,7 +138,9 @@ describe("eskalasi saat dibaca", () => {
     const app = await newApplication();
     const later = clockAt(2).now; // tahap verifikasi (1 hari kerja) sudah lewat
 
-    const copies = await Promise.all(Array.from({ length: 5 }, () => Application.findOne({ resi: app.resi }).lean()));
+    const copies = await Promise.all(
+      Array.from({ length: 5 }, () => Application.findOne({ resi: app.resi }).lean()),
+    );
     await Promise.all(copies.map((copy) => syncEscalations(copy, later, new Set())));
     await syncOverdue(later, new Set());
 
@@ -156,7 +168,12 @@ describe("aksi petugas", () => {
   it("menolak peran yang bukan pemilik tahap", async () => {
     const app = await newApplication();
     await expect(
-      performAction({ resi: app.resi, input: { action: "complete" }, actor: actor("petugas_teknis"), clock: clockAt() })
+      performAction({
+        resi: app.resi,
+        input: { action: "complete" },
+        actor: actor("petugas_teknis"),
+        clock: clockAt(),
+      }),
     ).rejects.toMatchObject({ code: "forbidden" });
   });
 
@@ -164,8 +181,8 @@ describe("aksi petugas", () => {
     const app = await newApplication();
     const results = await Promise.allSettled(
       [actor("petugas_loket"), actor("admin")].map((a) =>
-        performAction({ resi: app.resi, input: { action: "complete" }, actor: a, clock: clockAt() })
-      )
+        performAction({ resi: app.resi, input: { action: "complete" }, actor: a, clock: clockAt() }),
+      ),
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const stored = await Application.findOne({ resi: app.resi }).lean();
@@ -176,15 +193,33 @@ describe("aksi petugas", () => {
   it("warga mengirim perbaikan → status kembali berjalan, lalu rating setelah selesai", async () => {
     const app = await newApplication();
     const loket = actor("petugas_loket");
-    await performAction({ resi: app.resi, input: { action: "request_fix", publicNote: "Lampirkan KK" }, actor: loket, clock: clockAt() });
-    const resumed = await performCitizenAction({ resi: app.resi, input: { action: "resubmit" }, clock: clockAt(1) });
+    await performAction({
+      resi: app.resi,
+      input: { action: "request_fix", publicNote: "Lampirkan KK" },
+      actor: loket,
+      clock: clockAt(),
+    });
+    const resumed = await performCitizenAction({
+      resi: app.resi,
+      input: { action: "resubmit" },
+      clock: clockAt(1),
+    });
     expect(resumed.status).toBe("diajukan");
     expect(resumed.steps[0].pausedMs).toBe(DAY_MS);
 
     for (const role of ["petugas_loket", "petugas_teknis", "pimpinan", "petugas_teknis", "petugas_loket"]) {
-      await performAction({ resi: app.resi, input: { action: "complete" }, actor: actor(role), clock: clockAt(1) });
+      await performAction({
+        resi: app.resi,
+        input: { action: "complete" },
+        actor: actor(role),
+        clock: clockAt(1),
+      });
     }
-    const rated = await performCitizenAction({ resi: app.resi, input: { action: "rate", score: 5 }, clock: clockAt(1) });
+    const rated = await performCitizenAction({
+      resi: app.resi,
+      input: { action: "rate", score: 5 },
+      clock: clockAt(1),
+    });
     expect(rated.status).toBe("selesai");
     expect(rated.rating.score).toBe(5);
   });
