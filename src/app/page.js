@@ -7,6 +7,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import { Icon } from "@/components/landing/icons";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
 import Button from "@/components/ui/Button";
+import SectionError from "@/components/ui/SectionError";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
@@ -51,9 +52,12 @@ export default function Home() {
               {summary.cta} <ArrowRight aria-hidden className="size-4" />
             </Link>
           </div>
-          <Suspense fallback={<SummaryStatsSkeleton />}>
-            <SummaryStats />
-          </Suspense>
+          {/* Jika database tidak terjangkau, hanya rapor ini yang diganti pesan; hero & cek resi tetap jalan. */}
+          <SectionError message="Angka rapor sementara tidak dapat dimuat. Lacak resi tetap bisa dipakai.">
+            <Suspense fallback={<SummaryStatsSkeleton />}>
+              <SummaryStats />
+            </Suspense>
+          </SectionError>
         </div>
       </section>
 
@@ -118,7 +122,7 @@ export default function Home() {
         </ul>
       </Section>
 
-      <section aria-labelledby="penutup-title" className="relative overflow-hidden text-white surface-hero">
+      <section aria-labelledby="penutup-title" className="relative overflow-hidden surface-hero">
         <Hatch className="border-t-0" />
         <div className="mx-auto max-w-6xl px-4 py-20 text-center">
           <h2
@@ -127,10 +131,10 @@ export default function Home() {
           >
             {closing.title}
           </h2>
-          <p className="reveal mx-auto mt-4 max-w-2xl text-lg text-white/75">{closing.body}</p>
+          <p className="reveal mx-auto mt-4 max-w-2xl text-lg text-hero-muted">{closing.body}</p>
           <div className="reveal mt-8 flex flex-wrap justify-center gap-3">
             <Button href="/ajukan">Ajukan permohonan</Button>
-            <Button href="/rapor" variant="inverse">
+            <Button href="/rapor" variant="hero">
               Lihat rapor SLA
             </Button>
           </div>

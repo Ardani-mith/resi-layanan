@@ -78,12 +78,12 @@ export default function TrackingPreview({ resi, service, applicant, officerNote,
       {/* Cahaya biru di belakang jendela. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -inset-x-6 -top-8 h-48 rounded-[50%] bg-[radial-gradient(ellipse_at_50%_40%,rgb(80_160_255/0.45),transparent_70%)] blur-2xl"
+        className="pointer-events-none absolute -inset-x-6 -top-8 h-48 rounded-[50%] bg-[radial-gradient(ellipse_at_50%_40%,var(--hero-glow),transparent_70%)] blur-2xl"
       />
 
       <div
         aria-hidden
-        className="relative overflow-hidden rounded-2xl border border-white/15 bg-surface text-text shadow-[0_30px_80px_-20px_rgb(0_0_0/0.6)]"
+        className="relative overflow-hidden rounded-2xl border border-hero-line bg-surface text-text shadow-[0_30px_80px_-20px_var(--hero-shadow)]"
       >
         {/* Bilah browser */}
         <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-2.5">
@@ -157,18 +157,18 @@ export default function TrackingPreview({ resi, service, applicant, officerNote,
       {/* Kartu melayang: menjelaskan dua hal yang membedakan dari pelacakan biasa. */}
       <div
         aria-hidden
-        className="absolute -top-12 -left-8 hidden items-center gap-2 rounded-xl border border-white/10 bg-[#0d1f3a]/90 px-3 py-2 text-xs text-white shadow-xl backdrop-blur motion-safe:animate-fade-up lg:flex"
+        className="absolute -top-12 -left-8 hidden items-center gap-2 rounded-xl border border-hero-line bg-hero-chip px-3 py-2 text-xs text-hero-fg shadow-xl backdrop-blur motion-safe:animate-fade-up lg:flex"
         style={{ animationDelay: "700ms" }}
       >
-        <MessageSquareText className="size-4 text-sky-300" />
+        <MessageSquareText className="size-4 text-hero-accent" />
         Catatan petugas tampil ke warga
       </div>
       <div
         aria-hidden
-        className="absolute -right-6 -bottom-6 hidden max-w-60 items-start gap-2 rounded-xl border border-white/10 bg-[#0d1f3a]/90 px-3 py-2 text-xs text-white shadow-xl backdrop-blur motion-safe:animate-fade-up lg:flex"
+        className="absolute -right-6 -bottom-6 hidden max-w-60 items-start gap-2 rounded-xl border border-hero-line bg-hero-chip px-3 py-2 text-xs text-hero-fg shadow-xl backdrop-blur motion-safe:animate-fade-up lg:flex"
         style={{ animationDelay: "950ms" }}
       >
-        <BellRing className="mt-0.5 size-4 shrink-0 text-[#ff9b8f]" />
+        <BellRing className="mt-0.5 size-4 shrink-0 text-hero-alert" />
         {escalationNote}
       </div>
     </figure>

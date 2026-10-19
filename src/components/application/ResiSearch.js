@@ -5,13 +5,13 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { isValidResi, normalizeResi } from "@/lib/resi-format";
 
-// "hero" = di atas latar gelap landing page: teks bantuan terang, input lebih besar.
+// "hero" = di atas latar hero landing page: warna teks dari token hero-*, input lebih besar.
 const VARIANTS = {
   default: { helper: "text-muted", error: "text-late", example: "text-brand", input: "min-h-13" },
   hero: {
-    helper: "text-white/70",
-    error: "text-[#ffb4ab]",
-    example: "text-white",
+    helper: "text-hero-muted",
+    error: "text-hero-alert",
+    example: "text-hero-fg",
     input: "min-h-14 shadow-lg",
   },
 };

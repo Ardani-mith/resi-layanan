@@ -10,10 +10,7 @@ const delay = (ms) => ({ animationDelay: `${ms}ms` });
 export default function HeroSection({ hero }) {
   const lastLine = hero.titleLines.length - 1;
   return (
-    <section
-      aria-labelledby="hero-title"
-      className="relative isolate overflow-hidden text-white surface-hero"
-    >
+    <section aria-labelledby="hero-title" className="relative isolate overflow-hidden surface-hero">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 pattern-grid [mask-image:radial-gradient(ellipse_at_60%_35%,black,transparent_75%)]"
@@ -23,7 +20,7 @@ export default function HeroSection({ hero }) {
         <GuideLines />
         <div className="grid gap-14 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.12fr_0.88fr] lg:items-center lg:gap-16 lg:px-10 lg:pt-24 lg:pb-24">
           <div>
-            <Eyebrow tone="dark" className="motion-safe:animate-fade-up">
+            <Eyebrow tone="hero" className="motion-safe:animate-fade-up">
               {hero.eyebrow}
             </Eyebrow>
 
@@ -38,7 +35,8 @@ export default function HeroSection({ hero }) {
                   <span
                     className={cn(
                       "lg:block lg:whitespace-nowrap lg:motion-safe:animate-rise",
-                      i === lastLine && "bg-linear-to-r from-sky-300 to-white bg-clip-text text-transparent",
+                      i === lastLine &&
+                        "bg-linear-to-r from-hero-accent to-hero-accent-end bg-clip-text text-transparent",
                     )}
                     style={delay(100 + i * 90)}
                   >
@@ -49,7 +47,10 @@ export default function HeroSection({ hero }) {
               ))}
             </h1>
 
-            <p className="mt-5 max-w-lg text-lg text-white/75 motion-safe:animate-fade-up" style={delay(350)}>
+            <p
+              className="mt-5 max-w-lg text-lg text-hero-muted motion-safe:animate-fade-up"
+              style={delay(350)}
+            >
               {hero.body}
             </p>
 
@@ -58,13 +59,13 @@ export default function HeroSection({ hero }) {
             </div>
 
             <ul
-              className="mt-9 grid gap-3 text-sm text-white/80 motion-safe:animate-fade-up sm:grid-cols-3"
+              className="mt-9 grid gap-3 text-sm text-hero-muted motion-safe:animate-fade-up sm:grid-cols-3"
               style={delay(550)}
             >
               {hero.highlights.map((item) => (
                 <li key={item.text} className="flex items-start gap-2">
-                  <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10">
-                    <Icon name={item.icon} className="size-4 text-sky-300" />
+                  <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-hero-soft">
+                    <Icon name={item.icon} className="size-4 text-hero-accent" />
                   </span>
                   <span className="pt-1">{item.text}</span>
                 </li>

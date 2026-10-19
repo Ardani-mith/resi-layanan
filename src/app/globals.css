@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
+/* Varian dark: mengikuti pilihan tema (data-theme), bukan langsung prefers-color-scheme. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
   Design tokens Resi Layanan. Semua warna lewat variabel ini (bg-brand, text-muted,
   border-line, bg-late-soft, dst.) supaya mode gelap cukup diatur di satu tempat.
+  Tema dipilih lewat <html data-theme="light|dark">, dipasang skrip di <head>
+  (lib/theme.js) dari pilihan pengguna atau tema OS. Tanpa JavaScript: terang.
   Warna status tahap: ok = selesai/tepat waktu, run = berjalan, warn = mendekati
   tenggat, late = terlambat/eskalasi, pause = dijeda (perlu perbaikan).
 */
@@ -35,41 +40,78 @@
   --chart-track: #e6eef8;
   --grid: #e7ecf3;
 
+  /* Hero & penutup landing: biru muda bercahaya di mode terang, navy di mode gelap. */
+  --hero-top: #f4f8fe;
+  --hero-bottom: #e2edfa;
+  --hero-glow: rgb(52 132 226 / 0.2);
+  --hero-glow-2: rgb(11 92 173 / 0.12);
+  --hero-pattern: rgb(11 92 173 / 0.07);
+  --hero-hatch: rgb(11 92 173 / 0.12);
+  --hero-fg: #0f1b2d;
+  --hero-muted: #42536b;
+  --hero-soft: rgb(11 92 173 / 0.08);
+  --hero-line: rgb(11 92 173 / 0.14);
+  --hero-line-strong: rgb(11 92 173 / 0.35);
+  --hero-accent: #0b5cad;
+  --hero-accent-end: #2b7fd4;
+  --hero-alert: #c0362c;
+  --hero-chip: rgb(255 255 255 / 0.92);
+  --hero-shadow: rgb(15 27 45 / 0.22);
+
   --radius: 14px;
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
+
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1220;
-    --surface: #111a2b;
-    --surface-2: #18233a;
-    --text: #e8eef7;
-    --muted: #93a3b8;
-    --line: #24324b;
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #111a2b;
+  --surface-2: #18233a;
+  --text: #e8eef7;
+  --muted: #93a3b8;
+  --line: #24324b;
 
-    --brand: #5aa2ec;
-    --brand-strong: #84bbf2;
-    --brand-soft: #142a47;
-    --on-brand: #06101f;
+  --brand: #5aa2ec;
+  --brand-strong: #84bbf2;
+  --brand-soft: #142a47;
+  --on-brand: #06101f;
 
-    --ok: #4cc59a;
-    --ok-soft: #0f2e25;
-    --run: #5aa2ec;
-    --run-soft: #142a47;
-    --warn: #f0b44c;
-    --warn-soft: #33270f;
-    --late: #ff7b70;
-    --late-soft: #3a1714;
-    --pause: #a99cf0;
-    --pause-soft: #241f3f;
+  --ok: #4cc59a;
+  --ok-soft: #0f2e25;
+  --run: #5aa2ec;
+  --run-soft: #142a47;
+  --warn: #f0b44c;
+  --warn-soft: #33270f;
+  --late: #ff7b70;
+  --late-soft: #3a1714;
+  --pause: #a99cf0;
+  --pause-soft: #241f3f;
 
-    --chart: #4a92dd;
-    --chart-track: #1b2a42;
-    --grid: #1f2b40;
+  --chart: #4a92dd;
+  --chart-track: #1b2a42;
+  --grid: #1f2b40;
 
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
-  }
+  --hero-top: #06101e;
+  --hero-bottom: #0a1a33;
+  --hero-glow: rgb(52 132 226 / 0.5);
+  --hero-glow-2: rgb(11 92 173 / 0.5);
+  --hero-pattern: rgb(255 255 255 / 0.035);
+  --hero-hatch: rgb(255 255 255 / 0.09);
+  --hero-fg: #ffffff;
+  --hero-muted: rgb(255 255 255 / 0.78);
+  --hero-soft: rgb(255 255 255 / 0.1);
+  --hero-line: rgb(255 255 255 / 0.1);
+  --hero-line-strong: rgb(255 255 255 / 0.3);
+  --hero-accent: #7dd3fc;
+  --hero-accent-end: #ffffff;
+  --hero-alert: #ffa49a;
+  --hero-chip: rgb(13 31 58 / 0.9);
+  --hero-shadow: rgb(0 0 0 / 0.6);
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -96,13 +138,18 @@
   --color-chart: var(--chart);
   --color-chart-track: var(--chart-track);
   --color-grid: var(--grid);
+  --color-hero-fg: var(--hero-fg);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-soft: var(--hero-soft);
+  --color-hero-line: var(--hero-line);
+  --color-hero-line-strong: var(--hero-line-strong);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-accent-end: var(--hero-accent-end);
+  --color-hero-alert: var(--hero-alert);
+  --color-hero-chip: var(--hero-chip);
   --radius-card: var(--radius);
   --shadow-card: var(--shadow);
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-}
-
-html {
-  color-scheme: light dark;
 }
 
 body {
@@ -117,26 +164,27 @@ body {
 }
 
 /* --- Landing page --------------------------------------------------------------
-   Hero & penutup selalu gelap (navy) di mode terang maupun gelap, dengan cahaya
-   biru brand. Teks di atasnya memakai text-white/xx, bukan token tema. */
+   Hero & penutup: latar bercahaya biru brand (terang: biru muda, gelap: navy).
+   Teks & hiasan di atasnya memakai token hero-* (text-hero-fg, bg-hero-soft, dst.). */
 
 @utility surface-hero {
+  color: var(--hero-fg);
   background:
-    radial-gradient(ellipse 620px 320px at 74% 36%, rgb(52 132 226 / 0.5) 0%, rgb(52 132 226 / 0) 70%),
-    radial-gradient(ellipse 1100px 520px at 18% 115%, rgb(11 92 173 / 0.5) 0%, rgb(11 92 173 / 0) 70%),
-    linear-gradient(180deg, #06101e 0%, #0a1a33 100%);
+    radial-gradient(ellipse 620px 320px at 74% 36%, var(--hero-glow) 0%, transparent 70%),
+    radial-gradient(ellipse 1100px 520px at 18% 115%, var(--hero-glow-2) 0%, transparent 70%),
+    linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
 }
 
 /* Pita garis miring pemisah baris (gaya blueprint). */
 @utility pattern-hatch {
-  background: repeating-linear-gradient(45deg, rgb(255 255 255 / 0) 0 6px, rgb(255 255 255 / 0.09) 6px 7.2px);
+  background: repeating-linear-gradient(45deg, transparent 0 6px, var(--hero-hatch) 6px 7.2px);
 }
 
 /* Kisi halus di latar hero. */
 @utility pattern-grid {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    linear-gradient(var(--hero-pattern) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hero-pattern) 1px, transparent 1px);
   background-size: 56px 56px;
 }
 

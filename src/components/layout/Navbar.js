@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import LogoutButton from "@/components/layout/LogoutButton";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 import { site } from "@/config/site";
 import { getCurrentUser } from "@/lib/dal";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -85,13 +86,15 @@ export default function Navbar() {
           >
             RL
           </span>
-          <span className="hidden min-[360px]:inline">{site.name}</span>
+          {/* HP sempit: nama hanya untuk pembaca layar agar menu & tombol tema muat. */}
+          <span className="sr-only min-[430px]:not-sr-only">{site.name}</span>
         </Link>
-        <div className="-mr-2 flex min-w-0 items-center gap-0.5 overflow-x-auto">
+        <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
           <Suspense fallback={<GuestLinks />}>
             <SessionLinks />
           </Suspense>
         </div>
+        <ThemeToggle className="-mr-2" />
       </nav>
     </header>
   );

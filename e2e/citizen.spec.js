@@ -102,3 +102,32 @@ test("tampilan HP & mode gelap tanpa scroll horizontal", async ({ openPage }) =>
     expect(await hasHorizontalScroll(page), path).toBe(false);
   }
 });
+
+test("tombol tema: Sistem → Terang → Gelap, tersimpan setelah reload", async ({ openPage }) => {
+  const page = await openPage({ viewport: MOBILE, colorScheme: "dark" });
+  const html = page.locator("html");
+  const toggle = page.getByRole("button", { name: /^Tema:/ });
+  await gotoReady(page, "/");
+
+  // Belum ada pilihan: ikut OS (gelap).
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(toggle).toHaveAccessibleName(/^Tema: Sistem/);
+
+  await toggle.click();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(toggle).toHaveAccessibleName(/^Tema: Terang/);
+
+  // Pilihan dipasang skrip di <head> sebelum paint, jadi langsung benar setelah reload.
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 248, 251)");
+
+  await page.getByRole("button", { name: /^Tema:/ }).click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: /^Tema:/ }).click();
+  await expect(toggle).toHaveAccessibleName(/^Tema: Sistem/);
+
+  // Mode Sistem mengikuti perubahan tema OS tanpa reload.
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(html).toHaveAttribute("data-theme", "light");
+});
