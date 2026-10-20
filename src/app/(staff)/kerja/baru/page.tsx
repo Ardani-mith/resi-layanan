@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import ApplyForm from "@/components/application/ApplyForm";
-import Skeleton from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui";
 import { getActiveServices, requireStaffPage } from "@/lib/dal";
 
 export const metadata = { title: "Input warga di loket" };

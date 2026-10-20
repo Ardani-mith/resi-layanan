@@ -2,7 +2,9 @@
 // ulang oleh API maupun skrip seed. Fungsi apply* mengubah objek app secara langsung
 // dan mengembalikan event yang harus dicatat ke audit log.
 
-import { computeDueAt, pauseStep, resumeStep } from "./sla.js";
+import type { Types } from "mongoose";
+import type { ActorRole, Role } from "./roles.ts";
+import { computeDueAt, type Holidays, pauseStep, resumeStep } from "./sla.ts";
 
 export const STATUS = {
   DIAJUKAN: "diajukan",
@@ -11,9 +13,10 @@ export const STATUS = {
   SELESAI: "selesai",
   PERLU_PERBAIKAN: "perlu_perbaikan",
   DITOLAK: "ditolak",
-};
+} as const;
+export type Status = (typeof STATUS)[keyof typeof STATUS];
 
-export const STATUS_LABELS = {
+export const STATUS_LABELS: Record<Status, string> = {
   diajukan: "Diajukan",
   diproses: "Diproses",
   siap_diambil: "Siap Diambil",
@@ -23,7 +26,7 @@ export const STATUS_LABELS = {
 };
 
 /** Label aksi di audit log. */
-export const EVENT_LABELS = {
+export const EVENT_LABELS: Record<string, string> = {
   created: "Permohonan dibuat",
   complete: "Tahap diselesaikan",
   request_fix: "Diminta perbaikan",
@@ -34,14 +37,109 @@ export const EVENT_LABELS = {
 };
 
 /** Status yang tahapnya sedang berjalan (hitung mundur aktif). */
-export const RUNNING_STATUSES = [STATUS.DIAJUKAN, STATUS.DIPROSES, STATUS.SIAP_DIAMBIL];
+export const RUNNING_STATUSES: readonly Status[] = [STATUS.DIAJUKAN, STATUS.DIPROSES, STATUS.SIAP_DIAMBIL];
 /** Status yang belum final (termasuk yang dijeda). */
-export const OPEN_STATUSES = [...RUNNING_STATUSES, STATUS.PERLU_PERBAIKAN];
+export const OPEN_STATUSES: readonly Status[] = [...RUNNING_STATUSES, STATUS.PERLU_PERBAIKAN];
 
-export const ACTIONS = ["complete", "request_fix", "resume", "reject"];
+export const ACTIONS = ["complete", "request_fix", "resume", "reject"] as const;
+export type Action = (typeof ACTIONS)[number];
+
+// --- Bentuk data (sama dengan skema di models.ts) ----------------------------------
+
+export type Channel = "online" | "loket";
+
+/** Template tahap di layanan; disalin ke permohonan saat dibuat. */
+export interface StepTemplate {
+  key: string;
+  name: string;
+  role: Role;
+  /** Hari kerja. null = tanpa tenggat (mis. menunggu warga mengambil dokumen). */
+  slaDays: number | null;
+}
+
+export interface Step extends StepTemplate {
+  startedAt: Date | null;
+  dueAt: Date | null;
+  completedAt: Date | null;
+  pausedAt: Date | null;
+  pausedMs: number;
+  handledBy: Types.ObjectId | string | null;
+  handledByName: string | null;
+  publicNote: string | null;
+  internalNote: string | null;
+}
+
+export interface Escalation {
+  stepKey: string;
+  level: number;
+  target: string;
+  note: string | null;
+  createdAt: Date;
+  resolvedAt: Date | null;
+}
+
+export interface Applicant {
+  name: string;
+  phone: string;
+  email: string | null;
+  nik?: string | null;
+}
+
+export interface Rating {
+  score: number;
+  comment: string | null;
+  createdAt: Date;
+}
+
+export interface ServiceData {
+  _id: Types.ObjectId;
+  name: string;
+  slug: string;
+  description: string;
+  output: string;
+  requirements: string[];
+  steps: StepTemplate[];
+  isActive: boolean;
+  order: number;
+}
+
+export interface ApplicationData {
+  _id?: Types.ObjectId;
+  resi: string;
+  serviceId: Types.ObjectId;
+  serviceName: string;
+  serviceSlug: string;
+  applicant: Applicant;
+  channel: Channel;
+  status: Status;
+  currentStep: number;
+  /** Salinan dueAt tahap berjalan (null saat dijeda/final) agar antrean cukup satu query berindeks. */
+  currentDueAt: Date | null;
+  steps: Step[];
+  escalations: Escalation[];
+  requirementsChecked: string[];
+  rejectionReason: string | null;
+  completedAt: Date | null;
+  rating: Rating | null;
+  verifyLock?: { fails: number; until: Date | null };
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface Actor {
+  id: string | null;
+  name: string;
+  role: ActorRole;
+}
+
+export interface AuditEntry {
+  action: string;
+  payload: Record<string, unknown>;
+}
 
 export class WorkflowError extends Error {
-  constructor(code, message) {
+  code: string;
+  constructor(code: string, message: string) {
     super(message);
     this.code = code;
   }
@@ -51,14 +149,14 @@ export class WorkflowError extends Error {
  * Status turunan dari posisi tahap: tahap pertama = diajukan (verifikasi berkas),
  * tahap terakhir = siap_diambil (penyerahan), di antaranya = diproses.
  */
-export function statusForStep(index, total) {
+export function statusForStep(index: number, total: number): Status {
   if (index >= total) return STATUS.SELESAI;
   if (index === 0) return STATUS.DIAJUKAN;
   if (index === total - 1) return STATUS.SIAP_DIAMBIL;
   return STATUS.DIPROSES;
 }
 
-function startStep(step, now, holidays) {
+function startStep(step: Step, now: Date, holidays?: Holidays) {
   step.startedAt = now;
   step.dueAt = computeDueAt(now, step.slaDays, holidays);
   step.pausedMs = 0;
@@ -66,7 +164,7 @@ function startStep(step, now, holidays) {
 }
 
 /** Objek permohonan baru; tahapan disalin dari template layanan (snapshot). */
-export function buildApplication({
+export function buildApplication<R extends string | null>({
   service,
   applicant,
   channel,
@@ -74,8 +172,16 @@ export function buildApplication({
   now,
   holidays,
   requirementsChecked = [],
-}) {
-  const steps = service.steps.map((s) => ({
+}: {
+  service: Pick<ServiceData, "_id" | "name" | "slug" | "steps">;
+  applicant: Applicant;
+  channel: Channel;
+  resi: R;
+  now: Date;
+  holidays?: Holidays;
+  requirementsChecked?: string[];
+}): Omit<ApplicationData, "resi"> & { resi: R } {
+  const steps: Step[] = service.steps.map((s) => ({
     key: s.key,
     name: s.name,
     role: s.role,
@@ -111,8 +217,13 @@ export function buildApplication({
   };
 }
 
+type WorkflowApp = Pick<
+  ApplicationData,
+  "status" | "currentStep" | "currentDueAt" | "steps" | "escalations" | "rejectionReason" | "completedAt"
+>;
+
 /** Peran yang boleh menindak tahap saat ini. Pimpinan & admin selalu boleh. */
-export function canActOn(app, role) {
+export function canActOn(app: Pick<ApplicationData, "status" | "currentStep" | "steps">, role: ActorRole) {
   if (role === "admin" || role === "pimpinan") return true;
   const step = app.steps[app.currentStep];
   if (!step) return false;
@@ -120,23 +231,40 @@ export function canActOn(app, role) {
   return step.role === role;
 }
 
-function resolveEscalations(app, stepKey, now) {
+function resolveEscalations(app: WorkflowApp, stepKey: string, now: Date) {
   for (const esc of app.escalations ?? []) {
     if (esc.stepKey === stepKey && !esc.resolvedAt) esc.resolvedAt = now;
   }
 }
 
-function requireNote(note, message) {
-  if (!note || !String(note).trim()) throw new WorkflowError("note_required", message);
+function requireNote(note: string | null, message: string): asserts note is string {
+  if (!note || !note.trim()) throw new WorkflowError("note_required", message);
 }
 
 /**
  * Terapkan aksi petugas. Mengembalikan { action, payload } untuk audit log.
  * actor: { id, name, role } (warga: role "warga", id null).
  */
-export function applyAction(app, { action, actor, publicNote, internalNote, now, holidays }) {
+export function applyAction(
+  app: WorkflowApp,
+  {
+    action,
+    actor,
+    publicNote,
+    internalNote,
+    now,
+    holidays,
+  }: {
+    action: Action;
+    actor: Actor;
+    publicNote?: string;
+    internalNote?: string;
+    now: Date;
+    holidays?: Holidays;
+  },
+): AuditEntry {
   const step = app.steps[app.currentStep];
-  const payload = { stepKey: step?.key, from: app.status };
+  const payload: Record<string, unknown> = { stepKey: step?.key, from: app.status };
   const cleanPublic = publicNote?.trim() || null;
   const cleanInternal = internalNote?.trim() || null;
 
@@ -217,7 +345,10 @@ export function applyAction(app, { action, actor, publicNote, internalNote, now,
 }
 
 /** Rating hanya untuk permohonan selesai, sekali saja. */
-export function applyRating(app, { score, comment, now }) {
+export function applyRating(
+  app: Pick<ApplicationData, "status" | "rating">,
+  { score, comment, now }: { score: number; comment?: string; now: Date },
+): AuditEntry {
   if (app.status !== STATUS.SELESAI) {
     throw new WorkflowError("invalid_state", "Rating bisa diberikan setelah permohonan selesai.");
   }

@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-import { E2E_PORT } from "./e2e/helpers.js";
+import { E2E_PORT } from "./e2e/helpers.ts";
 
 // `npm run test:e2e`. Memakai Google Chrome yang terpasang (channel "chrome"), karena
 // lomba mewajibkan Chrome. Tanpa Chrome: `npx playwright install chromium` lalu hapus `channel`.
@@ -16,7 +16,7 @@ export default defineConfig({
   },
   projects: [{ name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" } }],
   webServer: {
-    command: "node scripts/e2e-server.mjs",
+    command: "node scripts/e2e-server.ts",
     url: `http://localhost:${E2E_PORT}/api/health`,
     timeout: 240_000,
     reuseExistingServer: false,

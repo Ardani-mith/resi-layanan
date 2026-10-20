@@ -1,12 +1,30 @@
-import mongoose from "mongoose";
-import { ROLES } from "../lib/roles.js";
-import { STATUS } from "../lib/workflow.js";
+// Skema Mongoose. Satu berkas: modelnya kecil dan saling berkaitan; bentuk datanya
+// (ApplicationData, Step, ...) didefinisikan di lib/workflow.ts agar logika murni
+// bisa memakainya tanpa database.
 
-const { ObjectId } = mongoose.Schema.Types;
+import mongoose, { type Model, Schema, type Types } from "mongoose";
+import { type ActorRole, type Role, ROLES } from "./lib/roles.ts";
+import {
+  type ApplicationData,
+  type Escalation,
+  type ServiceData,
+  STATUS,
+  type Step,
+  type StepTemplate,
+} from "./lib/workflow.ts";
+
+const { ObjectId } = Schema.Types;
+
+/** Pakai model yang sudah terdaftar (hot reload dev / serverless) atau daftarkan baru. */
+function defineModel<T>(name: string, schema: Schema<T>): Model<T> {
+  return (mongoose.models[name] as Model<T> | undefined) ?? mongoose.model<T>(name, schema);
+}
+
+// --- Permohonan ---------------------------------------------------------------------
 
 // Tahapan disematkan (bukan referensi ke template layanan): satu kali baca sudah
 // mendapat seluruh timeline, dan riwayat tetap utuh walau template layanan diubah.
-const stepSchema = new mongoose.Schema(
+const stepSchema = new Schema<Step>(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -25,7 +43,7 @@ const stepSchema = new mongoose.Schema(
   { _id: false },
 );
 
-const escalationSchema = new mongoose.Schema(
+const escalationSchema = new Schema<Escalation>(
   {
     stepKey: { type: String, required: true },
     level: { type: Number, required: true },
@@ -37,7 +55,7 @@ const escalationSchema = new mongoose.Schema(
   { _id: false },
 );
 
-const applicationSchema = new mongoose.Schema(
+const applicationSchema = new Schema<ApplicationData>(
   {
     resi: { type: String, required: true, unique: true },
     serviceId: { type: ObjectId, ref: "Service", required: true },
@@ -52,8 +70,6 @@ const applicationSchema = new mongoose.Schema(
     channel: { type: String, enum: ["online", "loket"], required: true },
     status: { type: String, enum: Object.values(STATUS), required: true },
     currentStep: { type: Number, required: true, default: 0 },
-    // Salinan dueAt tahap berjalan (null saat dijeda/final) agar antrean & deteksi
-    // keterlambatan cukup satu query berindeks.
     currentDueAt: { type: Date, default: null },
     steps: [stepSchema],
     escalations: [escalationSchema],
@@ -61,7 +77,7 @@ const applicationSchema = new mongoose.Schema(
     rejectionReason: { type: String, default: null },
     completedAt: { type: Date, default: null },
     rating: {
-      type: new mongoose.Schema(
+      type: new Schema(
         { score: { type: Number, min: 1, max: 5 }, comment: String, createdAt: Date },
         { _id: false },
       ),
@@ -83,4 +99,140 @@ applicationSchema.index({ "steps.dueAt": 1 });
 applicationSchema.index({ status: 1, currentDueAt: 1 });
 applicationSchema.index({ serviceId: 1, createdAt: -1 });
 
-export default mongoose.models.Application || mongoose.model("Application", applicationSchema);
+export const Application = defineModel("Application", applicationSchema);
+
+// --- Layanan ------------------------------------------------------------------------
+
+const stepTemplateSchema = new Schema<StepTemplate>(
+  {
+    key: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    role: { type: String, enum: ROLES, required: true },
+    slaDays: { type: Number, min: 0, default: null },
+  },
+  { _id: false },
+);
+
+const serviceSchema = new Schema<ServiceData>(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    description: { type: String, trim: true, default: "" },
+    output: { type: String, trim: true, default: "" },
+    requirements: [{ type: String, trim: true }],
+    steps: {
+      type: [stepTemplateSchema],
+      validate: [(v: StepTemplate[]) => v.length >= 2, "Layanan minimal punya 2 tahap."],
+    },
+    isActive: { type: Boolean, default: true },
+    order: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
+
+export const Service = defineModel("Service", serviceSchema);
+
+// --- Audit log ----------------------------------------------------------------------
+
+export interface EventData {
+  _id?: Types.ObjectId;
+  applicationId: Types.ObjectId;
+  actorId: Types.ObjectId | string | null;
+  actorName: string | null;
+  actorRole: ActorRole | null;
+  action: string;
+  payload: Record<string, unknown>;
+  at: Date;
+}
+
+const eventSchema = new Schema<EventData>({
+  applicationId: { type: ObjectId, ref: "Application", required: true, index: true },
+  actorId: { type: ObjectId, ref: "User", default: null },
+  actorName: { type: String, default: null },
+  actorRole: { type: String, default: null },
+  action: { type: String, required: true },
+  payload: { type: Schema.Types.Mixed, default: {} },
+  at: { type: Date, required: true },
+});
+
+// Audit log append-only: semua jalur ubah/hapus lewat Mongoose ditolak.
+function appendOnly(): never {
+  throw new Error("Audit log (events) bersifat append-only: tidak bisa diubah atau dihapus.");
+}
+eventSchema.pre(
+  [
+    "updateOne",
+    "updateMany",
+    "findOneAndUpdate",
+    "replaceOne",
+    "findOneAndReplace",
+    "deleteOne",
+    "deleteMany",
+    "findOneAndDelete",
+  ],
+  appendOnly,
+);
+eventSchema.pre("save", function () {
+  if (!this.isNew) appendOnly();
+});
+
+export const Event = defineModel("Event", eventSchema);
+
+// --- Pengaturan sistem --------------------------------------------------------------
+
+export interface SettingData {
+  key: string;
+  /** Tanggal libur "YYYY-MM-DD" (WIB) yang tidak dihitung sebagai hari kerja. */
+  holidays: string[];
+  /** Mode demo: geser jam sistem ke depan supaya keterlambatan bisa didemokan. */
+  clockOffsetMs: number;
+}
+
+// Satu dokumen konfigurasi sistem (key: "system").
+const settingSchema = new Schema<SettingData>(
+  {
+    key: { type: String, required: true, unique: true },
+    holidays: [{ type: String }],
+    clockOffsetMs: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
+
+export const Setting = defineModel("Setting", settingSchema);
+
+// --- Akun petugas -------------------------------------------------------------------
+
+export interface UserData {
+  _id: Types.ObjectId;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: Role;
+  unit: string | null;
+  isActive: boolean;
+  /** true setelah dibuat/di-reset admin: kata sandi sementara wajib diganti saat login pertama. */
+  mustChangePassword: boolean;
+  /**
+   * Naik setiap peran, status aktif, atau kata sandi berubah. Sesi (JWT) menyimpan versi
+   * saat login; versi berbeda = sesi lama otomatis tidak berlaku lagi.
+   */
+  sessionVersion: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<UserData>(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true, select: false },
+    role: { type: String, enum: ROLES, required: true },
+    unit: { type: String, trim: true, default: null },
+    isActive: { type: Boolean, default: true },
+    mustChangePassword: { type: Boolean, default: false },
+    sessionVersion: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
+
+export const User = defineModel("User", userSchema);

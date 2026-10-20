@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
-import Meter from "@/components/charts/Meter";
-import StatTile from "@/components/charts/StatTile";
-import { weeklyOnTime } from "@/components/charts/trend";
-import Skeleton from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
+import { cn } from "@/lib/cn";
 import { getStats } from "@/lib/dal";
 import { formatDateTime, formatPercent } from "@/lib/format";
 
@@ -14,7 +13,7 @@ export const metadata = {
   description: `Seberapa sering ${site.agency} menepati janji waktu layanannya.`,
 };
 
-const days = (value) => (value === null ? "—" : `${value.toLocaleString("id-ID")} hari`);
+const days = (value: number | null) => (value === null ? "—" : `${value.toLocaleString("id-ID")} hari`);
 
 async function Report() {
   const { overall, services, trend, generatedAt } = await getStats();
@@ -25,7 +24,9 @@ async function Report() {
           <p className="text-sm text-muted">Selesai tepat waktu</p>
           <p className="text-6xl font-semibold tracking-tight">{formatPercent(overall.onTimeRate)}</p>
           <p className="mt-2 text-sm text-muted">
-            dari {overall.completed} permohonan yang selesai, tidak ada satu tahap pun yang melewati tenggat.
+            {overall.completed === 0
+              ? "Belum ada permohonan yang selesai."
+              : `dari ${overall.completed} permohonan yang selesai, tidak ada satu tahap pun yang melewati tenggat.`}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -58,10 +59,14 @@ async function Report() {
         <h2 id="per-layanan" className="border-b border-line p-5 text-lg font-bold">
           Per layanan
         </h2>
+        {services.length === 0 && <p className="p-5 text-sm text-muted">Belum ada layanan yang dibuka.</p>}
         {/* Daftar responsif: kolom berjajar di layar lebar, bertumpuk dengan label di HP. */}
         <div
           aria-hidden
-          className="hidden grid-cols-[1.4fr_1.2fr_1fr_1fr] gap-4 px-5 pt-3 text-sm text-muted sm:grid"
+          className={cn(
+            "hidden grid-cols-[1.4fr_1.2fr_1fr_1fr] gap-4 px-5 pt-3 text-sm text-muted",
+            services.length > 0 && "sm:grid",
+          )}
         >
           <span>Layanan</span>
           <span>Tepat waktu</span>

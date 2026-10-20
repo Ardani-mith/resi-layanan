@@ -1,10 +1,11 @@
 import { fail, ok, parseBody, route } from "@/lib/api";
 import { createApplication } from "@/lib/applications";
 import { getClock } from "@/lib/clock";
+import type { Role } from "@/lib/roles";
 import { getSession } from "@/lib/session";
 import { applicationSchema } from "@/lib/validators";
 
-const LOKET_ROLES = ["petugas_loket", "admin"];
+const LOKET_ROLES: readonly Role[] = ["petugas_loket", "admin"];
 
 // Pengajuan online (warga, tanpa login) atau input walk-in di loket (petugas).
 export const POST = route(async (request) => {
@@ -12,7 +13,7 @@ export const POST = route(async (request) => {
   if (error) return error;
 
   const user = await getSession();
-  if (data.channel === "loket" && !LOKET_ROLES.includes(user?.role)) {
+  if (data.channel === "loket" && !(user && LOKET_ROLES.includes(user.role))) {
     return fail(403, "Pengajuan lewat loket hanya bisa diinput petugas loket.");
   }
 

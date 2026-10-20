@@ -1,13 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import Alert from "@/components/ui/Alert";
-import { buttonClass } from "@/components/ui/Button";
+import { type FormEvent, useState } from "react";
+import { Alert, buttonClass, type ButtonVariant } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { postJson } from "@/lib/http";
+import { type FormErrors, postJson } from "@/lib/http";
+import type { Action, Status } from "@/lib/workflow";
 
-const ACTIONS = {
+interface ActionSpec {
+  label: string;
+  variant: ButtonVariant;
+  /** null = tanpa isian catatan untuk warga. */
+  publicLabel: string | null;
+  publicRequired?: boolean;
+  confirm: string;
+  hint?: string;
+}
+
+const ACTIONS: Record<Action, ActionSpec> = {
   complete: {
     label: "Selesaikan tahap",
     variant: "primary",
@@ -40,18 +50,27 @@ const ACTIONS = {
   },
 };
 
-export default function ActionPanel({ resi, status, stepName }) {
+export default function ActionPanel({
+  resi,
+  status,
+  stepName,
+}: {
+  resi: string;
+  status: Status;
+  stepName: string | null;
+}) {
   const router = useRouter();
-  const available =
+  const available: Action[] =
     status === "perlu_perbaikan" ? ["resume", "reject"] : ["complete", "request_fix", "reject"];
-  const [action, setAction] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [action, setAction] = useState<Action | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
 
   const spec = action ? ACTIONS[action] : null;
 
-  async function submit(event) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!spec) return;
     const form = new FormData(event.currentTarget);
     const publicNote = String(form.get("publicNote") ?? "").trim();
     if (spec.publicRequired && !publicNote) {

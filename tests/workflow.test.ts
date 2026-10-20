@@ -3,19 +3,23 @@ import { pendingEscalations } from "@/lib/escalation";
 import { publicView, staffView } from "@/lib/present";
 import { DAY_MS } from "@/lib/sla";
 import {
+  type Action,
+  type Actor,
+  type ApplicationData,
   applyAction,
   applyRating,
   buildApplication,
   canActOn,
+  type ServiceData,
   statusForStep,
   WorkflowError,
 } from "@/lib/workflow";
 
-const wib = (s) => new Date(`${s}+07:00`);
+const wib = (s: string) => new Date(`${s}+07:00`);
 const HOUR = 3600_000;
 
 const service = {
-  _id: "svc1",
+  _id: "svc1" as unknown as ServiceData["_id"],
   name: "Akta Kelahiran",
   slug: "akta-kelahiran",
   requirements: ["Surat keterangan lahir"],
@@ -25,10 +29,10 @@ const service = {
     { key: "persetujuan", name: "Persetujuan", role: "pimpinan", slaDays: 1 },
     { key: "penyerahan", name: "Siap diambil", role: "petugas_loket", slaDays: null },
   ],
-};
-const loket = { id: "u1", name: "Rina", role: "petugas_loket" };
-const teknis = { id: "u2", name: "Dimas", role: "petugas_teknis" };
-const pimpinan = { id: "u3", name: "Hendra", role: "pimpinan" };
+} satisfies Pick<ServiceData, "_id" | "name" | "slug" | "requirements" | "steps">;
+const loket: Actor = { id: "u1", name: "Rina", role: "petugas_loket" };
+const teknis: Actor = { id: "u2", name: "Dimas", role: "petugas_teknis" };
+const pimpinan: Actor = { id: "u3", name: "Hendra", role: "pimpinan" };
 
 const T0 = wib("2026-10-12T09:00:00"); // Senin
 
@@ -42,7 +46,13 @@ function newApp() {
   });
 }
 
-const act = (app, action, actor, now, notes = {}) => applyAction(app, { action, actor, now, ...notes });
+const act = (
+  app: ApplicationData,
+  action: Action,
+  actor: Actor,
+  now: Date,
+  notes: { publicNote?: string; internalNote?: string } = {},
+) => applyAction(app, { action, actor, now, ...notes });
 
 describe("statusForStep", () => {
   it("tahap pertama diajukan, terakhir siap_diambil, tengah diproses, lewat = selesai", () => {
@@ -196,7 +206,7 @@ describe("eskalasi (logika murni)", () => {
   it("akhir pekan tidak mempercepat eskalasi level 2", () => {
     const friday = buildApplication({
       service,
-      applicant: { name: "A B", phone: "0812" },
+      applicant: { name: "A B", phone: "0812", email: null },
       channel: "online",
       resi: "x",
       now: wib("2026-10-15T09:00:00"),

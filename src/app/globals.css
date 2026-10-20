@@ -7,7 +7,7 @@
   Design tokens Resi Layanan. Semua warna lewat variabel ini (bg-brand, text-muted,
   border-line, bg-late-soft, dst.) supaya mode gelap cukup diatur di satu tempat.
   Tema dipilih lewat <html data-theme="light|dark">, dipasang skrip di <head>
-  (lib/theme.js) dari pilihan pengguna atau tema OS. Tanpa JavaScript: terang.
+  (lib/theme.ts) dari pilihan pengguna atau tema OS. Tanpa JavaScript: terang.
   Warna status tahap: ok = selesai/tepat waktu, run = berjalan, warn = mendekati
   tenggat, late = terlambat/eskalasi, pause = dijeda (perlu perbaikan).
 */

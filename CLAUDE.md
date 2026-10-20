@@ -6,48 +6,57 @@ Konteks lomba, jadwal, spesifikasi, dan prioritas: `../docs/HANDOFF-WIA.md`.
 
 ## Perintah
 
-- `npm run check`: lint + cek format + tes unit/integrasi. Jalankan sebelum commit.
+- `npm run check`: lint + cek tipe (`tsc`) + cek format + tes unit/integrasi. Jalankan sebelum commit.
+- `npm run typecheck`: `tsc --noEmit` (mode `strict`)
 - `npm test`: Vitest (unit + integrasi dengan MongoDB in-memory, tidak butuh Atlas)
-- `npm run test:e2e`: Playwright di Google Chrome. Server khusus (`scripts/e2e-server.mjs`): MongoDB in-memory + seed segar + build di `.next-e2e`, jadi aman walau `npm run dev` sedang berjalan dan tidak menyentuh Atlas.
+- `npm run test:e2e`: Playwright di Google Chrome. Server khusus (`scripts/e2e-server.ts`): MongoDB in-memory + seed segar + build di `.next-e2e`, jadi aman walau `npm run dev` sedang berjalan dan tidak menyentuh Atlas.
 - `npm run lint:fix` (termasuk urutan import), `npm run format` (Prettier + urutan class Tailwind)
 - `npm run build`
-- `npm run seed`: hapus & isi ulang DB dari `.env.local`
+- `npm run seed`: hapus & isi ulang DB dari `.env.local` dengan data demo lengkap
+- `npm run seed:master`: upsert 3 layanan saja (tanpa menghapus apa pun); dipakai untuk DB `development`
+- `npm run user:create -- --email … --name "…" [--role …] [--unit …]`: akun dengan kata sandi sementara (admin pertama); `--reset` = pemulihan
 
 ## Struktur folder
 
 ```
 src/
 ├── app/                  # route (nama URL berbahasa Indonesia); client component khusus satu halaman ditaruh di folder route-nya
+│   ├── (public)/         # halaman warga: navbar atas + footer (beranda, lacak, ajukan, rapor, masuk)
+│   └── (staff)/          # area petugas: sidebar + header konten (kerja, pantau, admin, akun)
 ├── components/
+│   ├── ui.tsx            # Button/buttonClass, Alert, Field, Skeleton, NotFoundView, DemoClockBanner
+│   ├── SectionError.tsx  # batas error per bagian halaman (client, catchError)
 │   ├── application/      # domain permohonan: ApplyForm, ResiSearch, StatusBadge, Timeline
-│   ├── charts/           # ColumnChart, Meter, StatTile, trend
-│   ├── layout/           # Navbar, Footer, LogoutButton, DemoClockBanner
-│   └── ui/               # Alert, Button, Field, Skeleton
-├── hooks/                # useNow, useAutoRefresh (client)
-├── config/site.js        # semua teks landing
-├── lib/                  # logika & akses data (lihat Arsitektur)
-├── models/               # skema Mongoose
-└── proxy.js
-scripts/                  # seed, data demo, server e2e
+│   ├── charts/           # index.tsx (StatTile, Meter, weeklyOnTime; server) + ColumnChart.tsx (client)
+│   ├── landing/          # HeroSection, TrackingPreview, SummaryStats, CountUp, Decor (hiasan + ikon)
+│   └── layout/           # PublicShell (Navbar+Footer), StaffShell (+ContentHeader, useDrawer), Sidebar, ThemeToggle
+├── config/               # site.ts (semua teks landing), staff-nav.ts (menu sidebar per peran & label breadcrumb)
+├── lib/                  # logika & akses data (lihat Arsitektur); hooks.ts = hook client (useNow, useAutoRefresh, ...)
+├── models.ts             # semua skema Mongoose (Application, Service, Event, Setting, User)
+└── proxy.ts
+scripts/                  # seed (+ --master), create-user, demo-data, server e2e
 tests/                    # Vitest
-e2e/                      # Playwright (fixtures.js: openPage per peran, gagal jika ada error browser/5xx)
+e2e/                      # Playwright (fixtures.ts: openPage per peran, gagal jika ada error browser/5xx)
 ```
 
 Kode dirapikan otomatis: ESLint (`simple-import-sort`: side-effect → node: → paket → `@/` → relatif, tanpa baris kosong) dan Prettier (lebar 110, plugin Tailwind). Daftar data panjang boleh `// prettier-ignore` agar tetap ringkas.
 
-Konvensi: komponen PascalCase, hook `useXxx`, modul lib huruf kecil (kebab-case jika dua kata). Kode & nama berkas berbahasa Inggris, teks UI & komentar berbahasa Indonesia.
+Konvensi: TypeScript `strict`; komponen PascalCase, hook `useXxx`, modul lib huruf kecil (kebab-case jika dua kata). Kode & nama berkas berbahasa Inggris, teks UI & komentar berbahasa Indonesia. Modul kecil yang hanya dipakai satu tempat digabung ke pemakainya (mis. hook tema di `ThemeToggle.tsx`); jangan pecah lagi menjadi berkas 10–20 baris.
 
 ## Arsitektur
 
-- `src/lib/` berisi logika murni yang bisa diuji tanpa DB: `sla.js` (hari kerja WIB, jeda, estimasi), `workflow.js` (mesin status, `applyAction`), `escalation.js` (`pendingEscalations` murni + `syncEscalations` ke DB), `present.js` (bentuk data publik/terverifikasi/petugas, satu-satunya tempat aturan privasi), `stats.js`.
-- `src/lib/dal.js` (Data Access Layer, server-only) adalah satu pintu baca data untuk Server Component **dan** route API: `getTracking`, `getQueue`, `getStaffApplication`, `getStats`, `getActiveServices`, `getClockInfo`. Setiap fungsi menyambungkan DB dan mengambil jam sendiri. Halaman petugas memanggil `requireStaffPage(roles, from)` (redirect), sedangkan route API memakai `requireUser(roles)` (401/403).
-- `src/lib/applications.js` berisi operasi tulis (create/aksi/verifikasi HP). Route API cukup tipis: `route()` + `requireUser()` + `parseBody()` dari `lib/api.js`.
-- Mutasi dari UI: `postJson()` (`lib/http.js`, tidak pernah throw, hasil `{ ok, data }` / `{ ok: false, error: { message, fields } }`) ke route API, lalu `router.refresh()` atau pindah halaman. Data halaman selalu dari Server Component (tanpa fetch di client saat load).
-- Class Tailwind kondisional: `cn()` (`lib/cn.js`, clsx + tailwind-merge yang sudah mengenal token warna kustom). Pesan form: `<Alert tone="error|success|warning">`. Ikon: `lucide-react` dengan `aria-hidden`.
+- `src/lib/` berisi logika murni yang bisa diuji tanpa DB: `sla.ts` (hari kerja WIB, jeda, estimasi), `workflow.ts` (mesin status, `applyAction`, **dan tipe domain**: `ApplicationData`, `Step`, `Status`, ...), `escalation.ts` (`pendingEscalations` murni + `syncEscalations` ke DB), `present.ts` (bentuk data publik/terverifikasi/petugas + masker nama/HP; satu-satunya tempat aturan privasi), `stats.ts`.
+- `src/lib/dal.ts` (Data Access Layer, server-only) adalah satu pintu baca data untuk Server Component **dan** route API: `getTracking`, `getQueue`, `getStaffApplication`, `getStats`, `getActiveServices`, `getClockInfo`, `getStaffAccounts`. Setiap fungsi menyambungkan DB dan mengambil jam sendiri. Halaman petugas memanggil `requireStaffPage(roles, from)` (redirect), sedangkan route API memakai `requireUser(roles)` (401/403).
+- `src/lib/applications.ts` berisi operasi tulis (create/aksi/verifikasi HP). Route API cukup tipis: `route()` + `requireUser()` + `parseBody()` dari `lib/api.ts` (juga tipe `ParamsOf`, `SearchParamsOf`, `firstParam` untuk halaman).
+- Mutasi dari UI: `postJson<T>()` (`lib/http.ts`, tidak pernah throw, hasil `{ ok, data }` / `{ ok: false, error: { message, fields } }`; `formErrors()` mengubah error menjadi state form) ke route API, lalu `router.refresh()` atau pindah halaman. Data halaman selalu dari Server Component (tanpa fetch di client saat load).
+- Tipe input API berasal dari skema Zod (`ApplicationInput`, `ActionInput`, ... di `validators.ts`, via `z.infer`); tipe data ke klien dari `present.ts`/`dal.ts` (`PublicView`, `Queue`, `ActiveService`, ...). Client Component cukup `import type` dari modul server (terhapus saat build).
+- Class Tailwind kondisional: `cn()` (`lib/cn.ts`, clsx + tailwind-merge yang sudah mengenal token warna kustom). Pesan form: `<Alert tone="error|success|warning">`. Ikon: `lucide-react` dengan `aria-hidden`.
 - Form yang memuat data sensitif (login, pengajuan, catatan petugas, 4 digit HP) wajib `method="post"`: kalau terkirim sebelum hydration, data tidak bocor ke URL.
 - Setelah aksi di `/kerja/[resi]`, petugas dikembalikan ke `/kerja?selesai=RESI&aksi=...` dengan konfirmasi (panel aksi bisa hilang karena tahap pindah peran).
-- Model dan modul `lib/` yang dipakai `scripts/` wajib memakai import relatif berekstensi `.js` (bukan `@/`), karena seed dijalankan dengan Node biasa.
-- `lib/session.js` dan `lib/api.js` bersifat `server-only`. `proxy.js` hanya boleh mengimpor `lib/jwt.js` dan `lib/roles.js`.
+- `models.ts` dan modul `lib/` yang dipakai `scripts/` wajib memakai import relatif berekstensi `.ts` (bukan `@/`), karena skrip dijalankan langsung oleh Node (type stripping). Karena itu tsconfig memakai `verbatimModuleSyntax` (impor tipe wajib `import type`) dan `erasableSyntaxOnly` (tanpa enum/namespace/parameter property).
+- Akun petugas: `lib/users.ts` (kata sandi bcrypt + kata sandi sementara, login, `loadSessionUser`, kelola akun; `AccountError` → status HTTP lewat `route()`). `PASSWORD_MIN` ada di `lib/roles.ts` (aman untuk browser). Halaman `/admin/petugas` (`StaffManager.tsx`) dan `/akun/kata-sandi`.
+- `lib/session.ts`, `lib/api.ts`, `lib/dal.ts` bersifat `server-only`. `proxy.ts` hanya boleh mengimpor `lib/jwt.ts` dan `lib/roles.ts`.
+- Modul yang diimpor Server Component tidak boleh mengimpor hook client (`useSyncExternalStore`, `useState`, ...): Turbopack menolak build. Hook client ada di `lib/hooks.ts` atau di dalam komponen `"use client"` pemakainya.
 
 ## Aturan yang sudah diputuskan
 
@@ -59,11 +68,15 @@ Konvensi: komponen PascalCase, hook `useXxx`, modul lib huruf kecil (kebab-case 
 - `events` bersifat append-only: hook Mongoose melempar error saat update/delete. Seed menghapusnya lewat `Model.collection` secara sengaja.
 - Format respons API: `{ data }` atau `{ error: { message, fields? } }`; key `fields` memakai path bertitik (`applicant.phone`).
 - Status tahap untuk UI: `selesai | berjalan | dijeda | terlambat | menunggu | ditolak | dibatalkan`.
-- Hitung mundur di browser: `hooks/useNow.js` (useSyncExternalStore; snapshot server = null → pakai `serverNow`, jadi tidak ada hydration mismatch). Format tanggal selalu lewat `lib/format.js` (zona waktu WIB eksplisit).
-- `components/application/Timeline.js` dipakai halaman warga & petugas (`staff` menampilkan catatan internal). `components/application/ApplyForm.js` dipakai `/ajukan` & nanti `/kerja/baru` (`channel="loket"`).
-- `lib/resi-format.js` aman untuk browser; `lib/resi.js` (generator) memakai node:crypto.
+- Hitung mundur di browser: `useNow` di `lib/hooks.ts` (useSyncExternalStore; snapshot server = null → pakai `serverNow`, jadi tidak ada hydration mismatch). Format tanggal selalu lewat `lib/format.ts` (zona waktu WIB eksplisit).
+- `components/application/Timeline.tsx` dipakai halaman warga & petugas (`staff` menampilkan catatan internal). `components/application/ApplyForm.tsx` dipakai `/ajukan` & `/kerja/baru` (`channel="loket"`).
+- `lib/resi.ts` aman untuk browser maupun server: format, normalisasi, dan generator (Web Crypto; alfabet 32 karakter → `byte & 31` tanpa bias). `randomCode()` juga dipakai untuk kata sandi sementara.
 - `getClock()` dan `getCurrentUser()` dibungkus `React.cache`: satu pembacaan per render.
 - Grafik: `components/charts/` (ColumnChart, Meter, StatTile) mengikuti skill dataviz: satu hue `--chart` (divalidasi untuk terang & gelap), tooltip hover + fokus, tabel alternatif. Prop ke Client Component harus bisa diserialisasi (`format="percent"`, bukan fungsi).
 - Mode demo: `resetClock()` juga menghapus eskalasi bertanggal masa depan (hasil simulasi); audit log tidak disentuh.
-- Design tokens ada di `src/app/globals.css` (bg-surface, text-muted, bg-late-soft, dst.); semua teks landing ada di `src/config/site.js`.
-- Tema: `<html data-theme="light|dark">` dipasang skrip inline di `<head>` (`lib/theme.js`, dari localStorage atau tema OS) sebelum paint. Token gelap hanya di `:root[data-theme="dark"]`; varian `dark:` sudah diarahkan ke data-theme. Tombol: `components/layout/ThemeToggle.js` + `hooks/useTheme.js`. Hero & penutup landing memakai token `hero-*` (jangan `text-white`/`sky-*`).
+- Design tokens ada di `src/app/globals.css` (bg-surface, text-muted, bg-late-soft, dst.); semua teks landing ada di `src/config/site.ts` (`as const`; nama ikon diketik sebagai `IconName`).
+- **Sesi dicek ulang ke DB** di `getSession()`: JWT menyimpan `ver` (= `User.sessionVersion`), yang dinaikkan saat peran, status aktif, atau kata sandi berubah. Nama & peran untuk otorisasi diambil dari DB. proxy.ts hanya membaca token (tanpa DB), karena itu proxy tidak mengalihkan `/masuk` (bisa memantul untuk akun nonaktif).
+- Kata sandi sementara (`mustChangePassword`): proxy (klaim `pwd`), `requireStaffPage`, dan `requireUser` mengarahkan/menolak semua kecuali `PASSWORD_PATH`; route ganti kata sandi memakai `requireUser(null, { allowTempPassword: true })`. Admin tidak bisa mengubah/menonaktifkan/me-reset akunnya sendiri dari `/admin/petugas` (selalu tersisa satu admin aktif).
+- Email di skema Zod lewat `emailSchema` (trim dulu, baru cek format); jangan `z.email().trim()`.
+- Layout: root layout hanya `<html>/<body>`; kerangka ada di route group. Menu petugas ditambah di `config/staff-nav.ts` (bukan di komponen). Sidebar & breadcrumb memakai `usePathname`, jadi wajib di dalam `<Suspense>` (route dinamis `/kerja/[resi]`). 404: setiap group punya `not-found.tsx` sendiri (isi dari `NotFoundView`, kerangka dari layout group); alamat tak dikenal ditangkap `(public)/[...missing]`. Jangan memasang Navbar/Footer di not-found/error, nanti dobel di dalam layout group. `error.ts` group me-re-export `app/error.tsx`.
+- Tema: `<html data-theme="light|dark">` dipasang skrip inline di `<head>` (`lib/theme.ts`, dari localStorage atau tema OS) sebelum paint. Token gelap hanya di `:root[data-theme="dark"]`; varian `dark:` sudah diarahkan ke data-theme. Tombol & hook `useTheme`: `components/layout/ThemeToggle.tsx`. Hero & penutup landing memakai token `hero-*` (jangan `text-white`/`sky-*`).

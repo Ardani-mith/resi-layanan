@@ -1,9 +1,20 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "./jwt.js";
+import type { UserData } from "../models.ts";
+import { dbConnect } from "./db.ts";
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "./jwt.ts";
+import { loadSessionUser, type SessionUser } from "./users.ts";
 
-export async function createSession(user) {
-  const token = await signSession({ id: user._id ?? user.id, name: user.name, role: user.role });
+export async function createSession(
+  user: Pick<UserData, "_id" | "name" | "role" | "sessionVersion" | "mustChangePassword">,
+) {
+  const token = await signSession({
+    id: user._id,
+    name: user.name,
+    role: user.role,
+    ver: user.sessionVersion,
+    mustChangePassword: user.mustChangePassword,
+  });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -14,10 +25,17 @@ export async function createSession(user) {
   });
 }
 
-/** Sesi pengguna yang sedang login, atau null. */
-export async function getSession() {
+/**
+ * Pengguna yang sedang login, atau null. Token saja tidak cukup: akun dicek ulang ke DB,
+ * jadi akun yang dinonaktifkan, diganti perannya, atau di-reset kata sandinya langsung
+ * kehilangan akses.
+ */
+export async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
-  return verifySession(store.get(SESSION_COOKIE)?.value);
+  const session = await verifySession(store.get(SESSION_COOKIE)?.value);
+  if (!session) return null;
+  await dbConnect();
+  return loadSessionUser(session);
 }
 
 export async function deleteSession() {

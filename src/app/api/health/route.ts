@@ -7,7 +7,7 @@ export async function GET() {
   await connection();
   try {
     await dbConnect();
-    await mongoose.connection.db.admin().ping();
+    await mongoose.connection.db?.admin().ping();
     return Response.json({ status: "ok", db: "connected" });
   } catch (error) {
     console.error("[health]", error);

@@ -1,6 +1,6 @@
 // SEMUA teks landing page ada di sini. Urutan bagian mengikuti pitch deck:
 // hero (cek resi) → rapor ringkas → masalah → cara kerja → fitur → penutup.
-// Ikon ditulis sebagai nama (lihat ICONS di src/app/page.js) agar config tetap data polos.
+// Ikon ditulis sebagai nama (lihat ICONS di components/landing/Decor.tsx) agar config tetap data polos.
 
 export const site = {
   name: "Resi Layanan",
@@ -128,4 +128,4 @@ export const site = {
     title: "Pelayanan publik yang bisa dipegang janjinya.",
     body: "Resi Layanan dirancang untuk Mal Pelayanan Publik dan dinas mana pun yang ingin menurunkan laporan maladministrasi.",
   },
-};
+} as const;

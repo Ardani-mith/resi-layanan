@@ -1,4 +1,4 @@
-import { clsx } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
 // Token desain dari globals.css (@theme). tailwind-merge perlu tahu bahwa ini WARNA,
@@ -24,6 +24,6 @@ const twMerge = extendTailwindMerge({
  * Gabungkan class kondisional (clsx) lalu selesaikan konflik Tailwind: class yang
  * datang belakangan menang, mis. cn("px-4", props.className) dengan className="px-6".
  */
-export function cn(...inputs) {
+export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }

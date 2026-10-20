@@ -1,11 +1,11 @@
-import { fail, ok, parseBody, route } from "@/lib/api";
+import { fail, ok, type ParamsOf, parseBody, route } from "@/lib/api";
 import { loadByResi, performCitizenAction, verifyApplicant } from "@/lib/applications";
 import { getClock } from "@/lib/clock";
 import { publicView, verifiedView } from "@/lib/present";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 import { trackActionSchema } from "@/lib/validators";
 
-async function find(params) {
+async function find(params: ParamsOf<{ resi: string }>["params"]) {
   const resi = normalizeResi((await params).resi);
   if (!isValidResi(resi)) {
     return { error: fail(400, "Format resi tidak dikenali. Contoh: RL-AB3K-7XQ9.") };
@@ -17,14 +17,14 @@ async function find(params) {
 }
 
 // Publik: progres + nama disamarkan, tanpa login.
-export const GET = route(async (request, { params }) => {
+export const GET = route(async (request, { params }: ParamsOf<{ resi: string }>) => {
   const { app, clock, error } = await find(params);
   if (error) return error;
   return ok(publicView(app, clock));
 });
 
 // Butuh 4 digit terakhir HP: lihat detail, kirim perbaikan, atau beri rating.
-export const POST = route(async (request, { params }) => {
+export const POST = route(async (request, { params }: ParamsOf<{ resi: string }>) => {
   const { data, error: bodyError } = await parseBody(request, trackActionSchema);
   if (bodyError) return bodyError;
 

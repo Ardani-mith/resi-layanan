@@ -6,7 +6,7 @@ Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Sken
 
 ## Tech stack
 
-- **Next.js 16** (App Router, Cache Components, JavaScript) + **React 19**
+- **Next.js 16** (App Router, Cache Components) + **React 19** + **TypeScript** (`strict`)
 - **Tailwind CSS 4**
 - **MongoDB Atlas** + **Mongoose 9**
 - **jose** (JWT sesi di cookie httpOnly), **bcryptjs**, **Zod 4**
@@ -15,7 +15,7 @@ Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Sken
 
 ## Cara menjalankan
 
-Prasyarat: Node.js 20.9+ dan database MongoDB (Atlas M0 gratis sudah cukup).
+Prasyarat: Node.js 22.18+ (skrip `.ts` dijalankan langsung oleh Node) dan database MongoDB (Atlas M0 gratis sudah cukup).
 
 ```bash
 # Sudah punya foldernya? Lewati 2 baris ini, cukup cd ke folder proyek.
@@ -31,11 +31,27 @@ Perintah lain:
 
 | Perintah | Fungsi |
 |---|---|
-| `npm run check` | lint + cek format + tes unit/integrasi |
+| `npm run check` | lint + cek tipe + cek format + tes unit/integrasi |
 | `npm test` | tes unit & integrasi (MongoDB in-memory, tidak butuh Atlas) |
 | `npm run test:e2e` | tes end-to-end di Google Chrome (database sementara, tidak menyentuh Atlas) |
 | `npm run lint:fix` / `npm run format` | rapikan kode otomatis (ESLint + Prettier) |
 | `npm run build` | build produksi |
+| `npm run seed:master` | isi 3 layanan saja, tanpa menghapus data apa pun |
+| `npm run user:create -- --email … --name "…"` | buat akun (bawaan: admin) dengan kata sandi sementara; `--reset` untuk pemulihan |
+
+### Akun petugas (database tanpa data demo)
+
+Tidak ada pendaftaran lewat web. Alurnya:
+
+1. Admin pertama dibuat dari terminal: `npm run user:create -- --email admin@instansi.go.id --name "Nama Admin"`.
+   Kata sandi sementara tampil sekali di terminal.
+2. Admin login → wajib ganti kata sandi → buka **Petugas** (`/admin/petugas`) untuk menambah petugas loket,
+   teknis, pimpinan, atau admin lain. Setiap akun baru mendapat kata sandi sementara untuk diserahkan langsung.
+3. Petugas login pertama kali → wajib ganti kata sandi sebelum bisa membuka antrean.
+4. Admin bisa mengubah nama/peran/unit, me-reset kata sandi, dan menonaktifkan akun (bukan menghapus, agar
+   audit log tetap utuh). Ganti peran, reset, atau nonaktif membuat sesi petugas itu langsung berakhir.
+
+Lupa kata sandi admin: `npm run user:create -- --email <email-admin> --reset`.
 
 ### Akun & resi demo
 
@@ -81,4 +97,4 @@ Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
 
 - QR code & unduh bukti resi
 - Notifikasi email perubahan status
-- Kelola layanan, SLA, libur, dan akun dari halaman admin
+- Kelola layanan, SLA, dan libur dari halaman admin (akun petugas sudah bisa dikelola di `/admin/petugas`)

@@ -2,21 +2,20 @@
 
 import { Check, Copy, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
-import DemoClockBanner from "@/components/layout/DemoClockBanner";
-import Alert from "@/components/ui/Alert";
-import { buttonClass } from "@/components/ui/Button";
-import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { Alert, buttonClass, DemoClockBanner } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { postJson } from "@/lib/http";
+import { useAutoRefresh } from "@/lib/hooks";
+import { type FormErrors, postJson } from "@/lib/http";
+import type { PublicView, VerifiedView } from "@/lib/present";
+import { OPEN_STATUSES } from "@/lib/workflow";
 
 const REFRESH_MS = 20_000;
-const OPEN = ["diajukan", "diproses", "siap_diambil", "perlu_perbaikan"];
 
-function CopyResi({ resi }) {
+function CopyResi({ resi }: { resi: string }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {
@@ -40,7 +39,17 @@ function CopyResi({ resi }) {
 }
 
 /** Input 4 digit terakhir HP, dipakai ulang oleh semua aksi warga. */
-function Last4Field({ value, onChange, error, id }) {
+function Last4Field({
+  value,
+  onChange,
+  error,
+  id,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  error?: string | null;
+  id: string;
+}) {
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
@@ -72,7 +81,15 @@ const BANNER_TONES = {
   ok: "border-ok bg-ok-soft",
 };
 
-function Banner({ tone, title, children }) {
+function Banner({
+  tone,
+  title,
+  children,
+}: {
+  tone: keyof typeof BANNER_TONES;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className={cn("rounded-card border-l-4 p-4", BANNER_TONES[tone])}>
       <h2 className="font-bold">{title}</h2>
@@ -82,33 +99,47 @@ function Banner({ tone, title, children }) {
 }
 
 /** Error dari server hanya tampil di bawah form yang mengirimnya. */
-function FormError({ errors, action }) {
+type CitizenAction = "verify" | "resubmit" | "rate";
+
+function FormError({ errors, action }: { errors: FormErrors; action: CitizenAction }) {
   return <Alert className="w-full">{errors.formAction === action && errors.form}</Alert>;
 }
 
-export default function TrackView({ data, serverNow, offsetMs }) {
+export default function TrackView({
+  data,
+  serverNow,
+  offsetMs,
+}: {
+  data: PublicView;
+  serverNow: string;
+  offsetMs: number;
+}) {
   const router = useRouter();
   const [last4, setLast4] = useState("");
-  const [detail, setDetail] = useState(null); // hasil verifikasi HP
-  const [errors, setErrors] = useState({});
-  const [pending, setPending] = useState(null);
+  const [detail, setDetail] = useState<VerifiedView | null>(null); // hasil verifikasi HP
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [pending, setPending] = useState<CitizenAction | null>(null);
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState("");
   const [notice, setNotice] = useState("");
 
-  const isOpen = OPEN.includes(data.status);
+  const isOpen = OPEN_STATUSES.includes(data.status);
 
   // Status diperbarui otomatis selama permohonan masih berjalan (mis. petugas baru menyelesaikan tahap).
   useAutoRefresh(REFRESH_MS, isOpen);
 
-  async function send(action, extra = {}) {
+  async function send(action: CitizenAction, extra: Record<string, unknown> = {}) {
     if (!/^\d{4}$/.test(last4)) {
       setErrors({ phoneLast4: "Masukkan 4 digit terakhir nomor HP." });
       return false;
     }
     setPending(action);
     setErrors({});
-    const res = await postJson(`/api/track/${data.resi}`, { action, phoneLast4: last4, ...extra });
+    const res = await postJson<VerifiedView>(`/api/track/${data.resi}`, {
+      action,
+      phoneLast4: last4,
+      ...extra,
+    });
     setPending(null);
     if (!res.ok) {
       const { fields, message } = res.error;
@@ -298,7 +329,7 @@ export default function TrackView({ data, serverNow, offsetMs }) {
       {/* Detail pemohon (butuh verifikasi) */}
       <section className="rounded-card border border-line bg-surface p-5">
         <h2 className="text-lg font-bold">Detail pemohon</h2>
-        {verified ? (
+        {detail ? (
           <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted">Nama</dt>

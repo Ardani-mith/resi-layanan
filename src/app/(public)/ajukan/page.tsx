@@ -1,16 +1,17 @@
 import { Suspense } from "react";
 import ApplyForm from "@/components/application/ApplyForm";
-import Skeleton from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui";
+import { firstParam, type SearchParamsOf } from "@/lib/api";
 import { getActiveServices } from "@/lib/dal";
 
 export const metadata = { title: "Ajukan permohonan" };
 
-async function ApplyLoader({ searchParams }) {
+async function ApplyLoader({ searchParams }: SearchParamsOf) {
   const [{ layanan }, services] = await Promise.all([searchParams, getActiveServices()]);
-  return <ApplyForm services={services} initialSlug={layanan} />;
+  return <ApplyForm services={services} initialSlug={firstParam(layanan)} />;
 }
 
-export default function ApplyPage({ searchParams }) {
+export default function ApplyPage({ searchParams }: SearchParamsOf) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Ajukan permohonan</h1>

@@ -1,13 +1,13 @@
 import ResiSearch from "@/components/application/ResiSearch";
-import { Eyebrow, GuideLines, Hatch } from "@/components/landing/Decor";
-import { Icon } from "@/components/landing/icons";
+import { Eyebrow, GuideLines, Hatch, Icon } from "@/components/landing/Decor";
 import TrackingPreview from "@/components/landing/TrackingPreview";
+import type { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
 /** Jeda animasi (CSS murni) agar elemen hero muncul berurutan. */
-const delay = (ms) => ({ animationDelay: `${ms}ms` });
+const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
 
-export default function HeroSection({ hero }) {
+export default function HeroSection({ hero }: { hero: typeof site.hero }) {
   const lastLine = hero.titleLines.length - 1;
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden surface-hero">

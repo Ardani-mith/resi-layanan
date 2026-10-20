@@ -1,14 +1,6 @@
-import Button from "@/components/ui/Button";
-
+import { NotFoundView } from "@/components/ui";
+// Cadangan terakhir. Alamat tak dikenal ditangkap (public)/[...missing] agar tampil dengan
+// navbar; notFound() di dalam group memakai not-found.tsx milik group itu.
 export default function NotFound() {
-  return (
-    <div className="mx-auto max-w-xl px-4 py-20 text-center">
-      <p className="font-mono text-sm text-muted">404</p>
-      <h1 className="mt-2 text-2xl font-bold">Halaman tidak ditemukan</h1>
-      <p className="mt-2 text-muted">Alamat yang Anda buka tidak ada atau sudah dipindahkan.</p>
-      <Button href="/" className="mt-6">
-        Kembali ke beranda
-      </Button>
-    </div>
-  );
+  return <NotFoundView />;
 }

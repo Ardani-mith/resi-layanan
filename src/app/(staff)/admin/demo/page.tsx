@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import DemoClockBanner from "@/components/layout/DemoClockBanner";
-import Button from "@/components/ui/Button";
-import Skeleton from "@/components/ui/Skeleton";
+import { Button, DemoClockBanner, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getClockInfo, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";

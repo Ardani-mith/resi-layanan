@@ -1,21 +1,28 @@
 "use client";
 
 import { STEP_STATE } from "@/components/application/StatusBadge";
-import { useNow } from "@/hooks/useNow";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration } from "@/lib/format";
+import { useNow } from "@/lib/hooks";
+import type { PublicView, StepViewState } from "@/lib/present";
+
+/** Tahap dari publicView; petugas juga mendapat nama petugas & catatan internal. */
+type TimelineStep = PublicView["steps"][number] & {
+  handledByName?: string | null;
+  internalNote?: string | null;
+};
 
 /** Status tahap dihitung ulang di browser supaya "berjalan" berubah jadi "terlambat" tanpa reload. */
-function liveState(step, now) {
+function liveState(step: TimelineStep, now: number): StepViewState {
   if ((step.state === "berjalan" || step.state === "terlambat") && step.dueAt) {
     return now > new Date(step.dueAt).getTime() ? "terlambat" : "berjalan";
   }
   return step.state;
 }
 
-function Progress({ step, now }) {
-  const start = new Date(step.startedAt).getTime();
-  const due = new Date(step.dueAt).getTime();
+function Progress({ step, now }: { step: TimelineStep; now: number }) {
+  const start = new Date(step.startedAt ?? now).getTime();
+  const due = new Date(step.dueAt ?? now).getTime();
   const pct = Math.min(100, Math.max(2, ((now - start) / (due - start)) * 100));
   const tone = pct >= 100 ? "bg-late" : pct >= 75 ? "bg-warn" : "bg-run";
   return (
@@ -25,7 +32,7 @@ function Progress({ step, now }) {
   );
 }
 
-function StepDetail({ step, state, now }) {
+function StepDetail({ step, state, now }: { step: TimelineStep; state: StepViewState; now: number }) {
   const due = step.dueAt ? new Date(step.dueAt).getTime() : null;
   switch (state) {
     case "selesai":
@@ -55,7 +62,7 @@ function StepDetail({ step, state, now }) {
       return (
         <>
           <p className="text-sm">
-            <span className="font-semibold text-late">Lewat {formatDuration(now - due)}</span>
+            <span className="font-semibold text-late">Lewat {formatDuration(now - (due ?? now))}</span>
             <span className="text-muted"> · tenggat {formatDateTime(step.dueAt)}</span>
           </p>
           {step.escalated && (
@@ -81,7 +88,17 @@ function StepDetail({ step, state, now }) {
  * Timeline vertikal per tahap. `staff` menambahkan nama petugas & catatan internal.
  * serverNow + offsetMs: lihat useNow.
  */
-export default function Timeline({ steps, serverNow, offsetMs = 0, staff = false }) {
+export default function Timeline({
+  steps,
+  serverNow,
+  offsetMs = 0,
+  staff = false,
+}: {
+  steps: TimelineStep[];
+  serverNow: string | Date;
+  offsetMs?: number;
+  staff?: boolean;
+}) {
   const now = useNow(serverNow, offsetMs);
   return (
     <ol className="relative">

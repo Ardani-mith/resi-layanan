@@ -1,7 +1,53 @@
+// Hiasan & ikon landing page.
+
+import {
+  BarChart3,
+  BellRing,
+  FilePlus2,
+  FileWarning,
+  LayoutDashboard,
+  ListOrdered,
+  Lock,
+  type LucideProps,
+  ShieldCheck,
+  Smartphone,
+  Star,
+  Timer,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
+/** Nama ikon di src/config/site.ts → komponen lucide (config tetap data polos). */
+const ICONS = {
+  bell: BellRing,
+  chart: BarChart3,
+  dashboard: LayoutDashboard,
+  file: FilePlus2,
+  fix: FileWarning,
+  lock: Lock,
+  phone: Smartphone,
+  queue: ListOrdered,
+  shield: ShieldCheck,
+  star: Star,
+  timer: Timer,
+};
+export type IconName = keyof typeof ICONS;
+
+export function Icon({ name, ...props }: { name: IconName } & LucideProps) {
+  const Component = ICONS[name];
+  return <Component aria-hidden {...props} />;
+}
+
 /** Label kecil berhuruf kapital dengan titik persegi. `tone="hero"` untuk latar hero/penutup. */
-export function Eyebrow({ tone = "default", className, children }) {
+export function Eyebrow({
+  tone = "default",
+  className,
+  children,
+}: {
+  tone?: "default" | "hero";
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <p
       className={cn(
@@ -17,11 +63,11 @@ export function Eyebrow({ tone = "default", className, children }) {
 }
 
 /** Pita garis miring pemisah bagian (gaya blueprint). */
-export function Hatch({ className }) {
+export function Hatch({ className }: { className?: string }) {
   return <div aria-hidden className={cn("h-9 border-y border-hero-line pattern-hatch", className)} />;
 }
 
-function Crosshair({ className }) {
+function Crosshair({ className }: { className: string }) {
   return (
     <span className={cn("absolute size-[11px] -translate-x-1/2 -translate-y-1/2", className)}>
       <span className="absolute top-0 left-[5px] h-full w-px bg-hero-line-strong" />

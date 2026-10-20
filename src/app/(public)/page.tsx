@@ -1,17 +1,30 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 import CountUp from "@/components/landing/CountUp";
-import { Eyebrow, Hatch } from "@/components/landing/Decor";
+import { Eyebrow, Hatch, Icon } from "@/components/landing/Decor";
 import HeroSection from "@/components/landing/HeroSection";
-import { Icon } from "@/components/landing/icons";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
-import Button from "@/components/ui/Button";
-import SectionError from "@/components/ui/SectionError";
+import SectionError from "@/components/SectionError";
+import { Button } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
-function Section({ id, eyebrow, title, intro, children, className }) {
+function Section({
+  id,
+  eyebrow,
+  title,
+  intro,
+  children,
+  className,
+}: {
+  id: string;
+  eyebrow?: string;
+  title: string;
+  intro?: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section
       id={id}

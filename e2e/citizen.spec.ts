@@ -1,5 +1,5 @@
-import { expect, test } from "./fixtures.js";
-import { gotoReady, hasHorizontalScroll, MOBILE } from "./helpers.js";
+import { expect, test } from "./fixtures.ts";
+import { gotoReady, hasHorizontalScroll, MOBILE } from "./helpers.ts";
 
 // Alur warga di HP: lacak, verifikasi HP, perbaikan berkas, rating, pengajuan.
 

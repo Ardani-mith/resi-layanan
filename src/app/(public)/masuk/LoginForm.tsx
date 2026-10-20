@@ -1,41 +1,40 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import Alert from "@/components/ui/Alert";
-import { buttonClass } from "@/components/ui/Button";
-import Field from "@/components/ui/Field";
-import { postJson } from "@/lib/http";
+import { type FormEvent, useState } from "react";
+import { Alert, buttonClass, Field } from "@/components/ui";
+import { type FormErrors, formErrors, postJson } from "@/lib/http";
 
 /** Hanya izinkan redirect ke path internal, bukan URL luar (open redirect). */
-function safeNext(value) {
+function safeNext(value: string | null): string | null {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
 }
 
 export default function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
 
-  async function submit(event) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setPending(true);
     setErrors({});
 
-    const res = await postJson("/api/auth/login", {
+    const res = await postJson<{ home: string; mustChangePassword: boolean }>("/api/auth/login", {
       email: form.get("email"),
       password: form.get("password"),
     });
     if (!res.ok) {
-      const { fields, message } = res.error;
-      setErrors({ ...fields, form: Object.keys(fields).length ? null : message });
+      setErrors(formErrors(res.error));
       setPending(false);
       return;
     }
     // pending dibiarkan true sampai halaman tujuan terbuka, supaya tombol tidak bisa diklik ulang.
-    router.replace(safeNext(params.get("next")) ?? res.data.home);
+    // Kata sandi sementara: selalu ke halaman ganti kata sandi dulu, abaikan ?next=.
+    const { home, mustChangePassword } = res.data;
+    router.replace(mustChangePassword ? home : (safeNext(params.get("next")) ?? home));
     router.refresh();
   }
 

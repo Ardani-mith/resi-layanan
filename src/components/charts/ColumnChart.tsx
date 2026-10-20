@@ -8,12 +8,17 @@ const TICKS = [0, 0.5, 1];
 // Prop dari Server Component harus bisa diserialisasi, jadi formatnya berupa nama, bukan fungsi.
 const FORMATTERS = { percent: formatPercent };
 
+export interface ColumnDatum {
+  label: string;
+  value: number | null;
+  detail?: string;
+}
+
 /**
  * Grafik kolom satu seri untuk rasio 0–1 (mis. % tepat waktu per minggu).
  * - Kolom ≤24px, ujung data membulat 4px, tumbuh dari satu garis dasar.
  * - Tooltip per kolom saat hover DAN fokus keyboard; nilai yang sama ada di tabel.
  * - Label langsung hanya di titik terakhir (selektif).
- * data: [{ label, value: number|null, detail?: string }]
  */
 export default function ColumnChart({
   title,
@@ -21,9 +26,15 @@ export default function ColumnChart({
   data,
   format = "percent",
   emptyLabel = "Tidak ada data",
+}: {
+  title: string;
+  description?: string;
+  data: ColumnDatum[];
+  format?: keyof typeof FORMATTERS;
+  emptyLabel?: string;
 }) {
   const formatValue = FORMATTERS[format];
-  const [active, setActive] = useState(null);
+  const [active, setActive] = useState<number | null>(null);
   const id = useId();
   const lastIndex = data.findLastIndex((d) => d.value !== null);
 
@@ -79,7 +90,7 @@ export default function ColumnChart({
                   style={{ height: `${Math.max(d.value * 100, 1)}%` }}
                 />
               )}
-              {i === lastIndex && active === null && (
+              {i === lastIndex && d.value !== null && active === null && (
                 <span
                   aria-hidden
                   className="absolute text-xs font-semibold"

@@ -15,9 +15,13 @@ import {
   wibDateKey,
   workedMs,
 } from "@/lib/sla";
+import type { Step } from "@/lib/workflow";
 
 // Semua waktu ditulis dalam WIB agar tes tidak bergantung pada zona waktu mesin.
-const wib = (s) => new Date(`${s}+07:00`);
+const wib = (s: string) => new Date(`${s}+07:00`);
+
+/** Tahap uji: hanya field waktu yang dipakai fungsi SLA. */
+type TestStep = Partial<Step>;
 const HOUR = 3600_000;
 
 describe("hari kerja (WIB)", () => {
@@ -132,7 +136,11 @@ describe("status & sisa waktu tahap", () => {
 
 describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   it("hitung mundur beku selama jeda dan tidak bisa jadi terlambat", () => {
-    const step = { startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-14T10:00:00"), pausedMs: 0 };
+    const step: TestStep = {
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-14T10:00:00"),
+      pausedMs: 0,
+    };
     pauseStep(step, wib("2026-10-13T10:00:00"));
 
     const muchLater = wib("2026-10-20T10:00:00");
@@ -142,7 +150,11 @@ describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   });
 
   it("setelah dilanjutkan, tenggat bergeser sebesar lama jeda dan sisa waktu utuh", () => {
-    const step = { startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-14T10:00:00"), pausedMs: 0 };
+    const step: TestStep = {
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-14T10:00:00"),
+      pausedMs: 0,
+    };
     pauseStep(step, wib("2026-10-13T10:00:00"));
     resumeStep(step, wib("2026-10-16T10:00:00")); // jeda 3 hari
 
@@ -153,7 +165,11 @@ describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   });
 
   it("jeda berulang diakumulasi; pause ganda tidak menggeser titik jeda", () => {
-    const step = { startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-14T10:00:00"), pausedMs: 0 };
+    const step: TestStep = {
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-14T10:00:00"),
+      pausedMs: 0,
+    };
     pauseStep(step, wib("2026-10-12T12:00:00"));
     pauseStep(step, wib("2026-10-12T18:00:00"));
     resumeStep(step, wib("2026-10-13T12:00:00")); // 24 jam
@@ -165,7 +181,7 @@ describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   });
 
   it("resume tanpa jeda tidak mengubah apa pun", () => {
-    const step = {
+    const step: TestStep = {
       startedAt: wib("2026-10-12T10:00:00"),
       dueAt: wib("2026-10-14T10:00:00"),
       pausedMs: 0,
@@ -177,7 +193,7 @@ describe("jeda (perlu_perbaikan) tidak dihitung", () => {
   });
 
   it("workedMs tidak menghitung waktu jeda", () => {
-    const step = {
+    const step: TestStep = {
       startedAt: wib("2026-10-12T10:00:00"),
       completedAt: wib("2026-10-15T10:00:00"),
       pausedMs: DAY_MS,
@@ -196,14 +212,18 @@ describe("simulasi waktu demo", () => {
 
   it("offset membuat tahap yang semula aman menjadi terlambat", () => {
     const real = wib("2026-10-13T10:00:00").getTime();
-    const step = { startedAt: wib("2026-10-12T10:00:00"), dueAt: wib("2026-10-14T10:00:00"), pausedMs: 0 };
+    const step: TestStep = {
+      startedAt: wib("2026-10-12T10:00:00"),
+      dueAt: wib("2026-10-14T10:00:00"),
+      pausedMs: 0,
+    };
     expect(stepState(step, nowWithOffset(0, real))).toBe("berjalan");
     expect(stepState(step, nowWithOffset(2 * DAY_MS, real))).toBe("terlambat");
   });
 });
 
 describe("estimateCompletion", () => {
-  const steps = () => [
+  const steps = (): (TestStep & { slaDays: number | null })[] => [
     {
       slaDays: 1,
       startedAt: wib("2026-10-12T10:00:00"),

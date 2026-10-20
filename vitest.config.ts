@@ -7,7 +7,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.js"],
+    include: ["tests/**/*.test.ts"],
     // Tes integrasi menyalakan MongoDB in-memory; unduhan biner pertama bisa lama.
     hookTimeout: 120_000,
   },

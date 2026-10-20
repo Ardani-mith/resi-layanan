@@ -1,9 +1,44 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
+import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
-import { THEMES } from "@/lib/theme";
+import { type Theme, THEME_EVENT, THEME_KEY, THEMES } from "@/lib/theme";
+
+function subscribe(onChange: () => void) {
+  window.addEventListener(THEME_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(THEME_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function readTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    return stored === "light" || stored === "dark" ? stored : "system";
+  } catch {
+    return "system";
+  }
+}
+
+/** Simpan pilihan; skrip tema di <head> yang memasang data-theme di <html>. */
+function setTheme(theme: Theme) {
+  try {
+    if (theme === "system") localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    return;
+  }
+  window.dispatchEvent(new Event(THEME_EVENT));
+}
+
+/** `[theme, setTheme]`: pilihan tema pengguna. Saat render server: null (belum diketahui). */
+function useTheme(): [Theme | null, (theme: Theme) => void] {
+  const theme = useSyncExternalStore(subscribe, readTheme, () => null);
+  return [theme, setTheme];
+}
 
 const OPTIONS = {
   system: { label: "Sistem", Icon: Monitor },
@@ -12,7 +47,7 @@ const OPTIONS = {
 };
 
 /** Tombol tema: tiap klik berganti Sistem → Terang → Gelap. */
-export default function ThemeToggle({ className }) {
+export default function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useTheme();
   // Render server belum tahu pilihan pengguna: tampilkan "Sistem" sampai hydration selesai.
   const current = theme ?? "system";

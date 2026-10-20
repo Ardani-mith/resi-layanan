@@ -2,13 +2,57 @@
 // publik = progres + nama disamarkan; terverifikasi (4 digit HP) = + detail pemohon;
 // petugas = + catatan internal, nama petugas, eskalasi, audit log. NIK tidak pernah keluar.
 
-import { maskName, maskPhone } from "./privacy.js";
-import { estimateCompletion, finishedLate, remainingMs, stepState } from "./sla.js";
-import { STATUS, STATUS_LABELS } from "./workflow.js";
+import type { EventData } from "../models.ts";
+import {
+  type DateLike,
+  estimateCompletion,
+  finishedLate,
+  type Holidays,
+  remainingMs,
+  type StepState,
+  stepState,
+} from "./sla.ts";
+import { type ApplicationData, STATUS, STATUS_LABELS, type Step } from "./workflow.ts";
 
-function stepView(app, step, index, now) {
+// --- Penyamaran data pribadi --------------------------------------------------------
+
+/** "Ardani Setiawan" → "Ar*** S***". Nama lengkap tidak pernah keluar ke tampilan publik. */
+export function maskName(name: unknown): string {
+  const words = String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) return "***";
+  return words.map((word, i) => `${word.slice(0, i === 0 ? 2 : 1)}***`).join(" ");
+}
+
+/** "081234567890" → "0812****7890". */
+export function maskPhone(phone: unknown): string {
+  const digits = String(phone ?? "");
+  if (digits.length < 8) return "****";
+  return `${digits.slice(0, 4)}${"*".repeat(digits.length - 8)}${digits.slice(-4)}`;
+}
+
+/** Nomor HP dinormalisasi ke format 08xxxxxxxxxx. */
+export function normalizePhone(input: unknown): string {
+  const digits = String(input ?? "").replace(/[^\d+]/g, "");
+  if (digits.startsWith("+62")) return `0${digits.slice(3)}`;
+  if (digits.startsWith("62")) return `0${digits.slice(2)}`;
+  return digits;
+}
+
+// --- Tampilan permohonan ------------------------------------------------------------
+
+export type StepViewState = StepState | "ditolak" | "dibatalkan";
+
+interface Ctx {
+  now: DateLike;
+  holidays?: Holidays;
+}
+
+function stepView(app: ApplicationData, step: Step, index: number, now: DateLike) {
   const isCurrent = index === app.currentStep;
-  let state = stepState(step, now);
+  let state: StepViewState = stepState(step, now);
   if (app.status === STATUS.DITOLAK && isCurrent) state = "ditolak";
   else if (app.status === STATUS.DITOLAK && !step.startedAt) state = "dibatalkan";
 
@@ -30,7 +74,7 @@ function stepView(app, step, index, now) {
 }
 
 /** Untuk siapa pun yang tahu nomor resi. */
-export function publicView(app, { now, holidays }) {
+export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
   const steps = app.steps.map((s, i) => stepView(app, s, i, now));
   const current = steps[app.currentStep];
   return {
@@ -51,7 +95,7 @@ export function publicView(app, { now, holidays }) {
       app.status === STATUS.SELESAI || app.status === STATUS.DITOLAK
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
-    fixNote: app.status === STATUS.PERLU_PERBAIKAN ? app.steps[app.currentStep]?.publicNote : null,
+    fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
     rejectionReason: app.rejectionReason,
     rated: Boolean(app.rating?.score),
     steps,
@@ -59,7 +103,7 @@ export function publicView(app, { now, holidays }) {
 }
 
 /** Setelah warga membuktikan 4 digit terakhir HP. */
-export function verifiedView(app, ctx) {
+export function verifiedView(app: ApplicationData, ctx: Ctx) {
   return {
     ...publicView(app, ctx),
     applicant: {
@@ -73,7 +117,7 @@ export function verifiedView(app, ctx) {
 }
 
 /** Untuk petugas yang login. */
-export function staffView(app, ctx, events = []) {
+export function staffView(app: ApplicationData, ctx: Ctx, events: EventData[] = []) {
   const base = verifiedView(app, ctx);
   return {
     ...base,
@@ -97,7 +141,7 @@ export function staffView(app, ctx, events = []) {
 }
 
 /** Baris ringkas untuk antrean petugas. */
-export function queueItem(app, now) {
+export function queueItem(app: ApplicationData, now: DateLike) {
   const step = app.steps[app.currentStep];
   return {
     resi: app.resi,
@@ -115,3 +159,8 @@ export function queueItem(app, now) {
     createdAt: app.createdAt,
   };
 }
+
+export type PublicView = ReturnType<typeof publicView>;
+export type VerifiedView = ReturnType<typeof verifiedView>;
+export type StaffView = ReturnType<typeof staffView>;
+export type QueueItem = ReturnType<typeof queueItem>;

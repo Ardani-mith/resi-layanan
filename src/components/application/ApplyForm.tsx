@@ -1,45 +1,54 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import Alert from "@/components/ui/Alert";
-import { buttonClass } from "@/components/ui/Button";
-import Field from "@/components/ui/Field";
+import { type FormEvent, useState } from "react";
+import { Alert, buttonClass, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { postJson } from "@/lib/http";
+import type { ActiveService } from "@/lib/dal";
+import { type FormErrors, postJson } from "@/lib/http";
+import type { Channel } from "@/lib/workflow";
 
 /**
  * Form pengajuan permohonan. channel="online" untuk warga, "loket" untuk petugas
  * yang menginput warga walk-in (server memeriksa perannya).
  */
-export default function ApplyForm({ services, initialSlug, channel = "online" }) {
+export default function ApplyForm({
+  services,
+  initialSlug,
+  channel = "online",
+}: {
+  services: ActiveService[];
+  initialSlug?: string;
+  channel?: Channel;
+}) {
   const router = useRouter();
   const [slug, setSlug] = useState(
     services.some((s) => s.slug === initialSlug) ? initialSlug : services[0]?.slug,
   );
-  const [checked, setChecked] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [checked, setChecked] = useState<string[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
 
   const service = services.find((s) => s.slug === slug);
   const isLoket = channel === "loket";
 
-  function chooseService(next) {
+  function chooseService(next: string) {
     setSlug(next);
     setChecked([]);
     setErrors({});
   }
 
-  function toggle(requirement) {
+  function toggle(requirement: string) {
     setChecked((list) =>
       list.includes(requirement) ? list.filter((r) => r !== requirement) : [...list, requirement],
     );
   }
 
-  async function submit(event) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!service) return;
     const form = new FormData(event.currentTarget);
-    const local = {};
+    const local: FormErrors = {};
     if (checked.length !== service.requirements.length) {
       local.requirementsChecked = isLoket
         ? "Centang semua persyaratan yang sudah diperiksa di loket."
@@ -53,7 +62,7 @@ export default function ApplyForm({ services, initialSlug, channel = "online" })
 
     setPending(true);
     setErrors({});
-    const res = await postJson("/api/applications", {
+    const res = await postJson<{ resi: string }>("/api/applications", {
       serviceSlug: slug,
       channel,
       applicant: {

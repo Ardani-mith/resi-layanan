@@ -1,7 +1,8 @@
 import { cn } from "@/lib/cn";
-import { STATUS_LABELS } from "@/lib/workflow";
+import type { StepViewState } from "@/lib/present";
+import { type Status, STATUS_LABELS } from "@/lib/workflow";
 
-const STATUS_STYLE = {
+const STATUS_STYLE: Record<Status, string> = {
   diajukan: "bg-run-soft text-run",
   diproses: "bg-run-soft text-run",
   siap_diambil: "bg-ok-soft text-ok",
@@ -10,7 +11,7 @@ const STATUS_STYLE = {
   ditolak: "bg-late-soft text-late",
 };
 
-export const STEP_STATE = {
+export const STEP_STATE: Record<StepViewState, { label: string; dot: string; text: string }> = {
   selesai: { label: "Selesai", dot: "bg-ok border-ok", text: "text-ok" },
   berjalan: { label: "Sedang diproses", dot: "bg-surface border-run ring-4 ring-run-soft", text: "text-run" },
   dijeda: { label: "Menunggu perbaikan", dot: "bg-pause border-pause", text: "text-pause" },
@@ -20,7 +21,15 @@ export const STEP_STATE = {
   dibatalkan: { label: "Tidak dilanjutkan", dot: "bg-surface-2 border-line", text: "text-muted" },
 };
 
-export default function StatusBadge({ status, late = false, size = "md" }) {
+export default function StatusBadge({
+  status,
+  late = false,
+  size = "md",
+}: {
+  status: Status;
+  late?: boolean;
+  size?: "md" | "lg";
+}) {
   const sizing = size === "lg" ? "px-3 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">

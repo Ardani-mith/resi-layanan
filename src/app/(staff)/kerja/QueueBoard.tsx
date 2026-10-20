@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
-import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import { useNow } from "@/hooks/useNow";
 import { cn } from "@/lib/cn";
+import type { Queue } from "@/lib/dal";
 import { formatDateTime, formatDuration } from "@/lib/format";
+import { useAutoRefresh, useNow } from "@/lib/hooks";
+
+type Item = Queue["items"][number];
 
 const REFRESH_MS = 30_000;
 
 /** Status hitung mundur sebuah baris pada waktu `now` (dihitung ulang di browser). */
-function urgency(item, now) {
+function urgency(item: Item, now: number): { tone: keyof typeof TONE; text: string } {
   if (item.status === "perlu_perbaikan") return { tone: "pause", text: "Menunggu warga" };
   if (!item.dueAt) return { tone: "muted", text: "Tanpa tenggat" };
   const left = new Date(item.dueAt).getTime() - now;
@@ -27,7 +29,7 @@ const TONE = {
   muted: "bg-surface-2 text-muted",
 };
 
-function Row({ item, now }) {
+function Row({ item, now }: { item: Item; now: number }) {
   const u = urgency(item, now);
   return (
     <li>
@@ -59,9 +61,9 @@ function Row({ item, now }) {
   );
 }
 
-export default function QueueBoard({ items, counts, role, now: serverNow, offsetMs }) {
+export default function QueueBoard({ items, counts, role, now: serverNow, offsetMs }: Queue) {
   const seesAll = role === "pimpinan" || role === "admin";
-  const tabs = [
+  const tabs: { key: string; label: string; count: number; match: (i: Item) => boolean }[] = [
     {
       key: "mine",
       label: "Tugas saya",

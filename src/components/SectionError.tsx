@@ -1,6 +1,6 @@
 "use client";
 
-import { catchError } from "next/error";
+import { catchError, type ErrorInfo } from "next/error";
 
 /**
  * Batas error untuk satu bagian halaman (Next `catchError`): jika bagian di dalamnya
@@ -8,7 +8,10 @@ import { catchError } from "next/error";
  * halaman tetap jalan. Sinyal internal Next (redirect, notFound, prerender) tidak ikut
  * tertangkap. `retry` memuat ulang bagian ini saja.
  */
-function SectionErrorFallback({ message = "Bagian ini sementara tidak dapat dimuat." }, { retry }) {
+function SectionErrorFallback(
+  { message = "Bagian ini sementara tidak dapat dimuat." }: { message?: string },
+  { retry }: ErrorInfo,
+) {
   return (
     <div
       role="alert"

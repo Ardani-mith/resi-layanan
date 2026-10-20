@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { cn } from "@/lib/cn";
-import { isValidResi, normalizeResi } from "@/lib/resi-format";
+import { isValidResi, normalizeResi } from "@/lib/resi";
 
 // "hero" = di atas latar hero landing page: warna teks dari token hero-*, input lebih besar.
 const VARIANTS = {
@@ -17,13 +17,21 @@ const VARIANTS = {
 };
 
 /** Form cek resi: validasi format di browser, lalu buka /lacak/[resi]. */
-export default function ResiSearch({ example, autoFocus = false, variant = "default" }) {
+export default function ResiSearch({
+  example,
+  autoFocus = false,
+  variant = "default",
+}: {
+  example: string;
+  autoFocus?: boolean;
+  variant?: keyof typeof VARIANTS;
+}) {
   const tone = VARIANTS[variant];
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
 
-  function submit(event) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const resi = normalizeResi(value);
     if (!isValidResi(resi)) {

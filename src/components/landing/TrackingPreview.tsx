@@ -3,15 +3,17 @@
 import { BellRing, Check, MessageSquareText } from "lucide-react";
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/application/StatusBadge";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/cn";
+import { useReducedMotion } from "@/lib/hooks";
 
 // Sisa waktu awal tahap berjalan (ilustrasi): 1 hari 03:12:45.
 const START_SECONDS = 27 * 3600 + 12 * 60 + 45;
 // Lama tahap entri data = 2 hari kerja; dipakai untuk progress bar.
 const STEP_SECONDS = 48 * 3600;
 
-const STEPS = [
+type PreviewState = "done" | "current" | "waiting";
+
+const STEPS: { name: string; state: PreviewState; detail?: string }[] = [
   { name: "Verifikasi berkas", state: "done", detail: "Selesai · tepat waktu" },
   { name: "Entri & validasi data", state: "current" },
   { name: "Persetujuan & tanda tangan elektronik", state: "waiting", detail: "Target 1 hari kerja" },
@@ -19,9 +21,9 @@ const STEPS = [
   { name: "Siap diambil di loket", state: "waiting" },
 ];
 
-const pad = (n) => String(n).padStart(2, "0");
+const pad = (n: number) => String(n).padStart(2, "0");
 
-function formatCountdown(total) {
+function formatCountdown(total: number): string {
   const days = Math.floor(total / 86400);
   const rest = total % 86400;
   const clock = `${pad(Math.floor(rest / 3600))}:${pad(Math.floor((rest % 3600) / 60))}:${pad(rest % 60)}`;
@@ -40,7 +42,7 @@ function useTicker() {
   return elapsed;
 }
 
-function StepDot({ state }) {
+function StepDot({ state }: { state: PreviewState }) {
   if (state === "done") {
     return (
       <span className="grid size-5 place-items-center rounded-full bg-ok text-surface">
@@ -64,7 +66,19 @@ function StepDot({ state }) {
  * yang berdetak. Ilustrasi, jadi isinya disembunyikan dari pembaca layar dan diganti
  * satu deskripsi.
  */
-export default function TrackingPreview({ resi, service, applicant, officerNote, escalationNote }) {
+export default function TrackingPreview({
+  resi,
+  service,
+  applicant,
+  officerNote,
+  escalationNote,
+}: {
+  resi: string;
+  service: string;
+  applicant: string;
+  officerNote: string;
+  escalationNote: string;
+}) {
   const elapsed = useTicker();
   const left = Math.max(0, START_SECONDS - elapsed);
   const progress = ((STEP_SECONDS - left) / STEP_SECONDS) * 100;

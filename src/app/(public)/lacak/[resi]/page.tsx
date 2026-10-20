@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
-import Skeleton from "@/components/ui/Skeleton";
+import { Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
+import type { ParamsOf } from "@/lib/api";
 import { getClockInfo, getTracking } from "@/lib/dal";
-import { isValidResi, normalizeResi } from "@/lib/resi-format";
+import { isValidResi, normalizeResi } from "@/lib/resi";
 import TrackView from "./TrackView";
 
 export const metadata = { title: "Lacak resi" };
 
-function Problem({ title, body }) {
+function Problem({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-card border border-line bg-surface p-6 shadow-card">
       <h1 className="text-xl font-bold">{title}</h1>
@@ -31,7 +32,7 @@ function TrackSkeleton() {
 }
 
 // params = data saat request → dibaca di dalam <Suspense> (Cache Components).
-async function Tracking({ params }) {
+async function Tracking({ params }: ParamsOf<{ resi: string }>) {
   const raw = decodeURIComponent((await params).resi);
   const resi = normalizeResi(raw);
 
@@ -58,7 +59,7 @@ async function Tracking({ params }) {
   return <TrackView data={data} serverNow={clock.now} offsetMs={clock.offsetMs} />;
 }
 
-export default function TrackPage({ params }) {
+export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <Suspense fallback={<TrackSkeleton />}>

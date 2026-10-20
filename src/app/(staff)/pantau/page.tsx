@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
-import Meter from "@/components/charts/Meter";
-import StatTile from "@/components/charts/StatTile";
-import { weeklyOnTime } from "@/components/charts/trend";
-import DemoClockBanner from "@/components/layout/DemoClockBanner";
-import Skeleton from "@/components/ui/Skeleton";
+import { DemoClockBanner, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getClockInfo, getStats, requireStaffPage } from "@/lib/dal";
 import { formatDuration, formatHours, formatPercent } from "@/lib/format";
+import type { Stats } from "@/lib/stats";
 
 export const metadata = { title: "Pantau kinerja" };
 
@@ -16,9 +14,12 @@ export const metadata = { title: "Pantau kinerja" };
 const BOTTLENECK_MIN_RATE = 0.15;
 
 /** Tahap dengan tingkat keterlambatan tertinggi, jika sudah di atas ambang waspada. */
-function bottleneckKey(steps) {
-  const worst = steps.reduce((a, b) => ((b.lateRate ?? 0) > (a?.lateRate ?? 0) ? b : a), null);
-  return worst?.lateRate >= BOTTLENECK_MIN_RATE ? worst.key : null;
+function bottleneckKey(steps: Stats["services"][number]["steps"]): string | null {
+  const worst = steps.reduce<(typeof steps)[number] | null>(
+    (a, b) => ((b.lateRate ?? 0) > (a?.lateRate ?? 0) ? b : a),
+    null,
+  );
+  return worst && (worst.lateRate ?? 0) >= BOTTLENECK_MIN_RATE ? worst.key : null;
 }
 
 async function Dashboard() {

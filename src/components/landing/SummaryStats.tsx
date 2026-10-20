@@ -2,10 +2,10 @@ import CountUp from "@/components/landing/CountUp";
 import { getStats } from "@/lib/dal";
 import { formatPercent } from "@/lib/format";
 
-const number = (value, digits = 1) =>
+const number = (value: number | null, digits = 1) =>
   value === null ? "—" : value.toLocaleString("id-ID", { maximumFractionDigits: digits });
 
-function Stat({ value, label, note }) {
+function Stat({ value, label, note }: { value: string; label: string; note: string }) {
   return (
     <div className="border-line py-1 sm:border-l sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
       <p className="text-4xl font-semibold tracking-tight">

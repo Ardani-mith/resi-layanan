@@ -1,7 +1,6 @@
 import "./globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
+import type { ReactNode } from "react";
 import { site } from "@/config/site";
 import { themeScript } from "@/lib/theme";
 
@@ -20,7 +19,7 @@ export const viewport = {
   ],
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // data-theme dipasang skrip tema sebelum hydration; ekstensi browser (Dark Reader, Grammarly,
     // penerjemah) juga sering menyisipkan atribut ke <html>. suppressHydrationWarning hanya berlaku
@@ -29,11 +28,8 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="flex min-h-full flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </body>
+      {/* Kerangka halaman ada di route group: (public) navbar atas, (staff) sidebar. */}
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

@@ -1,12 +1,12 @@
 import { Check } from "lucide-react";
 import { Suspense } from "react";
-import Button from "@/components/ui/Button";
-import Skeleton from "@/components/ui/Skeleton";
-import { isValidResi, normalizeResi } from "@/lib/resi-format";
+import { Button, Skeleton } from "@/components/ui";
+import type { SearchParamsOf } from "@/lib/api";
+import { isValidResi, normalizeResi } from "@/lib/resi";
 
 export const metadata = { title: "Permohonan terkirim" };
 
-async function Success({ searchParams }) {
+async function Success({ searchParams }: SearchParamsOf) {
   const params = await searchParams;
   const resi = normalizeResi(params.resi);
   const isLoket = params.loket === "1";
@@ -61,7 +61,7 @@ async function Success({ searchParams }) {
   );
 }
 
-export default function SuccessPage({ searchParams }) {
+export default function SuccessPage({ searchParams }: SearchParamsOf) {
   return (
     <div className="mx-auto max-w-xl px-4 py-14">
       <Suspense fallback={<Skeleton className="h-80" />}>

@@ -1,33 +1,18 @@
+// Kerangka halaman warga: navbar atas, konten, footer.
+
 import Link from "next/link";
-import { Suspense } from "react";
-import LogoutButton from "@/components/layout/LogoutButton";
+import { type ReactNode, Suspense } from "react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { site } from "@/config/site";
+import { cn } from "@/lib/cn";
 import { getCurrentUser } from "@/lib/dal";
-import { ROLE_LABELS } from "@/lib/roles";
-
-const STAFF_LINKS = {
-  petugas_loket: [
-    ["/kerja", "Antrean"],
-    ["/kerja/baru", "Input loket"],
-  ],
-  petugas_teknis: [["/kerja", "Antrean"]],
-  pimpinan: [
-    ["/pantau", "Pantau"],
-    ["/kerja", "Antrean"],
-  ],
-  admin: [
-    ["/admin/demo", "Mode demo"],
-    ["/pantau", "Pantau"],
-    ["/kerja", "Antrean"],
-  ],
-};
+import { homeFor, PASSWORD_PATH } from "@/lib/roles";
 
 const linkClass =
   "shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted hover:bg-surface-2 hover:text-text sm:px-3";
 
 /** Label pendek di HP, lengkap di layar lebar. */
-function Label({ short, full }) {
+function Label({ short, full }: { short: string; full: string }) {
   return (
     <>
       <span className="sm:hidden">{short}</span>
@@ -53,26 +38,22 @@ function GuestLinks() {
 }
 
 // Membaca cookie = data saat request; di Cache Components harus di dalam <Suspense>
-// supaya kerangka navbar tetap bisa di-prerender.
+// supaya kerangka navbar tetap bisa di-prerender. Menu kerja petugas ada di sidebar
+// area petugas; di halaman warga cukup satu jalan kembali ke sana.
 async function SessionLinks() {
   const user = await getCurrentUser();
   if (!user) return <GuestLinks />;
   return (
-    <>
-      {(STAFF_LINKS[user.role] ?? []).map(([href, label]) => (
-        <Link key={href} href={href} className={linkClass}>
-          {label}
-        </Link>
-      ))}
-      <span className="hidden px-2 text-xs text-muted sm:inline">
-        {user.name} · {ROLE_LABELS[user.role]}
-      </span>
-      <LogoutButton className={linkClass} />
-    </>
+    <Link
+      href={user.mustChangePassword ? PASSWORD_PATH : homeFor(user.role)}
+      className={cn(linkClass, "text-brand hover:text-brand")}
+    >
+      <Label short="Dasbor" full="Dasbor petugas" />
+    </Link>
   );
 }
 
-export default function Navbar() {
+function Navbar() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
@@ -97,5 +78,28 @@ export default function Navbar() {
         <ThemeToggle className="-mr-2" />
       </nav>
     </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-line bg-surface">
+      <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between">
+        <p>
+          <span className="font-semibold text-text">{site.name}</span> · {site.agency}
+        </p>
+        <p>{site.demoNotice}</p>
+      </div>
+    </footer>
+  );
+}
+
+export default function PublicShell({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <Navbar />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </>
   );
 }

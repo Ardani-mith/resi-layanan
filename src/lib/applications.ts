@@ -1,26 +1,47 @@
 // Operasi permohonan yang menyentuh database. Dipakai bersama oleh route API
-// dan (nanti) server component, supaya aturan bisnis hanya ada di satu tempat.
+// dan server component, supaya aturan bisnis hanya ada di satu tempat.
 
-import Application from "../models/Application.js";
-import Event from "../models/Event.js";
-import Service from "../models/Service.js";
-import { syncEscalations } from "./escalation.js";
-import { generateResi } from "./resi.js";
-import { applyAction, applyRating, buildApplication, canActOn, WorkflowError } from "./workflow.js";
+import type { Types } from "mongoose";
+import { Application, Event, type EventData, Service } from "../models.ts";
+import type { Clock } from "./clock.ts";
+import { syncEscalations } from "./escalation.ts";
+import { generateResi } from "./resi.ts";
+import type { ActionInput, ApplicationInput } from "./validators.ts";
+import {
+  type Actor,
+  type ApplicationData,
+  applyAction,
+  applyRating,
+  type AuditEntry,
+  buildApplication,
+  canActOn,
+  type ServiceData,
+  WorkflowError,
+} from "./workflow.ts";
 
 const DUPLICATE_KEY = 11000;
+type Ctx = Pick<Clock, "now" | "holidays">;
 
 /** Permohonan lean berdasarkan resi, dengan eskalasi yang sudah disinkronkan. */
-export async function loadByResi(resi, clock) {
-  const app = await Application.findOne({ resi }).lean();
+export async function loadByResi(resi: string, clock: Ctx): Promise<ApplicationData | null> {
+  const app = await Application.findOne({ resi }).lean<ApplicationData>();
   if (app) await syncEscalations(app, clock.now, clock.holidays);
   return app;
 }
 
-export async function createApplication({ input, actor, clock }) {
-  const service = await Service.findOne({ slug: input.serviceSlug, isActive: true }).lean();
-  if (!service)
+export async function createApplication({
+  input,
+  actor,
+  clock,
+}: {
+  input: ApplicationInput;
+  actor: Actor | null;
+  clock: Ctx;
+}): Promise<ApplicationData> {
+  const service = await Service.findOne({ slug: input.serviceSlug, isActive: true }).lean<ServiceData>();
+  if (!service) {
     throw new WorkflowError("unknown_service", "Layanan tidak ditemukan atau sedang tidak dibuka.");
+  }
 
   const allowed = new Set(service.requirements);
   const applicant = {
@@ -32,17 +53,18 @@ export async function createApplication({ input, actor, clock }) {
 
   // Resi acak; kalau (sangat jarang) bentrok dengan unique index, coba lagi.
   for (let attempt = 0; attempt < 5; attempt += 1) {
+    const resi = generateResi();
     const draft = buildApplication({
       service,
       applicant,
       channel: input.channel,
-      resi: generateResi(),
+      resi,
       now: clock.now,
       holidays: clock.holidays,
       requirementsChecked: input.requirementsChecked.filter((r) => allowed.has(r)),
     });
     try {
-      const app = await Application.create(draft);
+      const app = await Application.create({ ...draft, resi });
       await Event.create({
         applicationId: app._id,
         actorId: actor?.id ?? null,
@@ -54,7 +76,8 @@ export async function createApplication({ input, actor, clock }) {
       });
       return app.toObject();
     } catch (error) {
-      if (error?.code !== DUPLICATE_KEY || !error?.keyPattern?.resi) throw error;
+      const mongoError = error as { code?: number; keyPattern?: Record<string, unknown> };
+      if (mongoError?.code !== DUPLICATE_KEY || !mongoError.keyPattern?.resi) throw error;
     }
   }
   throw new Error("Gagal membuat nomor resi unik setelah 5 percobaan.");
@@ -65,19 +88,38 @@ export async function createApplication({ input, actor, clock }) {
  * keterlambatan yang belum sempat tercatat tidak hilang saat tahap diselesaikan.
  * optimisticConcurrency pada save() menolak jika dua petugas menindak bersamaan.
  */
-async function mutate(resi, clock, mutator) {
-  const snapshot = await Application.findOne({ resi }).select("status currentStep steps escalations").lean();
+async function mutate(
+  resi: string,
+  clock: Ctx,
+  mutator: (
+    app: ApplicationData,
+  ) => AuditEntry & Partial<Pick<EventData, "actorId" | "actorName" | "actorRole">>,
+): Promise<ApplicationData> {
+  const snapshot = await Application.findOne({ resi })
+    .select("status currentStep steps escalations")
+    .lean<Pick<ApplicationData, "_id" | "status" | "currentStep" | "steps" | "escalations">>();
   if (!snapshot) throw new WorkflowError("not_found", "Permohonan tidak ditemukan.");
   await syncEscalations(snapshot, clock.now, clock.holidays);
 
   const app = await Application.findOne({ resi });
+  if (!app) throw new WorkflowError("not_found", "Permohonan tidak ditemukan.");
   const event = mutator(app);
   await app.save();
   await Event.create({ applicationId: app._id, at: clock.now, ...event });
   return app.toObject();
 }
 
-export async function performAction({ resi, input, actor, clock }) {
+export async function performAction({
+  resi,
+  input,
+  actor,
+  clock,
+}: {
+  resi: string;
+  input: ActionInput;
+  actor: Actor;
+  clock: Ctx;
+}) {
   return mutate(resi, clock, (app) => {
     if (!canActOn(app, actor.role)) {
       throw new WorkflowError("forbidden", "Tahap ini bukan tugas peran Anda.");
@@ -93,8 +135,16 @@ export async function performAction({ resi, input, actor, clock }) {
 }
 
 /** Aksi warga dari halaman lacak (sudah lolos verifikasi HP). */
-export async function performCitizenAction({ resi, input, clock }) {
-  const citizen = { id: null, name: "Warga", role: "warga" };
+export async function performCitizenAction({
+  resi,
+  input,
+  clock,
+}: {
+  resi: string;
+  input: { action: "resubmit" } | { action: "rate"; score: number; comment?: string };
+  clock: Ctx;
+}) {
+  const citizen: Actor = { id: null, name: "Warga", role: "warga" };
   return mutate(resi, clock, (app) => {
     const result =
       input.action === "rate"
@@ -109,9 +159,12 @@ const LOCK_MS = 15 * 60 * 1000;
 
 /**
  * Cek 4 digit terakhir HP dengan pembatas tebakan: 5 kali salah → dikunci 15 menit.
- * Mengembalikan "ok" | "wrong" | "locked".
  */
-export async function verifyApplicant(app, last4, now) {
+export async function verifyApplicant(
+  app: ApplicationData,
+  last4: string,
+  now: Date,
+): Promise<"ok" | "wrong" | "locked"> {
   if (app.verifyLock?.until && new Date(app.verifyLock.until) > now) return "locked";
 
   if (app.applicant.phone.slice(-4) === last4) {
@@ -133,6 +186,6 @@ export async function verifyApplicant(app, last4, now) {
   return fails >= MAX_FAILS ? "locked" : "wrong";
 }
 
-export async function eventsFor(applicationId) {
-  return Event.find({ applicationId }).sort({ at: 1, _id: 1 }).lean();
+export async function eventsFor(applicationId: Types.ObjectId | undefined): Promise<EventData[]> {
+  return Event.find({ applicationId }).sort({ at: 1, _id: 1 }).lean<EventData[]>();
 }

@@ -2,13 +2,13 @@
 // MongoDB in-memory + data seed segar + build di .next-e2e: tidak menyentuh Atlas
 // (.env.local) maupun .next milik server dev.
 
-import { spawn } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { E2E_PASSWORD, E2E_PORT } from "../e2e/helpers.js";
-import { dbConnect } from "../src/lib/db.js";
-import { seed } from "./seed.mjs";
+import { E2E_PASSWORD, E2E_PORT } from "../e2e/helpers.ts";
+import { dbConnect } from "../src/lib/db.ts";
+import { seed } from "./seed.ts";
 
 const mongo = await MongoMemoryServer.create();
 const env = {
@@ -24,10 +24,10 @@ await dbConnect();
 await seed({ password: E2E_PASSWORD, log: () => {} });
 await mongoose.disconnect();
 
-const next = (args) =>
+const next = (args: string[]) =>
   spawn(process.execPath, ["node_modules/next/dist/bin/next", ...args], { env, stdio: "inherit" });
 
-let child;
+let child: ChildProcess | undefined;
 async function shutdown(code = 0) {
   child?.kill("SIGTERM");
   await mongo.stop();

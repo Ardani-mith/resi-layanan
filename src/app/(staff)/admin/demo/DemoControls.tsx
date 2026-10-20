@@ -2,19 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Alert from "@/components/ui/Alert";
-import { buttonClass } from "@/components/ui/Button";
+import { Alert, buttonClass } from "@/components/ui";
 import { postJson } from "@/lib/http";
 
-export default function DemoControls({ hasOffset }) {
-  const router = useRouter();
-  const [pending, setPending] = useState(null);
-  const [message, setMessage] = useState(null);
+type Result = { offsetDays: number; escalated: number; cancelled: number };
 
-  async function send(key, body) {
+export default function DemoControls({ hasOffset }: { hasOffset: boolean }) {
+  const router = useRouter();
+  const [pending, setPending] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ tone: "error" | "success"; text: string } | null>(null);
+
+  async function send(key: string, body: { days?: number; reset?: boolean }) {
     setPending(key);
     setMessage(null);
-    const res = await postJson("/api/admin/demo/advance", body);
+    const res = await postJson<Result>("/api/admin/demo/advance", body);
     setPending(null);
     if (!res.ok) {
       setMessage({ tone: "error", text: res.error.message });

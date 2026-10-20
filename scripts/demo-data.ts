@@ -1,14 +1,34 @@
 // Data demo Disdukcapil Kota Harapan Jaya (instansi fiktif).
-// Permohonan dibuat dengan MENJALANKAN alur kerja sungguhan (workflow.js) pada waktu
+// Permohonan dibuat dengan MENJALANKAN alur kerja sungguhan (workflow.ts) pada waktu
 // mundur, jadi timeline, keterlambatan, eskalasi, dan audit log-nya konsisten.
 
-import { ESCALATION_LEVELS, escalationThreshold, pendingEscalations } from "../src/lib/escalation.js";
-import { DAY_MS, isWorkday } from "../src/lib/sla.js";
-import { applyAction, applyRating, buildApplication } from "../src/lib/workflow.js";
+import type { Types } from "mongoose";
+import { ESCALATION_LEVELS, escalationThreshold, pendingEscalations } from "../src/lib/escalation.ts";
+import type { Role } from "../src/lib/roles.ts";
+import { DAY_MS, type Holidays, isWorkday } from "../src/lib/sla.ts";
+import {
+  type Action,
+  type Applicant,
+  type ApplicationData,
+  applyAction,
+  applyRating,
+  buildApplication,
+  type Channel,
+  type ServiceData,
+  type Step,
+} from "../src/lib/workflow.ts";
+import type { EventData, UserData } from "../src/models.ts";
+
+type ServiceSeed = Omit<ServiceData, "_id" | "isActive">;
+type DemoUser = Pick<UserData, "_id" | "name" | "role">;
+type DemoApp = Omit<ApplicationData, "resi"> & { resi: string | null };
+type DemoEvent = Omit<EventData, "applicationId">;
+type Rng = () => number;
+type Notes = { publicNote?: string; internalNote?: string };
 
 export const HOLIDAYS = ["2026-12-25", "2027-01-01"];
 
-export const SERVICES = [
+export const SERVICES: ServiceSeed[] = [
   {
     name: "Perekaman KTP-el",
     slug: "perekaman-ktp-el",
@@ -71,7 +91,7 @@ export const SERVICES = [
   },
 ];
 
-export const USERS = [
+export const USERS: { name: string; email: string; role: Role; unit: string }[] = [
   { name: "Admin Sistem", email: "admin@resi.demo", role: "admin", unit: "Bidang PIAK" },
   { name: "Rina Kusumawati", email: "loket@resi.demo", role: "petugas_loket", unit: "Loket Pelayanan" },
   { name: "Yusuf Hidayat", email: "loket2@resi.demo", role: "petugas_loket", unit: "Loket Pelayanan" },
@@ -121,7 +141,7 @@ const COMMENTS = [
 ];
 
 /** PRNG deterministik (mulberry32) supaya data demo sama setiap kali di-seed. */
-function createRng(seed) {
+function createRng(seed: number): Rng {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -136,7 +156,7 @@ const HOUR_MS = 3600_000;
 const WIB_OFFSET_MS = 7 * HOUR_MS;
 
 /** Jam kerja WIB 08.00–15.00 pada hari kerja, sekitar n hari kalender sebelum `now`. */
-function officeTime(now, daysAgo, rng, holidays) {
+function officeTime(now: Date, daysAgo: number, rng: Rng, holidays: Holidays): Date {
   let t = new Date(now.getTime() - daysAgo * DAY_MS);
   while (!isWorkday(t, holidays)) t = new Date(t.getTime() - DAY_MS);
   const wib = new Date(t.getTime() + WIB_OFFSET_MS);
@@ -145,11 +165,11 @@ function officeTime(now, daysAgo, rng, holidays) {
   return result < now ? result : new Date(now.getTime() - 30 * 60_000);
 }
 
-const isOfficeTime = (t, holidays) => {
+const isOfficeTime = (t: Date, holidays: Holidays) => {
   const hour = new Date(t.getTime() + WIB_OFFSET_MS).getUTCHours();
   return isWorkday(t, holidays) && hour >= 8 && hour < 16;
 };
-const wibMidnight = (t) => {
+const wibMidnight = (t: Date) => {
   const wib = new Date(t.getTime() + WIB_OFFSET_MS);
   return Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate()) - WIB_OFFSET_MS;
 };
@@ -160,7 +180,7 @@ const wibMidnight = (t) => {
  * waktu; maju ke pagi berikutnya hanya jika mundur melewati `notBefore`. Tidak pernah
  * melewati `notAfter` (waktu "sekarang" seed).
  */
-function toOfficeHours(t, rng, holidays, notBefore, notAfter) {
+function toOfficeHours(t: Date, rng: Rng, holidays: Holidays, notBefore: Date, notAfter: Date): Date {
   if (isOfficeTime(t, holidays)) return t;
 
   let back = wibMidnight(t);
@@ -176,13 +196,13 @@ function toOfficeHours(t, rng, holidays, notBefore, notAfter) {
   return notAfter && forward > notAfter ? t : forward;
 }
 
-function randomPhone(rng, last4) {
+function randomPhone(rng: Rng, last4?: string): string {
   let digits = "08" + String(1 + Math.floor(rng() * 9));
   while (digits.length < 8) digits += Math.floor(rng() * 10);
   return digits + (last4 ?? String(Math.floor(rng() * 10_000)).padStart(4, "0"));
 }
 
-function randomNik(rng) {
+function randomNik(rng: Rng): string {
   let nik = "3299";
   while (nik.length < 16) nik += Math.floor(rng() * 10);
   return nik;
@@ -193,7 +213,34 @@ function randomNik(rng) {
  * events[] dikumpulkan dan nanti ditulis dengan applicationId.
  */
 class Sim {
-  constructor({ service, applicant, channel, resi, createdAt, holidays, actors, creator, limit }) {
+  holidays: Holidays;
+  limit: Date;
+  actors: (role: Role) => DemoUser;
+  events: DemoEvent[];
+  app: DemoApp;
+  time: Date;
+
+  constructor({
+    service,
+    applicant,
+    channel,
+    resi,
+    createdAt,
+    holidays,
+    actors,
+    creator,
+    limit,
+  }: {
+    service: ServiceSeed & { _id: Types.ObjectId };
+    applicant: Applicant;
+    channel: Channel;
+    resi: string | null;
+    createdAt: Date;
+    holidays: Holidays;
+    actors: (role: Role) => DemoUser;
+    creator: DemoUser | null;
+    limit: Date;
+  }) {
     this.holidays = holidays;
     this.limit = limit;
     this.actors = actors;
@@ -219,18 +266,19 @@ class Sim {
     });
   }
 
-  get step() {
+  get step(): Step {
     return this.app.steps[this.app.currentStep];
   }
 
   /** Catat eskalasi yang "terdeteksi" sampai waktu t, dengan createdAt = saat ambang terlewati. */
-  escalateUntil(t) {
+  escalateUntil(t: Date) {
     for (const esc of pendingEscalations(this.app, t, this.holidays)) {
-      const { afterWorkdays } = ESCALATION_LEVELS.find((l) => l.level === esc.level);
-      const threshold = escalationThreshold(this.step.dueAt, afterWorkdays, this.holidays);
+      const { afterWorkdays } = ESCALATION_LEVELS.find((l) => l.level === esc.level)!;
+      const threshold = escalationThreshold(this.step.dueAt!, afterWorkdays, this.holidays);
       const at = new Date(Math.min(threshold.getTime() + 5 * 60_000, t.getTime()));
       this.app.escalations.push({ ...esc, createdAt: at });
       this.events.push({
+        actorId: null,
         actorName: "Sistem",
         actorRole: "sistem",
         action: "escalated",
@@ -240,12 +288,12 @@ class Sim {
     }
   }
 
-  act(action, at, notes = {}) {
+  act(action: Action, at: Date, notes: Notes = {}) {
     this.escalateUntil(at);
     const actor = this.actors(this.step.role);
     const { payload } = applyAction(this.app, {
       action,
-      actor: { id: actor._id, name: actor.name, role: actor.role },
+      actor: { id: String(actor._id), name: actor.name, role: actor.role },
       now: at,
       holidays: this.holidays,
       ...notes,
@@ -262,31 +310,38 @@ class Sim {
     this.app.updatedAt = at;
   }
 
-  citizenResume(at) {
+  citizenResume(at: Date) {
     const { payload } = applyAction(this.app, {
       action: "resume",
       actor: { id: null, name: "Warga", role: "warga" },
       now: at,
       holidays: this.holidays,
     });
-    this.events.push({ actorName: "Warga", actorRole: "warga", action: "resume", payload, at });
+    this.events.push({
+      actorId: null,
+      actorName: "Warga",
+      actorRole: "warga",
+      action: "resume",
+      payload,
+      at,
+    });
     this.time = at;
     this.app.updatedAt = at;
   }
 
-  rate(score, comment, at) {
-    const { payload } = applyRating(this.app, { score, comment, now: at });
-    this.events.push({ actorName: "Warga", actorRole: "warga", action: "rated", payload, at });
+  rate(score: number, comment: string | null, at: Date) {
+    const { payload } = applyRating(this.app, { score, comment: comment ?? undefined, now: at });
+    this.events.push({ actorId: null, actorName: "Warga", actorRole: "warga", action: "rated", payload, at });
     this.app.updatedAt = at;
   }
 
   /** Waktu selesai tahap berjalan: factor × durasi SLA (tanpa SLA → 1–4 hari), di jam kerja. */
-  finishTime(factor, rng) {
+  finishTime(factor: number, rng: Rng): Date {
     const step = this.step;
-    let raw;
-    if (step.dueAt) {
-      const span = new Date(step.dueAt).getTime() - new Date(step.startedAt).getTime();
-      raw = new Date(new Date(step.startedAt).getTime() + (step.pausedMs || 0) + factor * span);
+    let raw: Date;
+    if (step.dueAt && step.startedAt) {
+      const span = step.dueAt.getTime() - step.startedAt.getTime();
+      raw = new Date(step.startedAt.getTime() + (step.pausedMs || 0) + factor * span);
     } else {
       raw = new Date(this.time.getTime() + (1 + rng() * 3) * DAY_MS);
     }
@@ -294,7 +349,7 @@ class Sim {
   }
 
   /** `hours` jam setelah aksi terakhir, digeser ke jam kerja. */
-  later(hours, rng) {
+  later(hours: number, rng: Rng): Date {
     return toOfficeHours(
       new Date(this.time.getTime() + hours * HOUR_MS),
       rng,
@@ -313,17 +368,33 @@ export function buildDemoApplications({
   holidays = new Set(HOLIDAYS),
   count = 60,
   seed = 2026,
-}) {
+}: {
+  services: (ServiceSeed & { _id: Types.ObjectId })[];
+  users: DemoUser[];
+  now: Date;
+  holidays?: Holidays;
+  count?: number;
+  seed?: number;
+}): { app: DemoApp; events: DemoEvent[] }[] {
   const rng = createRng(seed);
-  const pick = (list) => list[Math.floor(rng() * list.length)];
-  const byRole = (role) => users.filter((u) => u.role === role);
-  const actors = (role) => pick(byRole(role));
+  const pick = <T>(list: readonly T[]): T => list[Math.floor(rng() * list.length)];
+  const byRole = (role: Role) => users.filter((u) => u.role === role);
+  const actors = (role: Role) => pick(byRole(role));
   const loket = byRole("petugas_loket");
   const bySlug = Object.fromEntries(services.map((s) => [s.slug, s]));
-  const sims = [];
+  const sims: Sim[] = [];
+
+  type Spec = {
+    resi?: string | null;
+    slug: string;
+    name: string;
+    last4?: string;
+    createdAt?: Date | number;
+    channel?: Channel;
+  };
 
   // --- Resi demo tetap: mudah diketik saat presentasi --------------------------
-  const makeSim = ({ resi = null, slug, name, last4, createdAt, channel = "online" }) =>
+  const makeSim = ({ resi = null, slug, name, last4, createdAt = 0, channel = "online" }: Spec) =>
     new Sim({
       service: bySlug[slug],
       applicant: { name, phone: randomPhone(rng, last4), email: null, nik: randomNik(rng) },
@@ -335,7 +406,7 @@ export function buildDemoApplications({
       creator: channel === "loket" ? loket[0] : null,
       limit: now,
     });
-  const fixed = (spec) => {
+  const fixed = (spec: Spec & { createdAt: number }) => {
     const sim = makeSim(spec);
     sims.push(sim);
     return sim;
@@ -346,7 +417,7 @@ export function buildDemoApplications({
    * tepat sampai `level`, kapan pun seed dijalankan: tanggal pengajuan dicari mundur
    * hari demi hari sampai kondisinya terpenuhi.
    */
-  const lateCase = (spec, stepIndex, level, notes = {}) => {
+  const lateCase = (spec: Spec, stepIndex: number, level: number, notes: Notes = {}) => {
     for (let d = 1; d <= 40; d += 1) {
       const sim = makeSim({ ...spec, createdAt: officeTime(now, d, rng, holidays) });
       for (let i = 0; i < stepIndex; i += 1) {
@@ -416,7 +487,7 @@ export function buildDemoApplications({
   for (let i = sims.length; i < count; i += 1) {
     const service = pick(services);
     const fresh = i >= count - FRESH;
-    const channel = !fresh && rng() < 0.4 ? "loket" : "online";
+    const channel: Channel = !fresh && rng() < 0.4 ? "loket" : "online";
     // 8 minggu ke belakang (untuk tren rapor), sedikit condong ke yang baru.
     const daysAgo = fresh ? 0 : 0.2 + rng() ** 1.25 * 56;
     const createdAt = fresh
@@ -482,7 +553,7 @@ export function buildDemoApplications({
 
     if (sim.app.status === "selesai" && rng() < 0.7) {
       const score = rng() < 0.6 ? 5 : rng() < 0.7 ? 4 : 3;
-      const ratedAt = Math.min(now.getTime(), sim.app.completedAt.getTime() + rng() * DAY_MS);
+      const ratedAt = Math.min(now.getTime(), sim.app.completedAt!.getTime() + rng() * DAY_MS);
       sim.rate(score, pick(COMMENTS), new Date(ratedAt));
     }
   }

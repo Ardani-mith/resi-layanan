@@ -1,9 +1,9 @@
-import { fail, ok, requireUser, route } from "@/lib/api";
+import { fail, ok, type ParamsOf, requireUser, route } from "@/lib/api";
 import { getStaffApplication } from "@/lib/dal";
 import { STAFF_ROLES } from "@/lib/roles";
 
 // Detail lengkap untuk petugas: catatan internal, eskalasi, audit log.
-export const GET = route(async (request, { params }) => {
+export const GET = route(async (request, { params }: ParamsOf<{ resi: string }>) => {
   const { user, error } = await requireUser(STAFF_ROLES);
   if (error) return error;
 

@@ -1,14 +1,20 @@
-import { expect, test as base } from "@playwright/test";
+import {
+  type BrowserContext,
+  type BrowserContextOptions,
+  expect,
+  type Page,
+  test as base,
+} from "@playwright/test";
 
 /**
  * `openPage(options)`: halaman di konteks browser baru (cookie/login terpisah, cocok
  * untuk memerankan warga, petugas, pimpinan bersamaan). Setiap error JavaScript atau
  * respons 5xx di halaman mana pun membuat tes gagal di akhir.
  */
-export const test = base.extend({
+export const test = base.extend<{ openPage: (options?: BrowserContextOptions) => Promise<Page> }>({
   openPage: async ({ browser, baseURL }, use) => {
-    const errors = [];
-    const contexts = [];
+    const errors: string[] = [];
+    const contexts: BrowserContext[] = [];
     await use(async (options = {}) => {
       const context = await browser.newContext({ baseURL, ...options });
       contexts.push(context);

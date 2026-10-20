@@ -1,11 +1,11 @@
-import { expect, test } from "./fixtures.js";
-import { gotoReady, hasHorizontalScroll, login, MOBILE } from "./helpers.js";
+import { expect, test } from "./fixtures.ts";
+import { gotoReady, hasHorizontalScroll, login, MOBILE } from "./helpers.ts";
 
 // Skrip demo lomba, berurutan: warga mengajukan → loket verifikasi → jam +2 hari →
 // warga melihat tahap merah → pimpinan melihat eskalasi → rapor → jam dikembalikan.
 test.describe.configure({ mode: "serial" });
 
-let resi;
+let resi: string;
 
 test("warga mengajukan akta kelahiran dari HP", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE });
@@ -17,7 +17,7 @@ test("warga mengajukan akta kelahiran dari HP", async ({ openPage }) => {
   await page.getByLabel(/Saya menyatakan/).check();
   await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
   await page.waitForURL("**/ajukan/sukses?resi=*");
-  resi = new URL(page.url()).searchParams.get("resi");
+  resi = new URL(page.url()).searchParams.get("resi") ?? "";
 });
 
 test("halaman petugas terlindungi per peran", async ({ openPage }) => {

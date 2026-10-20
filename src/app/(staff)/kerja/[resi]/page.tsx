@@ -1,11 +1,11 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
-import DemoClockBanner from "@/components/layout/DemoClockBanner";
-import Skeleton from "@/components/ui/Skeleton";
+import { DemoClockBanner, Skeleton } from "@/components/ui";
+import type { ParamsOf } from "@/lib/api";
 import { getStaffApplication, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
 import { ROLE_LABELS, STAFF_ROLES } from "@/lib/roles";
@@ -14,7 +14,7 @@ import ActionPanel from "./ActionPanel";
 
 export const metadata = { title: "Detail permohonan" };
 
-function Card({ title, children }) {
+function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-card border border-line bg-surface p-5">
       <h2 className="mb-3 text-lg font-bold">{title}</h2>
@@ -23,7 +23,7 @@ function Card({ title, children }) {
   );
 }
 
-function Detail({ label, children }) {
+function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <dt className="text-sm text-muted">{label}</dt>
@@ -32,7 +32,7 @@ function Detail({ label, children }) {
   );
 }
 
-async function StaffDetail({ params }) {
+async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
   const { resi } = await params;
   const user = await requireStaffPage(STAFF_ROLES, `/kerja/${resi}`);
   const app = await getStaffApplication(resi, user);
@@ -135,11 +135,11 @@ async function StaffDetail({ params }) {
                   <span className="block text-muted">
                     {e.actorName ?? "—"}
                     {e.actorRole && e.actorRole !== "sistem" && e.actorRole !== "warga"
-                      ? ` (${ROLE_LABELS[e.actorRole] ?? e.actorRole})`
+                      ? ` (${ROLE_LABELS[e.actorRole]})`
                       : ""}{" "}
                     · {formatDateTime(e.at)}
                   </span>
-                  {e.payload?.publicNote && (
+                  {typeof e.payload?.publicNote === "string" && (
                     <span className="mt-0.5 block text-muted italic">
                       &ldquo;{e.payload.publicNote}&rdquo;
                     </span>
@@ -155,7 +155,7 @@ async function StaffDetail({ params }) {
   );
 }
 
-export default function StaffDetailPage({ params }) {
+export default function StaffDetailPage({ params }: ParamsOf<{ resi: string }>) {
   return (
     <div className="mx-auto max-w-6xl space-y-5 px-4 py-8">
       <Suspense fallback={<Skeleton />}>

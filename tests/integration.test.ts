@@ -7,21 +7,28 @@ import { createApplication, performAction, performCitizenAction, verifyApplicant
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
 import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
+import type { Role } from "@/lib/roles";
 import { DAY_MS } from "@/lib/sla";
 import { computeStats, openEscalations } from "@/lib/stats";
-import Application from "@/models/Application";
-import Event from "@/models/Event";
-import Service from "@/models/Service";
-import { seed } from "../scripts/seed.mjs";
+import type { Actor, ApplicationData } from "@/lib/workflow";
+import { Application, Event, Service } from "@/models";
+import { seed } from "../scripts/seed.ts";
 
 const NOW = new Date("2026-10-19T03:00:00Z"); // Senin 10.00 WIB
 const clockAt = (offsetDays = 0) => ({
   now: new Date(NOW.getTime() + offsetDays * DAY_MS),
-  holidays: new Set(),
+  holidays: new Set<string>(),
 });
 
-let mongod;
-let users;
+let mongod: MongoMemoryServer;
+let users: Awaited<ReturnType<typeof seed>>["users"];
+
+/** Permohonan lean berdasarkan resi (wajib ada). */
+async function stored(resi: string): Promise<ApplicationData> {
+  const app = await Application.findOne({ resi }).lean<ApplicationData>();
+  if (!app) throw new Error(`Permohonan ${resi} tidak ada`);
+  return app;
+}
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
@@ -35,8 +42,8 @@ afterAll(async () => {
   await mongod?.stop();
 });
 
-const actor = (role) => {
-  const u = users.find((x) => x.role === role);
+const actor = (role: Role): Actor => {
+  const u = users.find((x) => x.role === role)!;
   return { id: String(u._id), name: u.name, role: u.role };
 };
 
@@ -63,7 +70,7 @@ describe("seed", () => {
       expect(statuses).toContain(s);
 
     const oldest = Math.min(...apps.map((a) => new Date(a.createdAt).getTime()));
-    expect(NOW - oldest).toBeGreaterThan(20 * DAY_MS);
+    expect(NOW.getTime() - oldest).toBeGreaterThan(20 * DAY_MS);
     expect(apps.every((a) => new Date(a.createdAt) <= NOW)).toBe(true);
 
     expect(apps.some((a) => a.rating?.score)).toBe(true);
@@ -72,10 +79,10 @@ describe("seed", () => {
 
   it("resi demo ada dengan kondisi yang dijanjikan", async () => {
     const byResi = Object.fromEntries(
-      (await Application.find({ resi: /^RL-HJ26-/ }).lean()).map((a) => [a.resi, a]),
+      (await Application.find({ resi: /^RL-HJ26-/ }).lean<ApplicationData[]>()).map((a) => [a.resi, a]),
     );
     expect(byResi["RL-HJ26-AKTA"].status).toBe("diproses");
-    expect(NOW - byResi["RL-HJ26-AKTA"].currentDueAt).toBeGreaterThan(0);
+    expect(NOW.getTime() - Number(byResi["RL-HJ26-AKTA"].currentDueAt)).toBeGreaterThan(0);
     expect(byResi["RL-HJ26-AKTA"].escalations.map((e) => e.level)).toEqual([1]);
     expect(byResi["RL-HJ26-AKTA"].applicant.phone.endsWith("1234")).toBe(true);
 
@@ -87,10 +94,12 @@ describe("seed", () => {
   });
 
   it("NIK tersimpan tapi tidak ikut terbaca secara default", async () => {
-    const app = await Application.findOne({ resi: "RL-HJ26-AKTA" }).lean();
+    const app = await stored("RL-HJ26-AKTA");
     expect(app.applicant.nik).toBeUndefined();
-    const withNik = await Application.findOne({ resi: "RL-HJ26-AKTA" }).select("+applicant.nik").lean();
-    expect(withNik.applicant.nik).toMatch(/^\d{16}$/);
+    const withNik = await Application.findOne({ resi: "RL-HJ26-AKTA" })
+      .select("+applicant.nik")
+      .lean<ApplicationData>();
+    expect(withNik?.applicant.nik).toMatch(/^\d{16}$/);
   });
 
   it("setiap permohonan punya event 'created' di audit log", async () => {
@@ -112,7 +121,13 @@ describe("pengajuan", () => {
   it("menolak layanan yang tidak ada", async () => {
     await expect(
       createApplication({
-        input: { serviceSlug: "tidak-ada", channel: "online", applicant: {}, requirementsChecked: [] },
+        input: {
+          serviceSlug: "tidak-ada",
+          channel: "online",
+          applicant: { name: "X Y Z", phone: "081200000000", nik: "3299000000000009" },
+          requirementsChecked: [],
+        },
+        actor: null,
         clock: clockAt(),
       }),
     ).rejects.toThrow(/Layanan tidak ditemukan/);
@@ -124,8 +139,8 @@ describe("pengajuan", () => {
       { slug: "akta-kelahiran" },
       { $set: { "steps.1.slaDays": 10, "steps.1.name": "Diganti" } },
     );
-    const stored = await Application.findOne({ resi: app.resi }).lean();
-    expect(stored.steps[1]).toMatchObject({ name: "Entri & validasi data", slaDays: 2 });
+    const saved = await stored(app.resi);
+    expect(saved.steps[1]).toMatchObject({ name: "Entri & validasi data", slaDays: 2 });
     await Service.updateOne(
       { slug: "akta-kelahiran" },
       { $set: { "steps.1.slaDays": 2, "steps.1.name": "Entri & validasi data" } },
@@ -138,15 +153,13 @@ describe("eskalasi saat dibaca", () => {
     const app = await newApplication();
     const later = clockAt(2).now; // tahap verifikasi (1 hari kerja) sudah lewat
 
-    const copies = await Promise.all(
-      Array.from({ length: 5 }, () => Application.findOne({ resi: app.resi }).lean()),
-    );
-    await Promise.all(copies.map((copy) => syncEscalations(copy, later, new Set())));
-    await syncOverdue(later, new Set());
+    const copies = await Promise.all(Array.from({ length: 5 }, () => stored(app.resi)));
+    await Promise.all(copies.map((copy) => syncEscalations(copy, later, new Set<string>())));
+    await syncOverdue(later, new Set<string>());
 
-    const stored = await Application.findOne({ resi: app.resi }).lean();
-    expect(stored.escalations.map((e) => e.level)).toEqual([1]);
-    expect(await Event.countDocuments({ applicationId: stored._id, action: "escalated" })).toBe(1);
+    const saved = await stored(app.resi);
+    expect(saved.escalations.map((e) => e.level)).toEqual([1]);
+    expect(await Event.countDocuments({ applicationId: saved._id, action: "escalated" })).toBe(1);
     expect(copies.every((c) => c.escalations.length === 1)).toBe(true);
   });
 
@@ -185,9 +198,9 @@ describe("aksi petugas", () => {
       ),
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    const stored = await Application.findOne({ resi: app.resi }).lean();
-    expect(stored.currentStep).toBe(1);
-    expect(await Event.countDocuments({ applicationId: stored._id, action: "complete" })).toBe(1);
+    const saved = await stored(app.resi);
+    expect(saved.currentStep).toBe(1);
+    expect(await Event.countDocuments({ applicationId: saved._id, action: "complete" })).toBe(1);
   });
 
   it("warga mengirim perbaikan → status kembali berjalan, lalu rating setelah selesai", async () => {
@@ -207,7 +220,13 @@ describe("aksi petugas", () => {
     expect(resumed.status).toBe("diajukan");
     expect(resumed.steps[0].pausedMs).toBe(DAY_MS);
 
-    for (const role of ["petugas_loket", "petugas_teknis", "pimpinan", "petugas_teknis", "petugas_loket"]) {
+    for (const role of [
+      "petugas_loket",
+      "petugas_teknis",
+      "pimpinan",
+      "petugas_teknis",
+      "petugas_loket",
+    ] as const) {
       await performAction({
         resi: app.resi,
         input: { action: "complete" },
@@ -221,7 +240,7 @@ describe("aksi petugas", () => {
       clock: clockAt(1),
     });
     expect(rated.status).toBe("selesai");
-    expect(rated.rating.score).toBe(5);
+    expect(rated.rating?.score).toBe(5);
   });
 });
 
@@ -233,20 +252,20 @@ describe("mode demo", () => {
 
     // Jam sistem +3 hari → eskalasi tercatat dengan tanggal "masa depan".
     const future = new Date(Date.now() + 3 * DAY_MS);
-    const lean = await Application.findOne({ resi: app.resi }).lean();
-    await syncEscalations(lean, future, new Set());
-    expect((await Application.findOne({ resi: app.resi }).lean()).escalations.length).toBeGreaterThan(0);
+    const lean = await stored(app.resi);
+    await syncEscalations(lean, future, new Set<string>());
+    expect((await stored(app.resi)).escalations.length).toBeGreaterThan(0);
 
     expect(await resetClock()).toBeGreaterThanOrEqual(1);
     expect((await getSystem()).clockOffsetMs).toBe(0);
-    expect((await Application.findOne({ resi: app.resi }).lean()).escalations).toEqual([]);
+    expect((await stored(app.resi)).escalations).toEqual([]);
     expect(await Event.countDocuments({ applicationId: lean._id, action: "escalated" })).toBeGreaterThan(0);
   });
 });
 
 describe("audit log append-only", () => {
   it("events tidak bisa diubah atau dihapus lewat model", async () => {
-    const event = await Event.findOne();
+    const event = (await Event.findOne())!;
     await expect(Event.updateOne({ _id: event._id }, { action: "x" })).rejects.toThrow(/append-only/);
     await expect(Event.deleteMany({})).rejects.toThrow(/append-only/);
     await expect(Event.findOneAndDelete({ _id: event._id })).rejects.toThrow(/append-only/);
@@ -259,7 +278,7 @@ describe("audit log append-only", () => {
 describe("verifikasi 4 digit HP", () => {
   it("benar → ok; 5 kali salah → terkunci, bahkan untuk jawaban benar", async () => {
     const app = await newApplication();
-    const load = () => Application.findOne({ resi: app.resi }).lean();
+    const load = () => stored(app.resi);
     expect(await verifyApplicant(await load(), "9999", NOW)).toBe("ok");
 
     for (let i = 0; i < 4; i += 1) expect(await verifyApplicant(await load(), "0000", NOW)).toBe("wrong");
