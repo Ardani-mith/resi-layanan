@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
 import type { ParamsOf } from "@/lib/api";
 import { getClockInfo, getTracking } from "@/lib/dal";
+import { receiptFor } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 import TrackView from "./TrackView";
 
@@ -46,7 +47,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
   }
   if (resi !== raw) redirect(`/lacak/${resi}`);
 
-  const [data, clock] = await Promise.all([getTracking(resi), getClockInfo()]);
+  const [data, clock, receipt] = await Promise.all([getTracking(resi), getClockInfo(), receiptFor(resi)]);
   if (!data) {
     return (
       <Problem
@@ -56,7 +57,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
     );
   }
 
-  return <TrackView data={data} serverNow={clock.now} offsetMs={clock.offsetMs} />;
+  return <TrackView data={data} serverNow={clock.now} offsetMs={clock.offsetMs} receipt={receipt} />;
 }
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {

@@ -89,6 +89,13 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
   const resi = new URL(page.url()).searchParams.get("resi");
   expect(resi).toMatch(/^RL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
 
+  // Bukti resi: QR menuju halaman lacak + gambar PNG yang bisa diunduh.
+  const receipt = page.getByRole("region", { name: "Simpan bukti resi" });
+  await expect(receipt.getByRole("img", { name: new RegExp(`/lacak/${resi}`) })).toBeVisible();
+  const image = await page.request.get(`/lacak/${resi}/bukti`);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toBe("image/png");
+
   await page.getByRole("link", { name: "Lacak sekarang" }).click();
   await page.waitForURL(`**/lacak/${resi}`);
   await expect(page.getByText("Ar*** S***")).toBeVisible();
@@ -130,4 +137,57 @@ test("tombol tema: Sistem → Terang → Gelap, tersimpan setelah reload", async
   // Mode Sistem mengikuti perubahan tema OS tanpa reload.
   await page.emulateMedia({ colorScheme: "light" });
   await expect(html).toHaveAttribute("data-theme", "light");
+});
+
+test("katalog layanan: persyaratan, tahapan & SLA, lalu ajukan", async ({ openPage }) => {
+  const page = await openPage({ viewport: MOBILE });
+  await gotoReady(page, "/layanan");
+  await page.getByRole("link", { name: /Akta Kelahiran/ }).click();
+  await page.waitForURL("**/layanan/akta-kelahiran");
+  await expect(page.getByRole("heading", { name: "Tahapan & janji waktu" })).toBeVisible();
+  await expect(page.getByText("Verifikasi berkas")).toBeVisible();
+  expect(await hasHorizontalScroll(page)).toBe(false);
+  await page.getByRole("link", { name: "Ajukan sekarang" }).click();
+  await page.waitForURL("**/ajukan?layanan=akta-kelahiran");
+});
+
+test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ openPage }) => {
+  const page = await openPage();
+  await gotoReady(page, "/ajukan?layanan=perekaman-ktp-el");
+  const preview = page
+    .getByRole("img", { name: "Pratinjau KTP elektronik dari isian form" })
+    .filter({ visible: true });
+  await expect(preview).toBeVisible();
+  const shows = (text: string) => expect(preview.locator("text", { hasText: text })).toHaveCount(1);
+
+  await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Siti Rahmawati");
+  await page.getByLabel("NIK", { exact: true }).fill("3299019913080002");
+  await expect(page.getByText(/Digit tanggal lahir di NIK/).filter({ visible: true })).toBeVisible();
+  await page.getByLabel("NIK", { exact: true }).fill("3299015508080002");
+  await shows("SITI RAHMAWATI");
+  await shows("3299 0155 0808 0002");
+  await expect(page.getByText("15-08-2008 · Perempuan")).toBeVisible();
+
+  await page.getByLabel("Nomor HP", { exact: true }).fill("081234560002");
+  await page.getByLabel("Tempat lahir").fill("Harapan Jaya");
+  await page.getByLabel("Golongan darah").selectOption("O");
+  await page.getByLabel("Alamat").fill("Jl. Melati No. 12");
+  await page.getByLabel("RT/RW").fill("3/5");
+  await page.getByLabel("Kelurahan/Desa").fill("Sukamaju");
+  await page.getByLabel("Kecamatan").fill("Harapan Baru");
+  await page.getByLabel("Agama/Kepercayaan").selectOption("ISLAM");
+  await page.getByLabel("Status perkawinan").selectOption("BELUM KAWIN");
+  await page.getByLabel("Pekerjaan").fill("PELAJAR/MAHASISWA");
+  await shows("HARAPAN JAYA, 15-08-2008");
+  await shows("JL. MELATI NO. 12");
+
+  for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
+  await page.getByLabel(/Saya menyatakan/).check();
+  await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
+  await page.waitForURL("**/ajukan/sukses?resi=*");
+
+  // Layanan lain: tanpa isian & pratinjau KTP.
+  await gotoReady(page, "/ajukan?layanan=akta-kelahiran");
+  await expect(page.getByLabel("Tempat lahir")).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
 });

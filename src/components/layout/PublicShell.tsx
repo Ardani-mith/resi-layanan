@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type ReactNode, Suspense } from "react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import { LogoMark, Wordmark } from "@/components/Logo";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { getCurrentUser } from "@/lib/dal";
@@ -21,28 +22,35 @@ function Label({ short, full }: { short: string; full: string }) {
   );
 }
 
-function GuestLinks() {
+/** Menu warga, sama untuk semua pengunjung (bagian statis navbar). */
+function PublicLinks() {
   return (
     <>
+      <Link href="/layanan" className={linkClass}>
+        Layanan
+      </Link>
       <Link href="/rapor" className={linkClass}>
         <Label short="Rapor" full="Rapor SLA" />
       </Link>
       <Link href="/ajukan" className={linkClass}>
         Ajukan
       </Link>
-      <Link href="/masuk" className={linkClass}>
-        <Label short="Masuk" full="Masuk petugas" />
-      </Link>
     </>
   );
 }
 
+const loginLink = (
+  <Link href="/masuk" className={linkClass}>
+    <Label short="Masuk" full="Masuk petugas" />
+  </Link>
+);
+
 // Membaca cookie = data saat request; di Cache Components harus di dalam <Suspense>
 // supaya kerangka navbar tetap bisa di-prerender. Menu kerja petugas ada di sidebar
 // area petugas; di halaman warga cukup satu jalan kembali ke sana.
-async function SessionLinks() {
+async function SessionLink() {
   const user = await getCurrentUser();
-  if (!user) return <GuestLinks />;
+  if (!user) return loginLink;
   return (
     <Link
       href={user.mustChangePassword ? PASSWORD_PATH : homeFor(user.role)}
@@ -59,20 +67,17 @@ function Navbar() {
       <nav className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
         <Link
           href="/"
-          className="mr-auto flex shrink-0 items-center gap-2 font-bold tracking-tight whitespace-nowrap"
+          aria-label={`${site.name}, beranda`}
+          className="mr-auto flex shrink-0 items-center rounded-lg"
         >
-          <span
-            aria-hidden
-            className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-on-brand"
-          >
-            RL
-          </span>
-          {/* HP sempit: nama hanya untuk pembaca layar agar menu & tombol tema muat. */}
-          <span className="sr-only min-[430px]:not-sr-only">{site.name}</span>
+          {/* HP sempit: ikon saja agar menu & tombol tema muat. */}
+          <LogoMark className="min-[430px]:hidden" />
+          <Wordmark className="text-[1.6rem] max-[429px]:hidden" />
         </Link>
         <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-          <Suspense fallback={<GuestLinks />}>
-            <SessionLinks />
+          <PublicLinks />
+          <Suspense fallback={loginLink}>
+            <SessionLink />
           </Suspense>
         </div>
         <ThemeToggle className="-mr-2" />

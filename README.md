@@ -1,4 +1,4 @@
-# Resi Layanan
+# Pantas: Pantau Tahapan Sipil
 
 Lacak permohonan layanan publik seperti melacak paket. Setiap tahap punya tenggat (SLA) dalam hari kerja yang terlihat oleh warga, dan tahap yang terlambat otomatis dieskalasi ke atasan.
 
@@ -84,17 +84,18 @@ Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
 - API: pengajuan online & loket, lacak publik, antrean per peran, aksi petugas, KPI/rapor, simulasi waktu demo.
 - Login petugas & proteksi halaman per peran.
 - Seed: 3 layanan, 6 akun, 60 permohonan hasil simulasi alur kerja nyata.
-- 75 tes unit/integrasi (SLA, alur kerja, eskalasi, privasi, mode demo, database) dan 14 tes end-to-end di browser yang memerankan skrip demo.
+- 98 tes unit/integrasi (SLA, alur kerja, eskalasi, privasi, akun, admin, notifikasi, database) dan 22 tes end-to-end di browser yang memerankan skrip demo.
 - Landing page & halaman masuk petugas.
 - **Warga:** lacak `/lacak/[resi]` (timeline, hitung mundur langsung, verifikasi HP, perbaikan berkas, rating, pembaruan otomatis), pengajuan online `/ajukan` + halaman sukses.
 - **Petugas:** antrean `/kerja` (urut sisa SLA, filter, pencarian), detail & aksi `/kerja/[resi]` (selesaikan, minta perbaikan, lanjutkan, tolak, audit log), input loket `/kerja/baru`.
 - **Pimpinan:** dashboard `/pantau` (KPI, eskalasi terbuka, tren mingguan, analisis bottleneck per tahap).
-- **Publik:** rapor SLA `/rapor`.
-- **Admin:** mode demo `/admin/demo` (majukan jam sistem, kembali ke waktu nyata).
+- **Publik:** rapor SLA `/rapor`, katalog layanan `/layanan` + detail `/layanan/[slug]` (persyaratan, tahapan & SLA, kinerja nyata).
+- **Bukti resi:** QR menuju halaman lacak, unduh gambar PNG, dan cetak (di halaman sukses, lacak, dan detail petugas).
+- **Notifikasi email** ke warga saat permohonan diterima, perlu perbaikan, siap diambil, selesai, atau ditolak (Resend; tanpa API key hanya dicatat di log).
+- **Admin:** kelola petugas `/admin/petugas`, layanan & SLA `/admin/layanan`, hari libur `/admin/libur`, mode demo `/admin/demo`; semua perubahan tercatat di audit log admin.
 - Responsif (HP & desktop), mode gelap, diuji end-to-end di browser.
 
 **Berikutnya (Fix It, 8–10 Nov)**
 
-- QR code & unduh bukti resi
-- Notifikasi email perubahan status
-- Kelola layanan, SLA, dan libur dari halaman admin (akun petugas sudah bisa dikelola di `/admin/petugas`)
+- Penyempurnaan desain antarmuka (tampilan aplikasi yang lebih bersih & profesional)
+- Deploy ke Vercel dan uji di Chrome, Edge, Firefox

@@ -41,6 +41,60 @@ export function normalizePhone(input: unknown): string {
   return digits;
 }
 
+/**
+ * Tanggal lahir & jenis kelamin yang tersimpan di NIK: digit 7–12 = DDMMYY, dan tanggal
+ * ditambah 40 untuk perempuan. null jika belum 12 digit atau tanggalnya tidak masuk akal.
+ * Hanya untuk membantu warga memeriksa ketikan NIK-nya (pratinjau), bukan validasi resmi.
+ */
+export function nikInfo(
+  nik: string,
+  now: Date = new Date(),
+): { birthDate: string; gender: "LAKI-LAKI" | "PEREMPUAN" } | null {
+  if (!/^\d{12}/.test(nik)) return null;
+  let day = Number(nik.slice(6, 8));
+  const month = Number(nik.slice(8, 10));
+  const yy = Number(nik.slice(10, 12));
+  const female = day > 40;
+  if (female) day -= 40;
+  const year = (yy > now.getFullYear() % 100 ? 1900 : 2000) + yy;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (month < 1 || month > 12 || day < 1 || date.getUTCDate() !== day) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return { birthDate: `${pad(day)}-${pad(month)}-${year}`, gender: female ? "PEREMPUAN" : "LAKI-LAKI" };
+}
+
+// --- Data KTP-el (layanan perekaman KTP-el) ------------------------------------------
+
+/** Layanan yang menerbitkan KTP-el: form meminta isi kartu (alamat, agama, dst.). */
+export const needsKtpData = (slug: string) => slug.includes("ktp");
+
+export const RELIGIONS = [
+  "ISLAM",
+  "KRISTEN",
+  "KATOLIK",
+  "HINDU",
+  "BUDDHA",
+  "KHONGHUCU",
+  "KEPERCAYAAN TERHADAP TUHAN YME",
+] as const;
+export const MARITAL_STATUSES = ["BELUM KAWIN", "KAWIN", "CERAI HIDUP", "CERAI MATI"] as const;
+export const BLOOD_TYPES = ["A", "B", "AB", "O", "-"] as const;
+export const KTP_MIN_AGE = 17;
+
+/** Umur dalam tahun penuh pada `now`, dari tanggal "DD-MM-YYYY". */
+export function ageOn(birthDate: string, now: Date = new Date()): number {
+  const [day, month, year] = birthDate.split("-").map(Number);
+  const age = now.getUTCFullYear() - year;
+  const beforeBirthday =
+    now.getUTCMonth() + 1 < month || (now.getUTCMonth() + 1 === month && now.getUTCDate() < day);
+  return beforeBirthday ? age - 1 : age;
+}
+
+/** Syarat KTP-el: minimal 17 tahun, atau sudah/pernah kawin. */
+export function ktpAgeAllowed(birthDate: string, marital: string, now?: Date): boolean {
+  return marital !== "BELUM KAWIN" || ageOn(birthDate, now) >= KTP_MIN_AGE;
+}
+
 // --- Tampilan permohonan ------------------------------------------------------------
 
 export type StepViewState = StepState | "ditolak" | "dibatalkan";
@@ -122,7 +176,7 @@ export function staffView(app: ApplicationData, ctx: Ctx, events: EventData[] = 
   return {
     ...base,
     id: String(app._id),
-    applicant: { ...base.applicant, phone: app.applicant.phone },
+    applicant: { ...base.applicant, phone: app.applicant.phone, ktp: app.applicant.ktp ?? null },
     steps: base.steps.map((s, i) => ({
       ...s,
       internalNote: app.steps[i].internalNote,

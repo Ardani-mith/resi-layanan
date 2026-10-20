@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useDrawer } from "@/components/layout/StaffShell";
+import { LogoMark, Wordmark } from "@/components/Logo";
 import { site } from "@/config/site";
 import { activeHref, FOOTER_LINKS, navFor, type NavItem } from "@/config/staff-nav";
 import { cn } from "@/lib/cn";
@@ -147,15 +148,10 @@ function SidebarContent({
         <Link
           href={homeFor(user.role)}
           onClick={onClose}
-          className="flex min-w-0 items-center gap-2 rounded-lg font-bold tracking-tight"
+          aria-label={site.name}
+          className="flex min-w-0 items-center rounded-lg px-1"
         >
-          <span
-            aria-hidden
-            className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand text-sm text-on-brand"
-          >
-            RL
-          </span>
-          <span className={cn("truncate", collapsed && "sr-only")}>{site.name}</span>
+          {collapsed ? <LogoMark /> : <Wordmark className="text-[1.55rem]" />}
         </Link>
         {onToggle && (
           <button

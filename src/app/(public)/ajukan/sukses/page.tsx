@@ -1,7 +1,9 @@
 import { Check } from "lucide-react";
 import { Suspense } from "react";
+import ReceiptCard from "@/components/application/ReceiptCard";
 import { Button, Skeleton } from "@/components/ui";
 import type { SearchParamsOf } from "@/lib/api";
+import { receiptFor } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 
 export const metadata = { title: "Permohonan terkirim" };
@@ -40,6 +42,10 @@ async function Success({ searchParams }: SearchParamsOf) {
       <div className="mt-6 rounded-card border-2 border-dashed border-brand bg-brand-soft px-4 py-6">
         <p className="text-sm text-muted">Nomor resi</p>
         <p className="mt-1 font-mono text-3xl font-bold tracking-widest select-all sm:text-4xl">{resi}</p>
+      </div>
+
+      <div className="mt-4 text-left">
+        <ReceiptCard {...await receiptFor(resi)} title="Simpan bukti resi" />
       </div>
 
       <ul className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm">

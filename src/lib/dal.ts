@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 import { Application, Service } from "../models.ts";
+import { getHolidays, listAdminEvents, listAllServices } from "./admin.ts";
 import { eventsFor, loadByResi } from "./applications.ts";
 import { getClock } from "./clock.ts";
 import { dbConnect } from "./db.ts";
@@ -71,6 +72,31 @@ export async function getActiveServices() {
 }
 
 export type ActiveService = Awaited<ReturnType<typeof getActiveServices>>[number];
+
+/**
+ * Katalog layanan publik: data layanan + kinerja nyatanya (agregat, tanpa data pribadi).
+ * `slug` diisi = satu layanan saja (null jika tidak ada/nonaktif).
+ */
+export async function getServiceCatalog() {
+  const [services, stats] = await Promise.all([getActiveServices(), getStats()]);
+  const bySlug = new Map(stats.services.map((s) => [s.slug, s]));
+  return services.map((service) => {
+    const perf = bySlug.get(service.slug);
+    return {
+      ...service,
+      performance: {
+        onTimeRate: perf?.onTimeRate ?? null,
+        avgCompletionDays: perf?.avgCompletionDays ?? null,
+        ratingAvg: perf?.ratingAvg ?? null,
+        ratingCount: perf?.ratingCount ?? 0,
+        completed: perf?.completed ?? 0,
+        open: perf?.open ?? 0,
+      },
+    };
+  });
+}
+
+export type CatalogService = Awaited<ReturnType<typeof getServiceCatalog>>[number];
 
 export async function getTracking(resi: string) {
   const clock = await ready();
@@ -163,4 +189,39 @@ export async function getStats({ internal = false } = {}) {
 export async function getStaffAccounts() {
   await ready();
   return listStaff();
+}
+
+/** Semua layanan (termasuk nonaktif) dalam bentuk polos untuk editor admin. */
+export async function getAdminServices() {
+  await ready();
+  return (await listAllServices()).map((s) => ({
+    id: String(s._id),
+    name: s.name,
+    slug: s.slug,
+    description: s.description,
+    output: s.output,
+    requirements: s.requirements,
+    steps: s.steps.map(({ key, name, role, slaDays }) => ({ key, name, role, slaDays })),
+    isActive: s.isActive,
+    order: s.order,
+  }));
+}
+
+export type AdminService = Awaited<ReturnType<typeof getAdminServices>>[number];
+
+export async function getAdminHolidays() {
+  await ready();
+  return getHolidays();
+}
+
+/** Jejak admin terbaru (polos untuk tampilan); `prefix` mis. "account_", "service_", "holidays_". */
+export async function getAdminEvents(prefix?: string, limit?: number) {
+  await ready();
+  return (await listAdminEvents(prefix, limit)).map((e) => ({
+    id: String(e._id),
+    actorName: e.actorName,
+    action: e.action,
+    target: e.target,
+    at: e.at,
+  }));
 }

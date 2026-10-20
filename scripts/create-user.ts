@@ -8,6 +8,7 @@
 
 import { parseArgs } from "node:util";
 import mongoose from "mongoose";
+import { logAdminEvent } from "../src/lib/admin.ts";
 import { dbConnect } from "../src/lib/db.ts";
 import { ROLE_LABELS } from "../src/lib/roles.ts";
 import { createStaff, generateTempPassword, hashPassword } from "../src/lib/users.ts";
@@ -18,6 +19,9 @@ const USAGE = `Pemakaian:
   npm run user:create -- --email <email> --name "<nama>" [--role admin] [--unit "<unit>"]
   npm run user:create -- --email <email> --reset
 Peran: ${Object.keys(ROLE_LABELS).join(", ")}`;
+
+// Pelaku di audit log admin untuk akun yang dibuat/di-reset dari terminal.
+const CLI = { id: null, name: "Terminal (npm run user:create)" };
 
 async function resetByEmail(email: string) {
   const tempPassword = generateTempPassword();
@@ -30,6 +34,7 @@ async function resetByEmail(email: string) {
     { returnDocument: "after" },
   ).lean<UserData>();
   if (!user) throw new Error(`Akun dengan email ${email} tidak ditemukan.`);
+  await logAdminEvent(CLI, "account_password_reset", `${user.name} <${user.email}>`);
   return { account: user, tempPassword };
 }
 
@@ -39,7 +44,7 @@ async function create(values: { email: string; name?: string; role?: string; uni
     const messages = parsed.error.issues.map((i) => `  --${i.path.join(".")}: ${i.message}`);
     throw new Error(`Isian tidak valid:\n${messages.join("\n")}`);
   }
-  return createStaff(parsed.data);
+  return createStaff(parsed.data, CLI);
 }
 
 let values!: { email?: string; name?: string; role?: string; unit?: string; reset: boolean };

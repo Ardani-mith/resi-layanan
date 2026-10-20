@@ -5,9 +5,11 @@
 import bcrypt from "bcryptjs";
 import mongoose, { type UpdateQuery } from "mongoose";
 import { User, type UserData } from "../models.ts";
+import { type AdminActor, logAdminEvent } from "./admin.ts";
 import { randomCode } from "./resi.ts";
 import type { Role } from "./roles.ts";
 import type { PasswordChangeInput, StaffCreateInput } from "./validators.ts";
+import { AppError } from "./workflow.ts";
 
 // --- Kata sandi ---------------------------------------------------------------------
 
@@ -33,17 +35,6 @@ export function generateTempPassword(): string {
 
 // --- Akun ---------------------------------------------------------------------------
 
-/** Error yang aman ditampilkan ke pengguna; route() mengubahnya menjadi respons `status`. */
-export class AccountError extends Error {
-  status: number;
-  fields?: Record<string, string>;
-  constructor(status: number, message: string, fields?: Record<string, string>) {
-    super(message);
-    this.status = status;
-    this.fields = fields;
-  }
-}
-
 /** Pengguna yang sedang login (hasil sesi yang sudah dicocokkan ke DB). */
 export interface SessionUser {
   id: string;
@@ -54,7 +45,10 @@ export interface SessionUser {
 
 export type StaffAccount = ReturnType<typeof toAccount>;
 
-const notFound = () => new AccountError(404, "Akun petugas tidak ditemukan.");
+const notFound = () => new AppError(404, "Akun petugas tidak ditemukan.");
+
+/** Sasaran di audit log admin: "Nama <email>". */
+const label = (user: Pick<UserData, "name" | "email">) => `${user.name} <${user.email}>`;
 
 const toAccount = (user: UserData) => ({
   id: String(user._id),
@@ -102,9 +96,9 @@ export async function listStaff(): Promise<StaffAccount[]> {
 }
 
 /** Buat akun dengan kata sandi sementara. `tempPassword` hanya dikembalikan sekali ini. */
-export async function createStaff({ name, email, role, unit }: StaffCreateInput) {
+export async function createStaff({ name, email, role, unit }: StaffCreateInput, actor: AdminActor) {
   const emailTaken = { email: "Email ini sudah dipakai akun lain." };
-  if (await User.exists({ email })) throw new AccountError(409, "Email sudah terdaftar.", emailTaken);
+  if (await User.exists({ email })) throw new AppError(409, "Email sudah terdaftar.", emailTaken);
 
   const tempPassword = generateTempPassword();
   try {
@@ -116,19 +110,20 @@ export async function createStaff({ name, email, role, unit }: StaffCreateInput)
       passwordHash: await hashPassword(tempPassword),
       mustChangePassword: true,
     });
+    await logAdminEvent(actor, "account_created", label(user), { role });
     return { account: toAccount(user.toObject()), tempPassword };
   } catch (error) {
     // Dua admin mendaftarkan email yang sama bersamaan: indeks unik yang menolak.
     if ((error as { code?: number })?.code === 11000) {
-      throw new AccountError(409, "Email sudah terdaftar.", emailTaken);
+      throw new AppError(409, "Email sudah terdaftar.", emailTaken);
     }
     throw error;
   }
 }
 
-async function loadOther(id: string, actor: { id: string }, selfMessage: string): Promise<UserData> {
+async function loadOther(id: string, actor: AdminActor, selfMessage: string): Promise<UserData> {
   if (!mongoose.isValidObjectId(id)) throw notFound();
-  if (id === actor.id) throw new AccountError(409, selfMessage);
+  if (id === actor.id) throw new AppError(409, selfMessage);
   const user = await User.findById(id).lean<UserData>();
   if (!user) throw notFound();
   return user;
@@ -150,28 +145,38 @@ async function save(id: string, update: UpdateQuery<UserData>): Promise<UserData
 export async function updateStaff(
   id: string,
   { name, role, unit }: { name: string; role: Role; unit?: string },
-  actor: { id: string },
+  actor: AdminActor,
 ) {
   const user = await loadOther(id, actor, "Akun Anda sendiri tidak bisa diubah dari halaman ini.");
   const update: UpdateQuery<UserData> = { $set: { name, role, unit: unit || null } };
   if (role !== user.role) update.$inc = { sessionVersion: 1 };
-  return toAccount(await save(id, update));
+  const saved = await save(id, update);
+  if (role !== user.role) {
+    await logAdminEvent(actor, "account_role_changed", label(saved), { from: user.role, to: role });
+  }
+  if (name !== user.name || (unit || null) !== user.unit) {
+    await logAdminEvent(actor, "account_updated", label(saved), { name, unit: unit || null });
+  }
+  return toAccount(saved);
 }
 
 /** Nonaktifkan (bukan hapus: audit log tetap merujuk akun ini) atau aktifkan kembali. */
-export async function setStaffActive(id: string, isActive: boolean, actor: { id: string }) {
+export async function setStaffActive(id: string, isActive: boolean, actor: AdminActor) {
   await loadOther(id, actor, "Anda tidak bisa menonaktifkan akun sendiri.");
-  return toAccount(await save(id, { $set: { isActive }, $inc: { sessionVersion: 1 } }));
+  const saved = await save(id, { $set: { isActive }, $inc: { sessionVersion: 1 } });
+  await logAdminEvent(actor, isActive ? "account_activated" : "account_deactivated", label(saved));
+  return toAccount(saved);
 }
 
 /** Kata sandi sementara baru; semua sesi akun ini berakhir dan wajib ganti saat login. */
-export async function resetStaffPassword(id: string, actor: { id: string }) {
+export async function resetStaffPassword(id: string, actor: AdminActor) {
   await loadOther(id, actor, "Untuk akun Anda sendiri, gunakan halaman ganti kata sandi.");
   const tempPassword = generateTempPassword();
   const user = await save(id, {
     $set: { passwordHash: await hashPassword(tempPassword), mustChangePassword: true },
     $inc: { sessionVersion: 1 },
   });
+  await logAdminEvent(actor, "account_password_reset", label(user));
   return { account: toAccount(user), tempPassword };
 }
 
@@ -186,17 +191,19 @@ export async function changeOwnPassword(
   const user = await User.findById(userId).select("+passwordHash").lean<UserData>();
   if (!user?.isActive) throw notFound();
   if (!(await verifyPassword(currentPassword, user.passwordHash))) {
-    throw new AccountError(422, "Periksa kembali isian Anda.", {
+    throw new AppError(422, "Periksa kembali isian Anda.", {
       currentPassword: "Kata sandi saat ini salah.",
     });
   }
   if (newPassword === currentPassword) {
-    throw new AccountError(422, "Periksa kembali isian Anda.", {
+    throw new AppError(422, "Periksa kembali isian Anda.", {
       newPassword: "Kata sandi baru harus berbeda dari yang sekarang.",
     });
   }
-  return save(userId, {
+  const saved = await save(userId, {
     $set: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
     $inc: { sessionVersion: 1 },
   });
+  await logAdminEvent({ id: userId, name: saved.name }, "account_password_changed", label(saved));
+  return saved;
 }

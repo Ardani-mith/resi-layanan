@@ -6,7 +6,184 @@ import { Alert, buttonClass, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ActiveService } from "@/lib/dal";
 import { type FormErrors, postJson } from "@/lib/http";
+import {
+  BLOOD_TYPES,
+  KTP_MIN_AGE,
+  ktpAgeAllowed,
+  MARITAL_STATUSES,
+  needsKtpData,
+  nikInfo,
+  RELIGIONS,
+} from "@/lib/present";
 import type { Channel } from "@/lib/workflow";
+import { KtpArt } from "./DocumentArt";
+
+/** Nama input yang ikut ditampilkan di pratinjau KTP (sama dengan nama field form). */
+const PREVIEW_FIELDS = [
+  "name",
+  "nik",
+  "birthPlace",
+  "bloodType",
+  "address",
+  "rtRw",
+  "village",
+  "district",
+  "religion",
+  "marital",
+  "job",
+] as const;
+type Person = Partial<Record<(typeof PREVIEW_FIELDS)[number], string>>;
+
+const JOBS = [
+  "PELAJAR/MAHASISWA",
+  "BELUM/TIDAK BEKERJA",
+  "MENGURUS RUMAH TANGGA",
+  "KARYAWAN SWASTA",
+  "WIRASWASTA",
+  "PEGAWAI NEGERI SIPIL",
+  "PETANI/PEKEBUN",
+  "BURUH HARIAN LEPAS",
+];
+
+/**
+ * Pratinjau KTP-el yang ikut berubah saat warga mengetik. Tanggal lahir & jenis kelamin
+ * dibaca dari NIK, jadi salah ketik NIK langsung terlihat.
+ */
+function KtpPreview({ person, className }: { person: Person; className?: string }) {
+  const up = (key: keyof Person) => (person[key] ?? "").trim().toUpperCase();
+  const nik = person.nik ?? "";
+  const info = nikInfo(nik);
+  const badNik = nik.length >= 12 && !info;
+  return (
+    <figure className={cn("space-y-2", className)}>
+      <KtpArt
+        data={{
+          nik,
+          name: up("name"),
+          birth: [up("birthPlace"), info?.birthDate].filter(Boolean).join(", "),
+          gender: info?.gender ?? "",
+          bloodType: person.bloodType ?? "",
+          address: up("address"),
+          rtrw: up("rtRw"),
+          village: up("village"),
+          district: up("district"),
+          religion: up("religion"),
+          marital: up("marital"),
+          job: up("job"),
+          citizenship: "WNI",
+          validUntil: "SEUMUR HIDUP",
+        }}
+      />
+      <figcaption className="text-xs text-muted">
+        {badNik ? (
+          <span className="font-medium text-late">
+            Digit tanggal lahir di NIK (digit 7–12) tidak valid. Periksa kembali NIK Anda.
+          </span>
+        ) : (
+          "Pratinjau KTP-el dari isian Anda. Tanggal lahir & jenis kelamin dibaca dari NIK: pastikan sesuai."
+        )}
+      </figcaption>
+    </figure>
+  );
+}
+
+/** Isian khusus KTP-el (dicetak di kartu). */
+function KtpFields({ person, errors }: { person: Person; errors: FormErrors }) {
+  const info = nikInfo(person.nik ?? "");
+  const tooYoung = info && person.marital && !ktpAgeAllowed(info.birthDate, person.marital);
+  const err = (key: string) => errors[`applicant.ktp.${key}`];
+  return (
+    <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+      <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm sm:col-span-2">
+        Tanggal lahir & jenis kelamin:{" "}
+        <span className="font-semibold">
+          {info ? `${info.birthDate} · ${info.gender === "PEREMPUAN" ? "Perempuan" : "Laki-laki"}` : "—"}
+        </span>{" "}
+        <span className="text-muted">(otomatis dari NIK)</span>
+      </p>
+      <Field label="Tempat lahir" name="birthPlace" required error={err("birthPlace")} />
+      <Field
+        as="select"
+        label="Golongan darah"
+        name="bloodType"
+        defaultValue=""
+        required
+        error={err("bloodType")}
+      >
+        <option value="" disabled>
+          Pilih
+        </option>
+        {BLOOD_TYPES.map((b) => (
+          <option key={b} value={b}>
+            {b === "-" ? "Tidak tahu" : b}
+          </option>
+        ))}
+      </Field>
+      <Field
+        className="sm:col-span-2"
+        label="Alamat"
+        name="address"
+        autoComplete="street-address"
+        placeholder="JL. MELATI NO. 12"
+        required
+        error={err("address")}
+      />
+      <Field
+        label="RT/RW"
+        name="rtRw"
+        placeholder="003/005"
+        inputMode="numeric"
+        required
+        error={err("rtRw")}
+      />
+      <Field label="Kelurahan/Desa" name="village" required error={err("village")} />
+      <Field label="Kecamatan" name="district" required error={err("district")} />
+      <Field
+        as="select"
+        label="Agama/Kepercayaan"
+        name="religion"
+        defaultValue=""
+        required
+        error={err("religion")}
+      >
+        <option value="" disabled>
+          Pilih
+        </option>
+        {RELIGIONS.map((r) => (
+          <option key={r} value={r}>
+            {r.charAt(0) + r.slice(1).toLowerCase()}
+          </option>
+        ))}
+      </Field>
+      <Field
+        as="select"
+        label="Status perkawinan"
+        name="marital"
+        defaultValue=""
+        required
+        error={
+          err("marital") ??
+          (tooYoung ? `Menurut NIK, pemohon belum ${KTP_MIN_AGE} tahun dan belum kawin.` : null)
+        }
+      >
+        <option value="" disabled>
+          Pilih
+        </option>
+        {MARITAL_STATUSES.map((m) => (
+          <option key={m} value={m}>
+            {m.charAt(0) + m.slice(1).toLowerCase()}
+          </option>
+        ))}
+      </Field>
+      <Field label="Pekerjaan" name="job" list="ktp-jobs" required error={err("job")} />
+      <datalist id="ktp-jobs">
+        {JOBS.map((j) => (
+          <option key={j} value={j} />
+        ))}
+      </datalist>
+    </div>
+  );
+}
 
 /**
  * Form pengajuan permohonan. channel="online" untuk warga, "loket" untuk petugas
@@ -28,9 +205,12 @@ export default function ApplyForm({
   const [checked, setChecked] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
+  const [person, setPerson] = useState<Person>({});
 
   const service = services.find((s) => s.slug === slug);
   const isLoket = channel === "loket";
+  // Pratinjau dokumen hanya untuk layanan KTP-el (isi kartunya = data pemohon sendiri).
+  const showKtp = Boolean(service && needsKtpData(service.slug));
 
   function chooseService(next: string) {
     setSlug(next);
@@ -70,6 +250,21 @@ export default function ApplyForm({
         nik: form.get("nik"),
         phone: form.get("phone"),
         email: form.get("email"),
+        ...(showKtp && {
+          ktp: Object.fromEntries(
+            [
+              "birthPlace",
+              "bloodType",
+              "address",
+              "rtRw",
+              "village",
+              "district",
+              "religion",
+              "marital",
+              "job",
+            ].map((key) => [key, form.get(key) ?? ""]),
+          ),
+        }),
       },
       requirementsChecked: checked,
     });
@@ -91,8 +286,18 @@ export default function ApplyForm({
     <form
       method="post"
       onSubmit={submit}
+      onChange={(event) => {
+        // Event isian naik ke form; pantau field yang tampil di pratinjau KTP.
+        const input: EventTarget = event.target;
+        if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) return;
+        const { name, value } = input;
+        if ((PREVIEW_FIELDS as readonly string[]).includes(name)) setPerson((p) => ({ ...p, [name]: value }));
+      }}
       noValidate
-      className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start"
+      className={cn(
+        "grid gap-6 lg:items-start",
+        showKtp ? "lg:grid-cols-[1fr_24rem]" : "lg:grid-cols-[1fr_20rem]",
+      )}
     >
       <div className="space-y-6">
         {/* 1. Layanan */}
@@ -160,7 +365,8 @@ export default function ApplyForm({
           )}
         </fieldset>
 
-        {/* 3. Data pemohon */}
+        {/* 3. Data pemohon (HP: pratinjau KTP di atas isian agar terlihat sambil mengetik) */}
+        {showKtp && <KtpPreview person={person} className="lg:hidden" />}
         <fieldset className="rounded-card border border-line bg-surface p-5">
           <legend className="float-left w-full text-lg font-bold">3. Data pemohon</legend>
           <div className="clear-both grid gap-4 pt-3 sm:grid-cols-2">
@@ -191,6 +397,7 @@ export default function ApplyForm({
               hint="4 digit terakhir dipakai untuk membuka detail resi."
               error={errors["applicant.phone"]}
             />
+            {showKtp && <KtpFields person={person} errors={errors} />}
             <Field
               className="sm:col-span-2"
               label="Email (opsional)"
@@ -222,6 +429,7 @@ export default function ApplyForm({
 
       {/* Ringkasan */}
       <aside className="space-y-4 lg:sticky lg:top-24">
+        {showKtp && <KtpPreview person={person} className="hidden lg:block" />}
         <div className="rounded-card border border-line bg-surface p-5">
           <h2 className="font-bold">Alur {service.name}</h2>
           <ol className="mt-3 space-y-2 text-sm">

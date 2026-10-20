@@ -1,7 +1,18 @@
 // Menu sidebar area petugas & label breadcrumb. Tambah/ubah menu cukup di sini;
 // komponen di components/layout/ hanya merender. `roles` = peran yang melihat menu itu.
 import type { LucideIcon } from "lucide-react";
-import { FilePlus2, Gauge, Globe, Inbox, KeyRound, LineChart, TimerReset, Users } from "lucide-react";
+import {
+  CalendarOff,
+  FilePlus2,
+  Gauge,
+  Globe,
+  Inbox,
+  KeyRound,
+  LayoutList,
+  LineChart,
+  TimerReset,
+  Users,
+} from "lucide-react";
 import { PASSWORD_PATH, type Role, STAFF_ROLES } from "@/lib/roles";
 
 export interface NavItem {
@@ -34,6 +45,8 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Admin",
     items: [
       { href: "/admin/petugas", label: "Petugas", icon: Users, roles: ["admin"] },
+      { href: "/admin/layanan", label: "Layanan & SLA", icon: LayoutList, roles: ["admin"] },
+      { href: "/admin/libur", label: "Hari libur", icon: CalendarOff, roles: ["admin"] },
       { href: "/admin/demo", label: "Mode demo", icon: TimerReset, roles: ["admin"] },
     ],
   },
@@ -71,6 +84,8 @@ const CRUMBS: Record<string, { label: string; link?: boolean }> = {
   "/admin": { label: "Admin", link: false },
   "/admin/petugas": { label: "Petugas" },
   "/admin/demo": { label: "Mode demo" },
+  "/admin/layanan": { label: "Layanan & SLA" },
+  "/admin/libur": { label: "Hari libur" },
   "/akun": { label: "Akun", link: false },
   [PASSWORD_PATH]: { label: "Ganti kata sandi" },
 };

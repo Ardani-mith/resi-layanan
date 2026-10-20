@@ -1,6 +1,9 @@
+import { after } from "next/server";
 import { fail, ok, parseBody, route } from "@/lib/api";
 import { createApplication } from "@/lib/applications";
 import { getClock } from "@/lib/clock";
+import { notifyApplicant } from "@/lib/notify";
+import { siteOrigin } from "@/lib/qr";
 import type { Role } from "@/lib/roles";
 import { getSession } from "@/lib/session";
 import { applicationSchema } from "@/lib/validators";
@@ -23,5 +26,8 @@ export const POST = route(async (request) => {
     actor: data.channel === "loket" ? user : null,
     clock,
   });
+  // Email dikirim setelah respons terkirim: warga tidak menunggu, dan gagal kirim tidak menggagalkan pengajuan.
+  const origin = await siteOrigin();
+  after(() => notifyApplicant("created", app, origin));
   return ok({ resi: app.resi, serviceName: app.serviceName, createdAt: app.createdAt }, 201);
 });

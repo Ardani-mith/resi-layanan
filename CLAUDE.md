@@ -1,6 +1,8 @@
 @AGENTS.md
 
-# Resi Layanan: catatan untuk sesi berikutnya
+# Pantas (Pantau Tahapan Sipil): catatan untuk sesi berikutnya
+
+Nama aplikasi: **Pantas** (dulu "Resi Layanan"; folder & repo masih `resi-layanan`). Nama, kepanjangan, dan huruf logo ada di `src/config/site.ts` (`name`, `expansion`, `mark`). Awalan nomor resi `RL-` (= resi layanan) sengaja tidak diubah.
 
 Konteks lomba, jadwal, spesifikasi, dan prioritas: `../docs/HANDOFF-WIA.md`.
 
@@ -21,18 +23,18 @@ Konteks lomba, jadwal, spesifikasi, dan prioritas: `../docs/HANDOFF-WIA.md`.
 ```
 src/
 ├── app/                  # route (nama URL berbahasa Indonesia); client component khusus satu halaman ditaruh di folder route-nya
-│   ├── (public)/         # halaman warga: navbar atas + footer (beranda, lacak, ajukan, rapor, masuk)
-│   └── (staff)/          # area petugas: sidebar + header konten (kerja, pantau, admin, akun)
+│   ├── (public)/         # halaman warga: navbar atas + footer (beranda, layanan, lacak + bukti PNG, ajukan, rapor, masuk)
+│   └── (staff)/          # area petugas: sidebar + header konten (kerja, pantau, admin/{petugas,layanan,libur,demo}, akun)
 ├── components/
 │   ├── ui.tsx            # Button/buttonClass, Alert, Field, Skeleton, NotFoundView, DemoClockBanner
 │   ├── SectionError.tsx  # batas error per bagian halaman (client, catchError)
-│   ├── application/      # domain permohonan: ApplyForm, ResiSearch, StatusBadge, Timeline
+│   ├── application/      # domain permohonan: ApplyForm, ResiSearch, StatusBadge, Timeline, ReceiptCard (QR + unduh/cetak)
 │   ├── charts/           # index.tsx (StatTile, Meter, weeklyOnTime; server) + ColumnChart.tsx (client)
 │   ├── landing/          # HeroSection, TrackingPreview, SummaryStats, CountUp, Decor (hiasan + ikon)
 │   └── layout/           # PublicShell (Navbar+Footer), StaffShell (+ContentHeader, useDrawer), Sidebar, ThemeToggle
 ├── config/               # site.ts (semua teks landing), staff-nav.ts (menu sidebar per peran & label breadcrumb)
 ├── lib/                  # logika & akses data (lihat Arsitektur); hooks.ts = hook client (useNow, useAutoRefresh, ...)
-├── models.ts             # semua skema Mongoose (Application, Service, Event, Setting, User)
+├── models.ts             # semua skema Mongoose (Application, Service, Event, AdminEvent, Setting, User)
 └── proxy.ts
 scripts/                  # seed (+ --master), create-user, demo-data, server e2e
 tests/                    # Vitest
@@ -54,8 +56,11 @@ Konvensi: TypeScript `strict`; komponen PascalCase, hook `useXxx`, modul lib hur
 - Form yang memuat data sensitif (login, pengajuan, catatan petugas, 4 digit HP) wajib `method="post"`: kalau terkirim sebelum hydration, data tidak bocor ke URL.
 - Setelah aksi di `/kerja/[resi]`, petugas dikembalikan ke `/kerja?selesai=RESI&aksi=...` dengan konfirmasi (panel aksi bisa hilang karena tahap pindah peran).
 - `models.ts` dan modul `lib/` yang dipakai `scripts/` wajib memakai import relatif berekstensi `.ts` (bukan `@/`), karena skrip dijalankan langsung oleh Node (type stripping). Karena itu tsconfig memakai `verbatimModuleSyntax` (impor tipe wajib `import type`) dan `erasableSyntaxOnly` (tanpa enum/namespace/parameter property).
-- Akun petugas: `lib/users.ts` (kata sandi bcrypt + kata sandi sementara, login, `loadSessionUser`, kelola akun; `AccountError` → status HTTP lewat `route()`). `PASSWORD_MIN` ada di `lib/roles.ts` (aman untuk browser). Halaman `/admin/petugas` (`StaffManager.tsx`) dan `/akun/kata-sandi`.
-- `lib/session.ts`, `lib/api.ts`, `lib/dal.ts` bersifat `server-only`. `proxy.ts` hanya boleh mengimpor `lib/jwt.ts` dan `lib/roles.ts`.
+- Akun petugas: `lib/users.ts` (kata sandi bcrypt + kata sandi sementara, login, `loadSessionUser`, kelola akun; error lewat `AppError`). `PASSWORD_MIN` ada di `lib/roles.ts` (aman untuk browser). Halaman `/admin/petugas` (`StaffManager.tsx`) dan `/akun/kata-sandi`.
+- Admin: `lib/admin.ts` (layanan, hari libur, dan `AdminEvent` = audit log semua tindakan admin termasuk akun petugas; `logAdminEvent` dipanggil dari users.ts/admin.ts, append-only). Error untuk pengguna: `AppError(status, message, fields)` di `workflow.ts` → respons lewat `route()`.
+- Bukti resi: `lib/qr.ts` (server-only: `siteOrigin()` dari `SITE_URL`/header, QR SVG/PNG) → `ReceiptCard` di /ajukan/sukses, /lacak/[resi], /kerja/[resi]; gambar PNG di `/lacak/[resi]/bukti` (ImageResponse: `<div>` berisi >1 node wajib `display:flex`). Cetak: kelas `print-area` (globals.css).
+- Email warga: `lib/notify.ts` (murni + `sendEmail` lewat Resend HTTP API jika `RESEND_API_KEY`/`EMAIL_FROM` ada, selain itu hanya log). Dipanggil dengan `after()` di route pengajuan & aksi petugas, agar tidak memperlambat/menggagalkan aksi.
+- `lib/session.ts`, `lib/api.ts`, `lib/dal.ts`, `lib/qr.ts` bersifat `server-only` (jangan diimpor modul yang dites Vitest). `proxy.ts` hanya boleh mengimpor `lib/jwt.ts` dan `lib/roles.ts`.
 - Modul yang diimpor Server Component tidak boleh mengimpor hook client (`useSyncExternalStore`, `useState`, ...): Turbopack menolak build. Hook client ada di `lib/hooks.ts` atau di dalam komponen `"use client"` pemakainya.
 
 ## Aturan yang sudah diputuskan

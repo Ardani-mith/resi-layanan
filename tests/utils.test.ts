@@ -1,8 +1,9 @@
 // Utilitas murni: resi & privasi, penggabung class (cn), dan animasi angka.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { countUpFrame } from "@/components/landing/CountUp";
 import { cn } from "@/lib/cn";
-import { maskName, maskPhone, normalizePhone } from "@/lib/present";
+import { applicantEmail, notificationFor, sendEmail } from "@/lib/notify";
+import { maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
 import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
 import { applicationSchema, resiSchema } from "@/lib/validators";
 
@@ -122,5 +123,58 @@ describe("countUpFrame", () => {
     const mid = countUpFrame("6,8 hari", 0.5);
     expect(mid).toMatch(/^\d,\d hari$/);
     expect(Number(mid.split(" ")[0].replace(",", "."))).toBeLessThan(6.8);
+  });
+});
+
+describe("notifikasi email", () => {
+  const app = {
+    resi: "RL-HJ26-AKTA",
+    serviceName: "Akta Kelahiran",
+    applicant: { name: "Siti Rahmawati", phone: "081234561234", email: "siti@contoh.id" },
+    steps: [{ publicNote: "Lampirkan buku nikah orang tua." }],
+    currentStep: 0,
+    rejectionReason: null,
+  } as unknown as Parameters<typeof applicantEmail>[1];
+
+  it("hanya status yang penting bagi warga yang dikirimi email", () => {
+    expect(notificationFor("created", { status: "diajukan" })).toBe("created");
+    expect(notificationFor("request_fix", { status: "perlu_perbaikan" })).toBe("request_fix");
+    expect(notificationFor("complete", { status: "diproses" })).toBeNull();
+    expect(notificationFor("complete", { status: "siap_diambil" })).toBe("ready");
+    expect(notificationFor("complete", { status: "selesai" })).toBe("completed");
+    expect(notificationFor("reject", { status: "ditolak" })).toBe("rejected");
+    expect(notificationFor("resume", { status: "diajukan" })).toBeNull();
+  });
+
+  it("isi email memuat resi, catatan petugas, dan tautan lacak; tanpa NIK/HP", () => {
+    const mail = applicantEmail("request_fix", app, "https://resi.contoh.id")!;
+    expect(mail.to).toBe("siti@contoh.id");
+    expect(mail.subject).toContain("RL-HJ26-AKTA");
+    expect(mail.text).toContain("Lampirkan buku nikah orang tua.");
+    expect(mail.text).toContain("https://resi.contoh.id/lacak/RL-HJ26-AKTA");
+    expect(mail.text).not.toContain("081234561234");
+  });
+
+  it("tanpa email pemohon tidak ada pesan; tanpa kunci Resend hanya dicatat", async () => {
+    expect(
+      applicantEmail("created", { ...app, applicant: { ...app.applicant, email: null } }, "x"),
+    ).toBeNull();
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    expect(await sendEmail({ to: "a@b.id", subject: "s", text: "t" })).toBe(false);
+    expect(info).toHaveBeenCalledOnce();
+    info.mockRestore();
+  });
+});
+
+describe("nikInfo (pratinjau KTP)", () => {
+  const now = new Date("2026-10-20T00:00:00Z");
+  it("membaca tanggal lahir & jenis kelamin; tanggal +40 = perempuan", () => {
+    expect(nikInfo("3299011203850001", now)).toEqual({ birthDate: "12-03-1985", gender: "LAKI-LAKI" });
+    expect(nikInfo("3299015508080002", now)).toEqual({ birthDate: "15-08-2008", gender: "PEREMPUAN" });
+  });
+  it("null jika belum lengkap atau tanggal tidak masuk akal", () => {
+    expect(nikInfo("32990155", now)).toBeNull();
+    expect(nikInfo("3299013213850001", now)).toBeNull(); // bulan 13
+    expect(nikInfo("3299017202850001", now)).toBeNull(); // 32 Februari (72 − 40)
   });
 });

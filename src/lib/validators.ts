@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizePhone } from "./present.ts";
+import { BLOOD_TYPES, MARITAL_STATUSES, normalizePhone, RELIGIONS } from "./present.ts";
 import { normalizeResi, RESI_PATTERN } from "./resi.ts";
 import { PASSWORD_MIN, ROLES } from "./roles.ts";
 import { ACTIONS } from "./workflow.ts";
@@ -28,6 +28,34 @@ export const resiSchema = z
   .transform(normalizeResi)
   .pipe(z.string().regex(RESI_PATTERN, "Format resi: RL-XXXX-XXXX."));
 
+/** Teks KTP: dipangkas & huruf kapital, seperti tercetak di kartu. */
+const ktpText = (max: number, message: string) =>
+  trimmed(max)
+    .min(2, message)
+    .transform((s) => s.toUpperCase());
+
+/** Isi KTP-el. Tanggal lahir & jenis kelamin tidak diminta: dibaca dari NIK di server. */
+export const ktpSchema = z.object({
+  birthPlace: ktpText(60, "Isi tempat lahir."),
+  bloodType: z.enum(BLOOD_TYPES, { error: "Pilih golongan darah." }),
+  address: ktpText(120, "Isi alamat."),
+  rtRw: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}\/\d{1,3}$/, "Format RT/RW, mis. 003/005.")
+    .transform((s) =>
+      s
+        .split("/")
+        .map((n) => n.padStart(3, "0"))
+        .join("/"),
+    ),
+  village: ktpText(60, "Isi kelurahan/desa."),
+  district: ktpText(60, "Isi kecamatan."),
+  religion: z.enum(RELIGIONS, { error: "Pilih agama/kepercayaan." }),
+  marital: z.enum(MARITAL_STATUSES, { error: "Pilih status perkawinan." }),
+  job: ktpText(60, "Isi pekerjaan."),
+});
+
 export const applicationSchema = z.object({
   serviceSlug: z.string().trim().min(1, "Pilih layanan."),
   channel: z.enum(["online", "loket"]).default("online"),
@@ -36,6 +64,7 @@ export const applicationSchema = z.object({
     phone: phoneSchema,
     email: z.union([z.literal(""), emailSchema]).optional(),
     nik: z.string().regex(/^\d{16}$/, "NIK harus 16 digit angka."),
+    ktp: ktpSchema.optional(),
   }),
   requirementsChecked: z.array(z.string().trim().max(200)).max(20).default([]),
 });
@@ -101,9 +130,41 @@ export const passwordChangeSchema = z
     message: "Konfirmasi tidak sama dengan kata sandi baru.",
   });
 
+// --- Layanan & hari libur (admin) ---------------------------------------------------
+
+const stepInputSchema = z.object({
+  name: trimmed(80).min(3, "Nama tahap minimal 3 huruf."),
+  role: z.enum(ROLES, { error: "Pilih peran." }),
+  // null = tanpa tenggat (mis. menunggu warga mengambil dokumen).
+  slaDays: z.number().int("Hari kerja harus bilangan bulat.").min(1).max(60).nullable(),
+});
+
+export const serviceSchema = z.object({
+  name: trimmed(100).min(3, "Nama layanan minimal 3 huruf."),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Hanya huruf kecil, angka, dan tanda hubung, mis. akta-kelahiran."),
+  description: trimmed(600).default(""),
+  output: trimmed(120).default(""),
+  requirements: z.array(trimmed(200).min(1)).max(20, "Maksimal 20 persyaratan."),
+  steps: z.array(stepInputSchema).min(2, "Layanan minimal punya 2 tahap.").max(12, "Maksimal 12 tahap."),
+  isActive: z.boolean().default(true),
+  order: z.number().int().min(0).max(999).default(0),
+});
+
+export const holidaysSchema = z.object({
+  holidays: z
+    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal YYYY-MM-DD."))
+    .max(200, "Maksimal 200 tanggal."),
+});
+
 export type ApplicationInput = z.infer<typeof applicationSchema>;
 export type ActionInput = z.infer<typeof actionSchema>;
 export type TrackActionInput = z.infer<typeof trackActionSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
 export type StaffActionInput = z.infer<typeof staffActionSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
+export type ServiceInput = z.infer<typeof serviceSchema>;
+export type HolidaysInput = z.infer<typeof holidaysSchema>;

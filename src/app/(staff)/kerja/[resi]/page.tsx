@@ -2,12 +2,14 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
+import ReceiptCard from "@/components/application/ReceiptCard";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
 import { DemoClockBanner, Skeleton } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
 import { getStaffApplication, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
+import { receiptFor } from "@/lib/qr";
 import { ROLE_LABELS, STAFF_ROLES } from "@/lib/roles";
 import { EVENT_LABELS } from "@/lib/workflow";
 import ActionPanel from "./ActionPanel";
@@ -35,7 +37,7 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
   const { resi } = await params;
   const user = await requireStaffPage(STAFF_ROLES, `/kerja/${resi}`);
-  const app = await getStaffApplication(resi, user);
+  const [app, receipt] = await Promise.all([getStaffApplication(resi, user), receiptFor(resi)]);
   if (!app) notFound();
 
   const current = app.steps[app.currentStep];
@@ -83,6 +85,7 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
         </div>
 
         <aside className="space-y-5">
+          <ReceiptCard {...receipt} title="Bukti resi untuk warga" />
           <Card title="Pemohon">
             <dl className="grid gap-3">
               <Detail label="Nama">{app.applicant.name}</Detail>
@@ -92,6 +95,23 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
                 </a>
               </Detail>
               {app.applicant.email && <Detail label="Email">{app.applicant.email}</Detail>}
+              {app.applicant.ktp && (
+                <Detail label="Data KTP-el">
+                  <span className="mt-1 block space-y-0.5 text-sm font-normal">
+                    <span className="block">
+                      {app.applicant.ktp.birthPlace}, {app.applicant.ktp.birthDate} ·{" "}
+                      {app.applicant.ktp.gender} · Gol. darah {app.applicant.ktp.bloodType}
+                    </span>
+                    <span className="block">
+                      {app.applicant.ktp.address}, RT/RW {app.applicant.ktp.rtRw}, {app.applicant.ktp.village}
+                      , {app.applicant.ktp.district}
+                    </span>
+                    <span className="block">
+                      {app.applicant.ktp.religion} · {app.applicant.ktp.marital} · {app.applicant.ktp.job}
+                    </span>
+                  </span>
+                </Detail>
+              )}
               <Detail label="Kanal">
                 {app.channel === "loket" ? "Loket" : "Online"} · {formatDateTime(app.createdAt)}
               </Detail>

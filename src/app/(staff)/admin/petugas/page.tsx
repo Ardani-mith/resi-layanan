@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
-import { getStaffAccounts, requireStaffPage } from "@/lib/dal";
+import { getAdminEvents, getStaffAccounts, requireStaffPage } from "@/lib/dal";
+import AdminLog from "../AdminLog";
 import { StaffCreateForm, StaffRow } from "./StaffManager";
 
 export const metadata = { title: "Kelola petugas" };
 
 async function StaffPanel() {
   const user = await requireStaffPage(["admin"], "/admin/petugas");
-  const accounts = await getStaffAccounts();
+  const [accounts, events] = await Promise.all([getStaffAccounts(), getAdminEvents("account_", 15)]);
   const active = accounts.filter((a) => a.isActive).length;
 
   return (
@@ -36,6 +37,8 @@ async function StaffPanel() {
           ))}
         </ul>
       </section>
+
+      <AdminLog events={events} />
     </>
   );
 }

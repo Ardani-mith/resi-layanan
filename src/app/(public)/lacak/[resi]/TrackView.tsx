@@ -3,6 +3,7 @@
 import { Check, Copy, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
+import ReceiptCard from "@/components/application/ReceiptCard";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
 import { Alert, buttonClass, DemoClockBanner } from "@/components/ui";
@@ -11,6 +12,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { useAutoRefresh } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { PublicView, VerifiedView } from "@/lib/present";
+import type { Receipt } from "@/lib/qr";
 import { OPEN_STATUSES } from "@/lib/workflow";
 
 const REFRESH_MS = 20_000;
@@ -109,10 +111,12 @@ export default function TrackView({
   data,
   serverNow,
   offsetMs,
+  receipt,
 }: {
   data: PublicView;
   serverNow: string;
   offsetMs: number;
+  receipt: Receipt;
 }) {
   const router = useRouter();
   const [last4, setLast4] = useState("");
@@ -204,6 +208,8 @@ export default function TrackView({
           </div>
         </dl>
       </section>
+
+      <ReceiptCard {...receipt} />
 
       {/* Situasi khusus */}
       {data.isLate && (

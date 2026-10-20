@@ -3,7 +3,9 @@
 // Ikon ditulis sebagai nama (lihat ICONS di components/landing/Decor.tsx) agar config tetap data polos.
 
 export const site = {
-  name: "Resi Layanan",
+  name: "Pantas",
+  /** Kepanjangan nama: PANTAS = Pantau Tahapan Sipil (sekaligus "pantas" = layak). */
+  expansion: "Pantau Tahapan Sipil",
   agency: "Disdukcapil Kota Harapan Jaya",
   tagline: "Kalau paket bisa dilacak, kenapa KTP tidak?",
   description:
@@ -53,7 +55,7 @@ export const site = {
         source: "Ombudsman RI Perwakilan Bengkulu",
       },
     ],
-    gap: "Kanal seperti SP4N-LAPOR! berfokus pada pengaduan setelah masalah terjadi. Resi Layanan mencegahnya: status dan tenggat terbuka sejak hari pertama.",
+    gap: "Kanal seperti SP4N-LAPOR! berfokus pada pengaduan setelah masalah terjadi. Pantas mencegahnya: status dan tenggat terbuka sejak hari pertama.",
   },
 
   howItWorks: {
@@ -126,6 +128,6 @@ export const site = {
 
   closing: {
     title: "Pelayanan publik yang bisa dipegang janjinya.",
-    body: "Resi Layanan dirancang untuk Mal Pelayanan Publik dan dinas mana pun yang ingin menurunkan laporan maladministrasi.",
+    body: "Pantas dirancang untuk Mal Pelayanan Publik dan dinas mana pun yang ingin menurunkan laporan maladministrasi.",
   },
 } as const;

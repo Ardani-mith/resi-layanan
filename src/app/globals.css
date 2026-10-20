@@ -4,7 +4,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
-  Design tokens Resi Layanan. Semua warna lewat variabel ini (bg-brand, text-muted,
+  Design tokens Pantas. Semua warna lewat variabel ini (bg-brand, text-muted,
   border-line, bg-late-soft, dst.) supaya mode gelap cukup diatur di satu tempat.
   Tema dipilih lewat <html data-theme="light|dark">, dipasang skrip di <head>
   (lib/theme.ts) dari pilihan pengguna atau tema OS. Tanpa JavaScript: terang.
@@ -58,6 +58,15 @@
   --hero-chip: rgb(255 255 255 / 0.92);
   --hero-shadow: rgb(15 27 45 / 0.22);
 
+  /* Panel ilustrasi kartu layanan (bergiliran per layanan): latar pastel + aksen. */
+  --tint-1: #e4f29e;
+  --tint-1-accent: #8fb21f;
+  --tint-2: #ddd3fd;
+  --tint-2-accent: #8a72e8;
+  --tint-3: #f9d3c0;
+  --tint-3-accent: #e2875f;
+  --tint-glow: rgb(255 255 255 / 0.5);
+
   --radius: 14px;
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
 
@@ -108,6 +117,14 @@
   --hero-alert: #ffa49a;
   --hero-chip: rgb(13 31 58 / 0.9);
   --hero-shadow: rgb(0 0 0 / 0.6);
+
+  --tint-1: #2c3714;
+  --tint-1-accent: #a9cd3c;
+  --tint-2: #272246;
+  --tint-2-accent: #a592f5;
+  --tint-3: #3a241b;
+  --tint-3-accent: #f0a07c;
+  --tint-glow: rgb(255 255 255 / 0.06);
 
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
 
@@ -223,5 +240,21 @@ body {
       animation-timeline: view();
       animation-range: entry 0% entry 45%;
     }
+  }
+}
+
+/* Cetak: jika halaman punya .print-area (mis. bukti resi), hanya bagian itu yang dicetak. */
+@media print {
+  body:has(.print-area) * {
+    visibility: hidden;
+  }
+  body:has(.print-area) .print-area,
+  body:has(.print-area) .print-area * {
+    visibility: visible;
+  }
+  body:has(.print-area) .print-area {
+    position: absolute;
+    inset: 0 0 auto 0;
+    border: none;
   }
 }

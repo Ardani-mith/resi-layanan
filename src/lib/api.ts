@@ -5,8 +5,8 @@ import type { z } from "zod";
 import { dbConnect } from "./db.ts";
 import type { Role } from "./roles.ts";
 import { getSession } from "./session.ts";
-import { AccountError, type SessionUser } from "./users.ts";
-import { WorkflowError } from "./workflow.ts";
+import type { SessionUser } from "./users.ts";
+import { AppError, WorkflowError } from "./workflow.ts";
 
 // Format respons seragam: sukses → { data }, gagal → { error: { message } }
 // atau { error: { fields: { "applicant.phone": "..." } } } untuk validasi form.
@@ -91,7 +91,7 @@ export function route<Ctx>(handler: (request: NextRequest, context: Ctx) => Prom
       await dbConnect();
       return await handler(request, context);
     } catch (error) {
-      if (error instanceof AccountError) return fail(error.status, error.message, error.fields);
+      if (error instanceof AppError) return fail(error.status, error.message, error.fields);
       if (error instanceof WorkflowError) {
         return fail(WORKFLOW_STATUS[error.code] ?? 422, error.message);
       }

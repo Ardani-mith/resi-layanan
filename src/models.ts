@@ -7,6 +7,7 @@ import { type ActorRole, type Role, ROLES } from "./lib/roles.ts";
 import {
   type ApplicationData,
   type Escalation,
+  type KtpDetails,
   type ServiceData,
   STATUS,
   type Step,
@@ -66,6 +67,26 @@ const applicationSchema = new Schema<ApplicationData>(
       phone: { type: String, required: true },
       email: { type: String, lowercase: true, trim: true, default: null },
       nik: { type: String, select: false, default: null },
+      // Isi KTP-el (layanan perekaman KTP-el). Data pribadi: hanya untuk petugas.
+      ktp: {
+        type: new Schema<KtpDetails>(
+          {
+            birthPlace: String,
+            birthDate: String,
+            gender: String,
+            bloodType: String,
+            address: String,
+            rtRw: String,
+            village: String,
+            district: String,
+            religion: String,
+            marital: String,
+            job: String,
+          },
+          { _id: false },
+        ),
+        default: null,
+      },
     },
     channel: { type: String, enum: ["online", "loket"], required: true },
     status: { type: String, enum: Object.values(STATUS), required: true },
@@ -159,24 +180,51 @@ const eventSchema = new Schema<EventData>({
 function appendOnly(): never {
   throw new Error("Audit log (events) bersifat append-only: tidak bisa diubah atau dihapus.");
 }
-eventSchema.pre(
-  [
-    "updateOne",
-    "updateMany",
-    "findOneAndUpdate",
-    "replaceOne",
-    "findOneAndReplace",
-    "deleteOne",
-    "deleteMany",
-    "findOneAndDelete",
-  ],
-  appendOnly,
-);
-eventSchema.pre("save", function () {
-  if (!this.isNew) appendOnly();
-});
+function makeAppendOnly<T>(schema: Schema<T>) {
+  schema.pre(
+    [
+      "updateOne",
+      "updateMany",
+      "findOneAndUpdate",
+      "replaceOne",
+      "findOneAndReplace",
+      "deleteOne",
+      "deleteMany",
+      "findOneAndDelete",
+    ],
+    appendOnly,
+  );
+  schema.pre("save", function () {
+    if (!this.isNew) appendOnly();
+  });
+}
+makeAppendOnly(eventSchema);
 
 export const Event = defineModel("Event", eventSchema);
+
+/** Jejak tindakan admin: akun petugas, layanan, dan hari libur. Append-only. */
+export interface AdminEventData {
+  _id?: Types.ObjectId;
+  actorId: Types.ObjectId | string | null;
+  actorName: string;
+  action: string;
+  /** Yang diubah, mis. nama & email petugas atau nama layanan. */
+  target: string;
+  payload: Record<string, unknown>;
+  at: Date;
+}
+
+const adminEventSchema = new Schema<AdminEventData>({
+  actorId: { type: ObjectId, ref: "User", default: null },
+  actorName: { type: String, required: true },
+  action: { type: String, required: true, index: true },
+  target: { type: String, required: true },
+  payload: { type: Schema.Types.Mixed, default: {} },
+  at: { type: Date, required: true, index: true },
+});
+makeAppendOnly(adminEventSchema);
+
+export const AdminEvent = defineModel("AdminEvent", adminEventSchema);
 
 // --- Pengaturan sistem --------------------------------------------------------------
 

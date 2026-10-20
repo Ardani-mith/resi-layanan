@@ -107,7 +107,7 @@ export default function TrackingPreview({
             <span className="size-2.5 rounded-full bg-ok/70" />
           </span>
           <span className="ml-2 flex-1 truncate rounded-md bg-surface px-3 py-1 font-mono text-[11px] text-muted">
-            resi-layanan/lacak/{resi}
+            pantas/lacak/{resi}
           </span>
         </div>
 

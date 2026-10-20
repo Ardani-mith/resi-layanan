@@ -7,9 +7,11 @@ import { createApplication, performAction, performCitizenAction, verifyApplicant
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
 import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
+import { publicView } from "@/lib/present";
 import type { Role } from "@/lib/roles";
 import { DAY_MS } from "@/lib/sla";
 import { computeStats, openEscalations } from "@/lib/stats";
+import type { ApplicationInput } from "@/lib/validators";
 import type { Actor, ApplicationData } from "@/lib/workflow";
 import { Application, Event, Service } from "@/models";
 import { seed } from "../scripts/seed.ts";
@@ -145,6 +147,49 @@ describe("pengajuan", () => {
       { slug: "akta-kelahiran" },
       { $set: { "steps.1.slaDays": 2, "steps.1.name": "Entri & validasi data" } },
     );
+  });
+});
+
+describe("pengajuan KTP-el", () => {
+  const ktp: NonNullable<ApplicationInput["applicant"]["ktp"]> = {
+    birthPlace: "HARAPAN JAYA",
+    bloodType: "O",
+    address: "JL. MELATI NO. 12",
+    rtRw: "003/005",
+    village: "SUKAMAJU",
+    district: "HARAPAN BARU",
+    religion: "ISLAM",
+    marital: "BELUM KAWIN",
+    job: "PELAJAR/MAHASISWA",
+  };
+  const submit = (nik: string, extra: { ktp?: typeof ktp } = { ktp }) =>
+    createApplication({
+      input: {
+        serviceSlug: "perekaman-ktp-el",
+        channel: "online",
+        applicant: { name: "Dewi Lestari", phone: "081200001111", email: "", nik, ...extra },
+        requirementsChecked: [],
+      },
+      actor: null,
+      clock: clockAt(),
+    });
+
+  it("menyimpan isi KTP + tanggal lahir & jenis kelamin dari NIK, tanpa bocor ke tampilan publik", async () => {
+    const app = await submit("3299014503070001"); // 05-03-2007, perempuan (45 = 5 + 40)
+    expect(app.applicant.ktp).toMatchObject({ ...ktp, birthDate: "05-03-2007", gender: "PEREMPUAN" });
+    expect(JSON.stringify(publicView(app, clockAt()))).not.toContain("SUKAMAJU");
+  });
+
+  it("menolak tanpa data KTP, NIK bertanggal tidak valid, atau belum 17 tahun & belum kawin", async () => {
+    await expect(submit("3299014503070001", {})).rejects.toMatchObject({ status: 422 });
+    await expect(submit("3299019913070001")).rejects.toMatchObject({
+      fields: { "applicant.nik": expect.any(String) },
+    });
+    // 01-01-2012: 14 tahun pada 19 Okt 2026.
+    await expect(submit("3299010101120001")).rejects.toMatchObject({
+      fields: { "applicant.ktp.marital": expect.stringContaining("17 tahun") },
+    });
+    await expect(submit("3299010101120001", { ktp: { ...ktp, marital: "KAWIN" } })).resolves.toBeTruthy();
   });
 });
 

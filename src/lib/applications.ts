@@ -5,16 +5,19 @@ import type { Types } from "mongoose";
 import { Application, Event, type EventData, Service } from "../models.ts";
 import type { Clock } from "./clock.ts";
 import { syncEscalations } from "./escalation.ts";
+import { KTP_MIN_AGE, ktpAgeAllowed, needsKtpData, nikInfo } from "./present.ts";
 import { generateResi } from "./resi.ts";
 import type { ActionInput, ApplicationInput } from "./validators.ts";
 import {
   type Actor,
+  AppError,
   type ApplicationData,
   applyAction,
   applyRating,
   type AuditEntry,
   buildApplication,
   canActOn,
+  type KtpDetails,
   type ServiceData,
   WorkflowError,
 } from "./workflow.ts";
@@ -27,6 +30,29 @@ export async function loadByResi(resi: string, clock: Ctx): Promise<ApplicationD
   const app = await Application.findOne({ resi }).lean<ApplicationData>();
   if (app) await syncEscalations(app, clock.now, clock.holidays);
   return app;
+}
+
+/**
+ * Isi KTP-el yang disimpan: isian warga + tanggal lahir & jenis kelamin dari NIK.
+ * Menolak NIK dengan tanggal lahir tidak valid dan pemohon di bawah 17 tahun yang belum kawin.
+ */
+function ktpDetails(input: ApplicationInput, now: Date): KtpDetails {
+  const info = nikInfo(input.applicant.nik, now);
+  if (!info) {
+    throw new AppError(422, "Periksa kembali isian Anda.", {
+      "applicant.nik": "Digit tanggal lahir di NIK (digit 7–12) tidak valid.",
+    });
+  }
+  const ktp = input.applicant.ktp;
+  if (!ktp) {
+    throw new AppError(422, "Lengkapi data KTP-el.", { "applicant.ktp": "Lengkapi data KTP-el." });
+  }
+  if (!ktpAgeAllowed(info.birthDate, ktp.marital, now)) {
+    throw new AppError(422, "Periksa kembali isian Anda.", {
+      "applicant.ktp.marital": `Menurut NIK, pemohon belum ${KTP_MIN_AGE} tahun. KTP-el bisa dibuat mulai ${KTP_MIN_AGE} tahun atau jika sudah/pernah kawin.`,
+    });
+  }
+  return { ...ktp, birthDate: info.birthDate, gender: info.gender };
 }
 
 export async function createApplication({
@@ -49,6 +75,7 @@ export async function createApplication({
     phone: input.applicant.phone,
     email: input.applicant.email || null,
     nik: input.applicant.nik,
+    ktp: needsKtpData(service.slug) ? ktpDetails(input, clock.now) : null,
   };
 
   // Resi acak; kalau (sangat jarang) bentrok dengan unique index, coba lagi.

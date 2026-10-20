@@ -80,7 +80,7 @@ async function Report() {
               className="grid gap-x-4 gap-y-2 px-5 py-4 sm:grid-cols-[1.4fr_1.2fr_1fr_1fr] sm:items-center"
             >
               <div>
-                <Link href={`/ajukan?layanan=${s.slug}`} className="font-medium hover:text-brand">
+                <Link href={`/layanan/${s.slug}`} className="font-medium hover:text-brand">
                   {s.name}
                 </Link>
                 <span className="block text-xs text-muted">

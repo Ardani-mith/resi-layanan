@@ -78,11 +78,29 @@ export interface Escalation {
   resolvedAt: Date | null;
 }
 
+/** Isi KTP-el yang diajukan warga (hanya untuk layanan perekaman KTP-el). */
+export interface KtpDetails {
+  birthPlace: string;
+  /** "DD-MM-YYYY", dibaca dari NIK. */
+  birthDate: string;
+  /** Dibaca dari NIK. */
+  gender: "LAKI-LAKI" | "PEREMPUAN";
+  bloodType: string;
+  address: string;
+  rtRw: string;
+  village: string;
+  district: string;
+  religion: string;
+  marital: string;
+  job: string;
+}
+
 export interface Applicant {
   name: string;
   phone: string;
   email: string | null;
   nik?: string | null;
+  ktp?: KtpDetails | null;
 }
 
 export interface Rating {
@@ -135,6 +153,17 @@ export interface Actor {
 export interface AuditEntry {
   action: string;
   payload: Record<string, unknown>;
+}
+
+/** Error yang aman ditampilkan ke pengguna; route() mengubahnya menjadi respons `status`. */
+export class AppError extends Error {
+  status: number;
+  fields?: Record<string, string>;
+  constructor(status: number, message: string, fields?: Record<string, string>) {
+    super(message);
+    this.status = status;
+    this.fields = fields;
+  }
 }
 
 export class WorkflowError extends Error {

@@ -3,9 +3,9 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { getHolidays, listAdminEvents, saveService, setHolidays } from "@/lib/admin";
 import { dbConnect } from "@/lib/db";
 import {
-  AccountError,
   authenticate,
   changeOwnPassword,
   createStaff,
@@ -17,7 +17,8 @@ import {
   updateStaff,
 } from "@/lib/users";
 import { passwordChangeSchema, staffCreateSchema } from "@/lib/validators";
-import { User, type UserData } from "@/models";
+import { AppError } from "@/lib/workflow";
+import { AdminEvent, Service, User, type UserData } from "@/models";
 
 let mongod: MongoMemoryServer;
 let admin: { id: string; name: string; role: UserData["role"] };
@@ -47,21 +48,24 @@ async function sessionOf(email: string) {
   return { id: String(user._id), name: user.name, role: user.role, ver: user.sessionVersion };
 }
 
-async function expectAccountError(promise: Promise<unknown>, status: number) {
+async function expectAppError(promise: Promise<unknown>, status: number) {
   const error = await promise.catch((e: unknown) => e);
-  expect(error).toBeInstanceOf(AccountError);
-  expect((error as AccountError).status).toBe(status);
-  return error as AccountError;
+  expect(error).toBeInstanceOf(AppError);
+  expect((error as AppError).status).toBe(status);
+  return error as AppError;
 }
 
 let seq = 0;
 const newStaff = (overrides = {}) =>
-  createStaff({
-    name: "Petugas Uji",
-    email: `petugas${++seq}@uji.test`,
-    role: "petugas_loket",
-    ...overrides,
-  });
+  createStaff(
+    {
+      name: "Petugas Uji",
+      email: `petugas${++seq}@uji.test`,
+      role: "petugas_loket",
+      ...overrides,
+    },
+    admin,
+  );
 
 describe("kata sandi sementara", () => {
   it("format mudah didiktekan, tanpa karakter mirip", () => {
@@ -80,7 +84,7 @@ describe("kata sandi sementara", () => {
 
   it("email ganda ditolak dengan pesan di field email", async () => {
     const { account } = await newStaff();
-    const error = await expectAccountError(newStaff({ email: account.email }), 409);
+    const error = await expectAppError(newStaff({ email: account.email }), 409);
     expect(error.fields?.email).toBeTruthy();
   });
 });
@@ -123,8 +127,8 @@ describe("sesi dicabut saat akun berubah", () => {
   });
 
   it("id tidak valid atau tidak ada → 404; sesi dengan id rusak → null", async () => {
-    await expectAccountError(setStaffActive("bukan-id", false, admin), 404);
-    await expectAccountError(setStaffActive(String(new mongoose.Types.ObjectId()), false, admin), 404);
+    await expectAppError(setStaffActive("bukan-id", false, admin), 404);
+    await expectAppError(setStaffActive(String(new mongoose.Types.ObjectId()), false, admin), 404);
     expect(await loadSessionUser({ id: "bukan-id", ver: 0 })).toBeNull();
   });
   it("akun lama tanpa field sessionVersion tetap bisa login", async () => {
@@ -136,9 +140,9 @@ describe("sesi dicabut saat akun berubah", () => {
 
 describe("admin tidak bisa mengunci dirinya sendiri", () => {
   it("menolak menonaktifkan, mengubah, atau me-reset akun sendiri", async () => {
-    await expectAccountError(setStaffActive(admin.id, false, admin), 409);
-    await expectAccountError(updateStaff(admin.id, { name: "X Y Z", role: "petugas_loket" }, admin), 409);
-    await expectAccountError(resetStaffPassword(admin.id, admin), 409);
+    await expectAppError(setStaffActive(admin.id, false, admin), 409);
+    await expectAppError(updateStaff(admin.id, { name: "X Y Z", role: "petugas_loket" }, admin), 409);
+    await expectAppError(resetStaffPassword(admin.id, admin), 409);
     expect((await User.findById(admin.id).lean<UserData>())?.role).toBe("admin");
   });
 });
@@ -146,12 +150,12 @@ describe("admin tidak bisa mengunci dirinya sendiri", () => {
 describe("ganti kata sandi sendiri", () => {
   it("kata sandi saat ini salah atau sama → error di field yang tepat", async () => {
     const { account, tempPassword } = await newStaff();
-    const wrong = await expectAccountError(
+    const wrong = await expectAppError(
       changeOwnPassword(account.id, { currentPassword: "keliru", newPassword: "kata-sandi-baru-1" }),
       422,
     );
     expect(wrong.fields?.currentPassword).toBeTruthy();
-    const same = await expectAccountError(
+    const same = await expectAppError(
       changeOwnPassword(account.id, { currentPassword: tempPassword, newPassword: tempPassword }),
       422,
     );
@@ -198,5 +202,71 @@ describe("validasi isian", () => {
     expect(staffCreateSchema.safeParse({ name: "Budi", email: "b@c.id", role: "superadmin" }).success).toBe(
       false,
     );
+  });
+});
+
+describe("audit log admin", () => {
+  it("setiap perubahan akun tercatat dengan pelaku & sasaran, dan tidak bisa diubah", async () => {
+    const { account } = await newStaff();
+    await updateStaff(account.id, { name: account.name, role: "pimpinan" }, admin);
+    await setStaffActive(account.id, false, admin);
+    const events = await AdminEvent.find({ target: { $regex: account.email } })
+      .sort({ at: 1, _id: 1 })
+      .lean();
+    expect(events.map((e) => e.action)).toEqual([
+      "account_created",
+      "account_role_changed",
+      "account_deactivated",
+    ]);
+    expect(events.every((e) => e.actorName === admin.name)).toBe(true);
+    await expect(AdminEvent.deleteMany({})).rejects.toThrow(/append-only/);
+  });
+});
+
+describe("kelola layanan & hari libur", () => {
+  const input = {
+    name: "Surat Pindah",
+    slug: "surat-pindah",
+    description: "",
+    output: "Surat pindah",
+    requirements: ["KK asli"],
+    steps: [
+      { name: "Verifikasi berkas", role: "petugas_loket" as const, slaDays: 1 },
+      { name: "Verifikasi berkas", role: "petugas_teknis" as const, slaDays: 2 },
+      { name: "Siap diambil", role: "petugas_loket" as const, slaDays: null },
+    ],
+    isActive: true,
+    order: 9,
+  };
+
+  it("membuat layanan dengan kunci tahap unik; slug ganda ditolak; slug tidak ikut diubah", async () => {
+    const created = await saveService(input, admin);
+    expect(created.steps.map((s) => s.key)).toEqual([
+      "verifikasi-berkas",
+      "verifikasi-berkas-2",
+      "siap-diambil",
+    ]);
+    const error = await expectAppError(saveService(input, admin), 409);
+    expect(error.fields?.slug).toBeTruthy();
+
+    const updated = await saveService(
+      { ...input, name: "Surat Pindah Datang", slug: "lain" },
+      admin,
+      String(created._id),
+    );
+    expect(updated).toMatchObject({ name: "Surat Pindah Datang", slug: "surat-pindah" });
+    expect(await Service.countDocuments({ slug: "lain" })).toBe(0);
+    expect((await listAdminEvents("service_")).map((e) => e.action)).toEqual([
+      "service_updated",
+      "service_created",
+    ]);
+  });
+
+  it("hari libur disimpan unik & terurut, perubahan tercatat", async () => {
+    await setHolidays({ holidays: ["2026-12-25", "2026-12-24", "2026-12-25"] }, admin);
+    expect(await getHolidays()).toEqual(["2026-12-24", "2026-12-25"]);
+    await setHolidays({ holidays: ["2026-12-25"] }, admin);
+    const [latest] = await listAdminEvents("holidays_");
+    expect(latest.payload).toMatchObject({ added: [], removed: ["2026-12-24"] });
   });
 });

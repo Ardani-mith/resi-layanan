@@ -93,8 +93,8 @@ type FieldProps = {
   error?: string | null;
   hint?: string;
   className?: string;
-  /** "select" untuk pilihan (isi `<option>` lewat children). */
-  as?: "input" | "select";
+  /** "select" untuk pilihan (isi `<option>` lewat children), "textarea" untuk teks panjang. */
+  as?: "input" | "select" | "textarea";
   children?: ReactNode;
 } & Omit<ComponentPropsWithoutRef<"input">, "className" | "children">;
 
@@ -116,6 +116,12 @@ export function Field({ label, error, hint, className = "", as = "input", ...pro
       </label>
       {as === "select" ? (
         <select {...control} {...(props as ComponentPropsWithoutRef<"select">)} />
+      ) : as === "textarea" ? (
+        <textarea
+          {...control}
+          className={cn(control.className, "min-h-24 py-2")}
+          {...(props as ComponentPropsWithoutRef<"textarea">)}
+        />
       ) : (
         <input {...control} {...props} />
       )}

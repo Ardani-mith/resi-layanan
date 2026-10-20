@@ -1,7 +1,10 @@
+import { after } from "next/server";
 import { ok, type ParamsOf, parseBody, requireUser, route } from "@/lib/api";
 import { performAction } from "@/lib/applications";
 import { getClock } from "@/lib/clock";
+import { notifyApplicant } from "@/lib/notify";
 import { staffView } from "@/lib/present";
+import { siteOrigin } from "@/lib/qr";
 import { STAFF_ROLES } from "@/lib/roles";
 import { actionSchema } from "@/lib/validators";
 
@@ -16,5 +19,7 @@ export const POST = route(async (request, { params }: ParamsOf<{ resi: string }>
   const { resi } = await params;
   const clock = await getClock();
   const app = await performAction({ resi, input: data, actor: user, clock });
+  const origin = await siteOrigin();
+  after(() => notifyApplicant(data.action, app, origin));
   return ok(staffView(app, clock));
 });
