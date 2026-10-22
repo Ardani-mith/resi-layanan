@@ -1,6 +1,7 @@
 // Utilitas murni: resi & privasi, penggabung class (cn), dan animasi angka.
 import { describe, expect, it, vi } from "vitest";
 import { countUpFrame } from "@/components/landing/CountUp";
+import { distanceKm, OFFICE_TYPES, OFFICES } from "@/config/offices";
 import { cn } from "@/lib/cn";
 import { applicantEmail, notificationFor, sendEmail } from "@/lib/notify";
 import { maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
@@ -176,5 +177,20 @@ describe("nikInfo (pratinjau KTP)", () => {
     expect(nikInfo("32990155", now)).toBeNull();
     expect(nikInfo("3299013213850001", now)).toBeNull(); // bulan 13
     expect(nikInfo("3299017202850001", now)).toBeNull(); // 32 Februari (72 − 40)
+  });
+});
+
+describe("lokasi layanan & jarak", () => {
+  it("haversine: Monas ke Bundaran HI sekitar 2,2 km", () => {
+    const km = distanceKm({ lat: -6.1754, lng: 106.8272 }, { lat: -6.195, lng: 106.8229 });
+    expect(km).toBeGreaterThan(2);
+    expect(km).toBeLessThan(2.4);
+  });
+  it("data lokasi lengkap: semua jenis ada, ratusan kantor se-DKI Jakarta, id unik", () => {
+    expect(new Set(OFFICES.map((o) => o.type))).toEqual(new Set(Object.keys(OFFICE_TYPES)));
+    expect(new Set(OFFICES.map((o) => o.id)).size).toBe(OFFICES.length);
+    // DKI Jakarta termasuk Kepulauan Seribu (±70 km ke utara).
+    for (const o of OFFICES) expect(distanceKm(o, { lat: -6.18, lng: 106.83 })).toBeLessThan(80);
+    expect(OFFICES.length).toBeGreaterThan(250);
   });
 });

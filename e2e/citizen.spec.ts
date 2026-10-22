@@ -191,3 +191,42 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
   await expect(page.getByLabel("Tempat lahir")).toHaveCount(0);
   await expect(preview).toHaveCount(0);
 });
+
+test("peta lokasi layanan: hasil mengikuti area peta, filter jenis, urut dari lokasi saya", async ({
+  openPage,
+}) => {
+  // Lokasi tiruan di depan Kantor Kecamatan Tanah Abang (Jl. K.H. Mas Mansyur No. 130).
+  const page = await openPage({
+    viewport: MOBILE,
+    geolocation: { latitude: -6.1999, longitude: 106.8145 },
+    permissions: ["geolocation"],
+  });
+  await gotoReady(page, "/ajukan/sukses?resi=RL-HJ26-AKTA");
+  const section = page.getByRole("region", { name: "Lokasi layanan terdekat" });
+  const count = section.getByText(/^\d+ lokasi$/);
+  await expect(section.getByRole("region", { name: "Peta lokasi layanan" })).toBeVisible();
+  await expect(section.getByRole("listitem").first()).toBeVisible();
+
+  // Perkecil peta: area lebih luas, kantor kelurahan disembunyikan agar tidak penuh sesak.
+  await section.getByRole("button", { name: "Zoom out" }).click();
+  await expect(section.getByText("Perbesar peta untuk melihat kantor kelurahan.")).toBeVisible();
+
+  await section.getByRole("button", { name: "Gunakan lokasi saya" }).click();
+  const first = section.getByRole("listitem").first();
+  await expect(first).toContainText("Kantor Kecamatan Tanah Abang");
+  await expect(first).toContainText("terdekat");
+  await expect(first.getByRole("link", { name: "Petunjuk arah" })).toHaveAttribute(
+    "href",
+    /google\.com\/maps\/dir/,
+  );
+  await expect(count).not.toHaveText("0 lokasi");
+
+  // MPP tidak di area peta: peta pindah ke MPP terdekat dan hasilnya tampil.
+  await section
+    .getByRole("group", { name: "Jenis lokasi" })
+    .getByRole("button", { name: "Mal Pelayanan Publik", exact: true })
+    .click();
+  await expect(section.getByRole("listitem").first()).toContainText("Rasuna Said");
+  await expect(section.getByText(/Program Jemput Bola/)).toBeVisible();
+  expect(await hasHorizontalScroll(page)).toBe(false);
+});

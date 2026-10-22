@@ -72,12 +72,12 @@ test("warga melihat catatan publik, catatan internal tidak bocor", async ({ open
   await expect(page.getByText("Cek silang KK OK.")).toHaveCount(0);
 });
 
-test("jam +2 hari: tahap merah di HP warga, eskalasi di dashboard pimpinan", async ({ openPage }) => {
+test("jam +2 hari kerja: tahap merah di HP warga, eskalasi di dashboard pimpinan", async ({ openPage }) => {
   const admin = await openPage();
   await login(admin, "admin@resi.demo");
   await admin.waitForURL("**/admin/demo");
-  await admin.getByRole("button", { name: "Majukan +2 hari" }).click();
-  await expect(admin.getByText(/Jam sistem sekarang \+2 hari/)).toBeVisible();
+  await admin.getByRole("button", { name: "Majukan +2 hari kerja" }).click();
+  await expect(admin.getByText(/Jam sistem dimajukan 2 hari kerja/)).toBeVisible();
 
   const warga = await openPage({ viewport: MOBILE });
   await gotoReady(warga, `/lacak/${resi}`);

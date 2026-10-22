@@ -6,6 +6,12 @@ import {
   test as base,
 } from "@playwright/test";
 
+/** PNG transparan 1×1. */
+const BLANK_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+  "base64",
+);
+
 /**
  * `openPage(options)`: halaman di konteks browser baru (cookie/login terpisah, cocok
  * untuk memerankan warga, petugas, pimpinan bersamaan). Setiap error JavaScript atau
@@ -18,6 +24,11 @@ export const test = base.extend<{ openPage: (options?: BrowserContextOptions) =>
     await use(async (options = {}) => {
       const context = await browser.newContext({ baseURL, ...options });
       contexts.push(context);
+      // Tes tidak bergantung pada internet: tile peta & sumber luar dijawab gambar kosong.
+      await context.route(
+        (url) => url.hostname !== "localhost",
+        (route) => route.fulfill({ status: 200, contentType: "image/png", body: BLANK_PNG }),
+      );
       const page = await context.newPage();
       page.on("pageerror", (error) => errors.push(`[pageerror] ${page.url()} ${error.message}`));
       page.on("response", (res) => {

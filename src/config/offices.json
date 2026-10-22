@@ -1,0 +1,2498 @@
+[
+ {
+  "id": "kec-cakung",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cakung",
+  "address": "Jl. Raya Bekasi KM 23",
+  "lat": -6.1842,
+  "lng": 106.94018
+ },
+ {
+  "id": "kec-cempaka-putih",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cempaka Putih",
+  "address": "Jl. Rawasari Selatan No. 3",
+  "lat": -6.1847,
+  "lng": 106.87329
+ },
+ {
+  "id": "kec-cengkareng",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cengkareng",
+  "address": "Jl. Lingkar Barat",
+  "lat": -6.15034,
+  "lng": 106.72688
+ },
+ {
+  "id": "kec-cilandak",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cilandak",
+  "address": "Jl. K.H. Muhasim VII No. 90",
+  "lat": -6.29153,
+  "lng": 106.79101
+ },
+ {
+  "id": "kec-cilincing",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cilincing",
+  "address": "Jl. Sungai Landak, Kelurahan Cilincing, Kecamatan Cilincing, Jakarta Utara",
+  "lat": -6.10228,
+  "lng": 106.93941
+ },
+ {
+  "id": "kec-cipayung",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cipayung",
+  "address": "Jl. Bina Marga",
+  "lat": -6.32866,
+  "lng": 106.88859
+ },
+ {
+  "id": "kec-cipinang-cempedak",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Cipinang Cempedak",
+  "address": "",
+  "lat": -6.22831,
+  "lng": 106.87521
+ },
+ {
+  "id": "kec-ciracas",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Ciracas",
+  "address": "Jl. Penganten Ali Rt 003 Rw 006",
+  "lat": -6.32024,
+  "lng": 106.8834
+ },
+ {
+  "id": "kec-duren-sawit",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Duren Sawit",
+  "address": "Jl. Swadaya VIII No. 4",
+  "lat": -6.23298,
+  "lng": 106.91824
+ },
+ {
+  "id": "kec-gambir",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Gambir",
+  "address": "Jl. Tanah Abang I",
+  "lat": -6.17078,
+  "lng": 106.81903
+ },
+ {
+  "id": "kec-grogol-petamburan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Grogol Petamburan",
+  "address": "Jl. Tanjung Duren Barat IV",
+  "lat": -6.17799,
+  "lng": 106.78329
+ },
+ {
+  "id": "kec-jagakarsa",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Jagakarsa",
+  "address": "Jl. Sirsak No. 2",
+  "lat": -6.33408,
+  "lng": 106.82162
+ },
+ {
+  "id": "kec-jatinegara",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Jatinegara",
+  "address": "Jl. Di Panjaitan",
+  "lat": -6.22826,
+  "lng": 106.87459
+ },
+ {
+  "id": "kec-johar-baru",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Johar Baru",
+  "address": "Jl. Johar Baru Utara I No. 1",
+  "lat": -6.18234,
+  "lng": 106.85636
+ },
+ {
+  "id": "kec-kalideres",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kalideres",
+  "address": "Jl. Peta Utara No. 26",
+  "lat": -6.14226,
+  "lng": 106.70216
+ },
+ {
+  "id": "kec-kebayoran-baru",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kebayoran Baru",
+  "address": "Jl. Kerinci IX",
+  "lat": -6.24008,
+  "lng": 106.78861
+ },
+ {
+  "id": "kec-kebayoran-lama",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kebayoran Lama",
+  "address": "Jl. Ciputat Raya No. 1",
+  "lat": -6.2495,
+  "lng": 106.77852
+ },
+ {
+  "id": "kec-kebon-jeruk",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kebon Jeruk",
+  "address": "Jl. HH",
+  "lat": -6.1988,
+  "lng": 106.76426
+ },
+ {
+  "id": "kec-kecamatan-kelapa-gading",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kecamatan Kelapa Gading",
+  "address": "Jl. Bulevard Timur, Pegangsaan Dua, Kelapa Gading, Pegangsaan Dua, Klp. Gading, Kota Jkt Utara, Daerah Khusus Ibukota Jakarta 14250",
+  "lat": -6.16256,
+  "lng": 106.908
+ },
+ {
+  "id": "kec-kemayoran",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kemayoran",
+  "address": "Jl. Serdang III No. 01",
+  "lat": -6.15641,
+  "lng": 106.86391
+ },
+ {
+  "id": "kec-kembangan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kembangan",
+  "address": "Taman Meruya Ilir",
+  "lat": -6.19526,
+  "lng": 106.73646
+ },
+ {
+  "id": "kec-kepulauan-seribu-selatan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kepulauan Seribu Selatan",
+  "address": "Jl. Pulau Tidung",
+  "lat": -5.79661,
+  "lng": 106.49315
+ },
+ {
+  "id": "kec-kepulauan-seribu-utara",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kepulauan Seribu Utara",
+  "address": "Jl. Merlin, Pulau Kelapa",
+  "lat": -5.65646,
+  "lng": 106.57343
+ },
+ {
+  "id": "kec-koja",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Koja",
+  "address": "Jl. Mundu No. 1",
+  "lat": -6.11799,
+  "lng": 106.91045
+ },
+ {
+  "id": "kec-kramat-jati",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Kramat Jati",
+  "address": "Jl. Raya Bogor Km 20",
+  "lat": -6.28492,
+  "lng": 106.87156
+ },
+ {
+  "id": "kec-makasar",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Makasar",
+  "address": "Jl. Pusdiklat Depnaker, Makasar, Jakarta Timur",
+  "lat": -6.27919,
+  "lng": 106.87851
+ },
+ {
+  "id": "kec-mampang-prapatan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Mampang Prapatan",
+  "address": "",
+  "lat": -6.2521,
+  "lng": 106.82446
+ },
+ {
+  "id": "kec-matraman",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Matraman",
+  "address": "Jl. Balai Rakyat Utan Kayu Utara",
+  "lat": -6.19726,
+  "lng": 106.86936
+ },
+ {
+  "id": "kec-menteng",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Menteng",
+  "address": "Jl. Pegangsaan Barat No. 14",
+  "lat": -6.19942,
+  "lng": 106.84136
+ },
+ {
+  "id": "kec-pademangan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pademangan",
+  "address": "Jl. Budi Mulia Raya No. 1",
+  "lat": -6.13315,
+  "lng": 106.83714
+ },
+ {
+  "id": "kec-palmerah",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Palmerah",
+  "address": "Jl. Palmerah Tengah No. 2",
+  "lat": -6.19888,
+  "lng": 106.78695
+ },
+ {
+  "id": "kec-pancoran",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pancoran",
+  "address": "Jl. Pengadegan Timur 2",
+  "lat": -6.24865,
+  "lng": 106.86017
+ },
+ {
+  "id": "kec-pasar-minggu",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pasar Minggu",
+  "address": "Jl. Raya Ragunan",
+  "lat": -6.28478,
+  "lng": 106.83543
+ },
+ {
+  "id": "kec-pasar-rebo",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pasar Rebo",
+  "address": "Jl. Raya Bogor",
+  "lat": -6.34007,
+  "lng": 106.8698
+ },
+ {
+  "id": "kec-penjaringan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Penjaringan",
+  "address": "Jl. Pluit Raya No. 5",
+  "lat": -6.1261,
+  "lng": 106.79408
+ },
+ {
+  "id": "kec-pesanggrahan",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pesanggrahan",
+  "address": "Jl. Pesanggrahan",
+  "lat": -6.25702,
+  "lng": 106.75676
+ },
+ {
+  "id": "kec-pulo-gadung",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Pulo Gadung",
+  "address": "Jl. Raya Bekasi KM 18",
+  "lat": -6.1986,
+  "lng": 106.90443
+ },
+ {
+  "id": "kec-sawah-besar",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Sawah Besar",
+  "address": "Jl. Karang Anyar",
+  "lat": -6.15145,
+  "lng": 106.82791
+ },
+ {
+  "id": "kec-senen",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Senen",
+  "address": "Jl. Kramat Raya No. 114",
+  "lat": -6.18482,
+  "lng": 106.8434
+ },
+ {
+  "id": "kec-setiabudi",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Setiabudi",
+  "address": "Jl. Setiabudi Barat No. 8M",
+  "lat": -6.20849,
+  "lng": 106.82367
+ },
+ {
+  "id": "kec-tamansari",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tamansari",
+  "address": "Jl. Kemukus",
+  "lat": -6.13421,
+  "lng": 106.81539
+ },
+ {
+  "id": "kec-tambora",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tambora",
+  "address": "Jl. Pangeran Tubagus Angke Jembatan Dua",
+  "lat": -6.14351,
+  "lng": 106.79129
+ },
+ {
+  "id": "kec-tanah-abang",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tanah Abang",
+  "address": "Jl. KH. Mas Mansyur No. 130",
+  "lat": -6.19984,
+  "lng": 106.81434
+ },
+ {
+  "id": "kec-tanjung-priok",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tanjung Priok",
+  "address": "Jl. Yos Sudarso No. 22",
+  "lat": -6.11684,
+  "lng": 106.89258
+ },
+ {
+  "id": "kec-tebet",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tebet",
+  "address": "Jl. Prof. Dr. Soepomo",
+  "lat": -6.23173,
+  "lng": 106.84616
+ },
+ {
+  "id": "kec-tj-priok",
+  "type": "kecamatan",
+  "name": "Kantor Kecamatan Tj. Priok",
+  "address": "",
+  "lat": -6.11689,
+  "lng": 106.89298
+ },
+ {
+  "id": "kel-angke",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Angke",
+  "address": "Jl. Angke Indah Raya 1/32",
+  "lat": -6.1434,
+  "lng": 106.80014
+ },
+ {
+  "id": "kel-bale-kambang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bale Kambang",
+  "address": "Jl. Kober, Jakarta Timur",
+  "lat": -6.2817,
+  "lng": 106.85029
+ },
+ {
+  "id": "kel-bali-mester",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bali Mester",
+  "address": "Jl. Jatinegara Barat II No. 19",
+  "lat": -6.22036,
+  "lng": 106.86669
+ },
+ {
+  "id": "kel-bambu-apus",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bambu Apus",
+  "address": "Jl. Mini III",
+  "lat": -6.30584,
+  "lng": 106.90715
+ },
+ {
+  "id": "kel-bangka",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bangka",
+  "address": "Jl. Duren Bangka",
+  "lat": -6.25937,
+  "lng": 106.82591
+ },
+ {
+  "id": "kel-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Baru",
+  "address": "Jl. Puskesmas",
+  "lat": -6.32336,
+  "lng": 106.85115
+ },
+ {
+  "id": "kel-batu-ampar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Batu Ampar",
+  "address": "Jl. Batu Ampar 2",
+  "lat": -6.28286,
+  "lng": 106.85888
+ },
+ {
+  "id": "kel-benda",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Benda",
+  "address": "",
+  "lat": -6.11936,
+  "lng": 106.68782
+ },
+ {
+  "id": "kel-bendungan-hilir",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bendungan Hilir",
+  "address": "Jl. Penjernihan I No. 29 B",
+  "lat": -6.20176,
+  "lng": 106.80828
+ },
+ {
+  "id": "kel-bidara-cina",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bidara Cina",
+  "address": "Jl. Tanjung Lengkong No. 30",
+  "lat": -6.23999,
+  "lng": 106.86738
+ },
+ {
+  "id": "kel-bintaro",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bintaro",
+  "address": "Jl. R.C. Veteran Raya",
+  "lat": -6.27293,
+  "lng": 106.76434
+ },
+ {
+  "id": "kel-bukit-duri",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bukit Duri",
+  "address": "Jl. Kampung Melayu Kecil III No. 12",
+  "lat": -6.22416,
+  "lng": 106.86124
+ },
+ {
+  "id": "kel-bungur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Bungur",
+  "address": "Jl. Kp. Kepu Gang V No. 277",
+  "lat": -6.1688,
+  "lng": 106.84635
+ },
+ {
+  "id": "kel-cakung-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cakung Barat",
+  "address": "Jl. Pool PPD Depo C",
+  "lat": -6.17359,
+  "lng": 106.93355
+ },
+ {
+  "id": "kel-cakung-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cakung Timur",
+  "address": "Jl. Irigasi Gempol Jakarta Timur",
+  "lat": -6.18348,
+  "lng": 106.95765
+ },
+ {
+  "id": "kel-cawang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cawang",
+  "address": "JL. Ja’ani Nasir No. 7",
+  "lat": -6.25032,
+  "lng": 106.86838
+ },
+ {
+  "id": "kel-ceger",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ceger",
+  "address": "Jl. SMPN 160",
+  "lat": -6.31447,
+  "lng": 106.8894
+ },
+ {
+  "id": "kel-cempaka-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cempaka Baru",
+  "address": "Jl. Cempaka Baru II No. 1",
+  "lat": -6.16974,
+  "lng": 106.85946
+ },
+ {
+  "id": "kel-cempaka-putih-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cempaka Putih Barat",
+  "address": "Jl. Cempak Putih Barat XXV",
+  "lat": -6.1839,
+  "lng": 106.86758
+ },
+ {
+  "id": "kel-cempaka-putih-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cempaka Putih Timur",
+  "address": "Jl. Cempaka Putih Tengah 13",
+  "lat": -6.17373,
+  "lng": 106.87042
+ },
+ {
+  "id": "kel-cengkareng-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cengkareng Barat",
+  "address": "Jl. Utama Raya",
+  "lat": -6.14952,
+  "lng": 106.72181
+ },
+ {
+  "id": "kel-cengkareng-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cengkareng Timur",
+  "address": "Jl. Fajar Baru Utara",
+  "lat": -6.14515,
+  "lng": 106.73324
+ },
+ {
+  "id": "kel-cibubur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cibubur",
+  "address": "Jl. Raya Lapangan Tembak",
+  "lat": -6.34997,
+  "lng": 106.87649
+ },
+ {
+  "id": "kel-cideng",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cideng",
+  "address": "Jl. petojo selatan xi No. 9",
+  "lat": -6.16788,
+  "lng": 106.80935
+ },
+ {
+  "id": "kel-ciganjur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ciganjur",
+  "address": "Jl. Anda No. 1B RT. 007/ RW. 03",
+  "lat": -6.33811,
+  "lng": 106.8106
+ },
+ {
+  "id": "kel-cijantung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cijantung",
+  "address": "Jl. Gongseng Raya Rt 1 RW 10",
+  "lat": -6.32487,
+  "lng": 106.86204
+ },
+ {
+  "id": "kel-cikini",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cikini",
+  "address": "Jl. Cikini VII No. 7",
+  "lat": -6.18875,
+  "lng": 106.83903
+ },
+ {
+  "id": "kel-cikoko",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cikoko",
+  "address": "Jl. Cikoko Barat III No. 45",
+  "lat": -6.24634,
+  "lng": 106.8528
+ },
+ {
+  "id": "kel-cilandak-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cilandak Barat",
+  "address": "Jl. Terogong III No. 85",
+  "lat": -6.28226,
+  "lng": 106.79202
+ },
+ {
+  "id": "kel-cilandak-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cilandak Timur",
+  "address": "Jl. Bakti No. 48 Cilandak Timur",
+  "lat": -6.30707,
+  "lng": 106.81064
+ },
+ {
+  "id": "kel-cilangkap",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cilangkap",
+  "address": "Jl. Assyafi'iyah",
+  "lat": -6.3338,
+  "lng": 106.90325
+ },
+ {
+  "id": "kel-cililitan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cililitan",
+  "address": "Jl. Mayjend Sutoyo Blok Ali Sarbi 2 No. 46",
+  "lat": -6.26038,
+  "lng": 106.86996
+ },
+ {
+  "id": "kel-cilincing",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cilincing",
+  "address": "Jl. Cilincing Bhakti, Kelurahan Cilincing, Kecamatan Cilincing, Jakarta Utara",
+  "lat": -6.10918,
+  "lng": 106.93894
+ },
+ {
+  "id": "kel-cipayung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipayung",
+  "address": "Jl. Bambu Hitam",
+  "lat": -6.32461,
+  "lng": 106.89961
+ },
+ {
+  "id": "kel-cipedak",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipedak",
+  "address": "Jl. Pinding",
+  "lat": -6.34478,
+  "lng": 106.80266
+ },
+ {
+  "id": "kel-cipete-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipete Selatan",
+  "address": "Jl. Palem",
+  "lat": -6.27408,
+  "lng": 106.79881
+ },
+ {
+  "id": "kel-cipete-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipete Utara",
+  "address": "Jl. Sawo Dalam III",
+  "lat": -6.26291,
+  "lng": 106.803
+ },
+ {
+  "id": "kel-cipinang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang",
+  "address": "Jl. Cipinang Empang Timur No. 1",
+  "lat": -6.20896,
+  "lng": 106.89517
+ },
+ {
+  "id": "kel-cipinang-besar-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang Besar Selatan",
+  "address": "Jl. Cipinang Raya Gang Buntu",
+  "lat": -6.22429,
+  "lng": 106.8832
+ },
+ {
+  "id": "kel-cipinang-besar-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang Besar Utara",
+  "address": "Jl. Swadaya II",
+  "lat": -6.21734,
+  "lng": 106.88218
+ },
+ {
+  "id": "kel-cipinang-cempedak",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang Cempedak",
+  "address": "Jl. Panti Asuhan",
+  "lat": -6.22829,
+  "lng": 106.87432
+ },
+ {
+  "id": "kel-cipinang-melayu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang Melayu",
+  "address": "Jl. Inspeksi Tarum Barat Rt 01/ Rw 10",
+  "lat": -6.24471,
+  "lng": 106.89863
+ },
+ {
+  "id": "kel-cipinang-muara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipinang Muara",
+  "address": "Jl. Cipinang Muara Raya No. 1",
+  "lat": -6.22739,
+  "lng": 106.88649
+ },
+ {
+  "id": "kel-cipulir",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Cipulir",
+  "address": "Jl. Samudera I",
+  "lat": -6.2393,
+  "lng": 106.7763
+ },
+ {
+  "id": "kel-ciracas",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ciracas",
+  "address": "Jl. Raya Ciracas RT 007 RW 003",
+  "lat": -6.32829,
+  "lng": 106.87765
+ },
+ {
+  "id": "kel-dukuh",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Dukuh",
+  "address": "Jl. Dukuh V",
+  "lat": -6.29207,
+  "lng": 106.87706
+ },
+ {
+  "id": "kel-duren-sawit",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duren Sawit",
+  "address": "Jl. Kelurahan",
+  "lat": -6.23098,
+  "lng": 106.91461
+ },
+ {
+  "id": "kel-duren-tiga",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duren Tiga",
+  "address": "Jl. Minyak I",
+  "lat": -6.25414,
+  "lng": 106.83674
+ },
+ {
+  "id": "kel-duri-kepa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duri Kepa",
+  "address": "Jl. Duri Kepa No. 1",
+  "lat": -6.18504,
+  "lng": 106.77322
+ },
+ {
+  "id": "kel-duri-kosambi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duri Kosambi",
+  "address": "Jl. Duri Kosambi Raya",
+  "lat": -6.17009,
+  "lng": 106.72235
+ },
+ {
+  "id": "kel-duri-pulo",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duri Pulo",
+  "address": "Jl. Petojo Barat XI",
+  "lat": -6.16384,
+  "lng": 106.8093
+ },
+ {
+  "id": "kel-duri-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duri Selatan",
+  "address": "Jl. Duri Selatan 8 RT 04 RW 05",
+  "lat": -6.15817,
+  "lng": 106.80251
+ },
+ {
+  "id": "kel-duri-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Duri Utara",
+  "address": "Jl. Duri Raya",
+  "lat": -6.15486,
+  "lng": 106.80199
+ },
+ {
+  "id": "kel-galur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Galur",
+  "address": "Jl. Galur Jaya No. 36",
+  "lat": -6.17553,
+  "lng": 106.85465
+ },
+ {
+  "id": "kel-gambir",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gambir",
+  "address": "Jl. Budi Kemuliaan",
+  "lat": -6.17996,
+  "lng": 106.81957
+ },
+ {
+  "id": "kel-gandaria-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gandaria Selatan",
+  "address": "Jl. Mangga",
+  "lat": -6.27051,
+  "lng": 106.79399
+ },
+ {
+  "id": "kel-gedong",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gedong",
+  "address": "Jl. H. Taiman No. 20",
+  "lat": -6.30145,
+  "lng": 106.86603
+ },
+ {
+  "id": "kel-gelora",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gelora",
+  "address": "Jl. Gerbang Pemuda No. 1",
+  "lat": -6.21395,
+  "lng": 106.79827
+ },
+ {
+  "id": "kel-glodok",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Glodok",
+  "address": "Jl. Kemurnian V",
+  "lat": -6.14626,
+  "lng": 106.81299
+ },
+ {
+  "id": "kel-gondangdia",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gondangdia",
+  "address": "Jl. Jambu No. 2A",
+  "lat": -6.19029,
+  "lng": 106.83465
+ },
+ {
+  "id": "kel-grogol",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Grogol",
+  "address": "Jl. DR Nurdin",
+  "lat": -6.15931,
+  "lng": 106.79338
+ },
+ {
+  "id": "kel-grogol-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Grogol Selatan",
+  "address": "Jl. Kubur Islam",
+  "lat": -6.23036,
+  "lng": 106.78342
+ },
+ {
+  "id": "kel-grogol-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Grogol Utara",
+  "address": "Jl. Kemandoran I",
+  "lat": -6.21096,
+  "lng": 106.78939
+ },
+ {
+  "id": "kel-guntur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Guntur",
+  "address": "Jl. Prahu No. 2 RT/RW 08/02",
+  "lat": -6.20703,
+  "lng": 106.83425
+ },
+ {
+  "id": "kel-gunung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gunung",
+  "address": "Jl. Bujana Dalam No. 7",
+  "lat": -6.23468,
+  "lng": 106.78842
+ },
+ {
+  "id": "kel-gunung-sahari-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gunung Sahari Selatan",
+  "address": "Jl. Kran Raya No. 77",
+  "lat": -6.16083,
+  "lng": 106.84578
+ },
+ {
+  "id": "kel-gunung-sahari-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Gunung Sahari Utara",
+  "address": "Jl. Gunung Sahari VII A No. 30",
+  "lat": -6.15301,
+  "lng": 106.83868
+ },
+ {
+  "id": "kel-halim-perdana-kusuma",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Halim Perdana Kusuma",
+  "address": "Jl. Squadron No. 1A",
+  "lat": -6.26777,
+  "lng": 106.87773
+ },
+ {
+  "id": "kel-harapan-mulya",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Harapan Mulya",
+  "address": "Jl. Cempaka Wangi II",
+  "lat": -6.16791,
+  "lng": 106.85763
+ },
+ {
+  "id": "kel-jagakarsa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jagakarsa",
+  "address": "Jl. Jagakarsa II",
+  "lat": -6.32843,
+  "lng": 106.82253
+ },
+ {
+  "id": "kel-jati",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jati",
+  "address": "Jl. Perhubungan No. 79C",
+  "lat": -6.19927,
+  "lng": 106.90037
+ },
+ {
+  "id": "kel-jati-padang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jati Padang",
+  "address": "Jl. Raya Ragunan No. 2",
+  "lat": -6.28557,
+  "lng": 106.83484
+ },
+ {
+  "id": "kel-jati-pulo",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jati Pulo",
+  "address": "Jl. Turi No. 30",
+  "lat": -6.17711,
+  "lng": 106.80426
+ },
+ {
+  "id": "kel-jatinegara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jatinegara",
+  "address": "Jl. Raya Bekasi KM 18",
+  "lat": -6.19758,
+  "lng": 106.90546
+ },
+ {
+  "id": "kel-jatinegara-kaum",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jatinegara Kaum",
+  "address": "Jl. TB Badarudin No. 1",
+  "lat": -6.20916,
+  "lng": 106.89782
+ },
+ {
+  "id": "kel-jelambar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jelambar",
+  "address": "Jl. Hadiah Ujung",
+  "lat": -6.16141,
+  "lng": 106.78153
+ },
+ {
+  "id": "kel-jelambar-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jelambar Baru",
+  "address": "Jl. Kusuma VI D",
+  "lat": -6.14725,
+  "lng": 106.78154
+ },
+ {
+  "id": "kel-jembatabn-besi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jembatabn Besi",
+  "address": "Jl. Jembatan Besi 9",
+  "lat": -6.15272,
+  "lng": 106.79794
+ },
+ {
+  "id": "kel-jembatan-lima",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Jembatan Lima",
+  "address": "Jl. Stasiun Angke Gudang Gandung No. 134",
+  "lat": -6.14618,
+  "lng": 106.80129
+ },
+ {
+  "id": "kel-joglo",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Joglo",
+  "address": "Jl. Joglo Raya No. 1",
+  "lat": -6.22051,
+  "lng": 106.73546
+ },
+ {
+  "id": "kel-johar-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Johar Baru",
+  "address": "Jl. Johar Baru Utara III No. 39",
+  "lat": -6.18328,
+  "lng": 106.85681
+ },
+ {
+  "id": "kel-kali-anyar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kali Anyar",
+  "address": "Jl. Kali Anyar IV No. 10",
+  "lat": -6.15629,
+  "lng": 106.79934
+ },
+ {
+  "id": "kel-kali-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kali Baru",
+  "address": "Jl. Kali Baru Timur II",
+  "lat": -6.1023,
+  "lng": 106.929
+ },
+ {
+  "id": "kel-kalibata",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kalibata",
+  "address": "Jl. Kalibata Timur IV",
+  "lat": -6.26039,
+  "lng": 106.847
+ },
+ {
+  "id": "kel-kalideres",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kalideres",
+  "address": "Jl. Perumahan Citra I Blok G.VI No. 31",
+  "lat": -6.14329,
+  "lng": 106.69246
+ },
+ {
+  "id": "kel-kalisari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kalisari",
+  "address": "Jl. Kalisari Raya",
+  "lat": -6.33738,
+  "lng": 106.85598
+ },
+ {
+  "id": "kel-kamal",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kamal",
+  "address": "Jl. Benda Raya No. 7",
+  "lat": -6.10439,
+  "lng": 106.70613
+ },
+ {
+  "id": "kel-kamal-muara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kamal Muara",
+  "address": "Jl. Kamal Pantai",
+  "lat": -6.0981,
+  "lng": 106.71415
+ },
+ {
+  "id": "kel-kampung-bali",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kampung Bali",
+  "address": "Jl. Kampung Bali V",
+  "lat": -6.18448,
+  "lng": 106.81786
+ },
+ {
+  "id": "kel-kampung-melayu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kampung Melayu",
+  "address": "Jl. Kebon Pala",
+  "lat": -6.21454,
+  "lng": 106.8597
+ },
+ {
+  "id": "kel-kampung-rawa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kampung Rawa",
+  "address": "Jl. Rawa Selatan III",
+  "lat": -6.18037,
+  "lng": 106.85873
+ },
+ {
+  "id": "kel-kapuk",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kapuk",
+  "address": "Jl. Kapuk Kamal",
+  "lat": -6.13135,
+  "lng": 106.74615
+ },
+ {
+  "id": "kel-kapuk-muara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kapuk Muara",
+  "address": "Jl. SMP 122 RT/RW 01/03",
+  "lat": -6.13728,
+  "lng": 106.76399
+ },
+ {
+  "id": "kel-karang-anyar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karang Anyar",
+  "address": "Jl. B. Karang Anyar",
+  "lat": -6.15582,
+  "lng": 106.8289
+ },
+ {
+  "id": "kel-karet",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karet",
+  "address": "Jl. Karet Raya",
+  "lat": -6.211,
+  "lng": 106.82592
+ },
+ {
+  "id": "kel-karet-jakarta-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karet Jakarta Selatan",
+  "address": "Jl. anggrek raya, Jakarta Selatan 12940",
+  "lat": -6.216,
+  "lng": 106.82254
+ },
+ {
+  "id": "kel-karet-kuningan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karet Kuningan",
+  "address": "Jl. Anggrek IV No. 4",
+  "lat": -6.21867,
+  "lng": 106.82503
+ },
+ {
+  "id": "kel-karet-semanggi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karet Semanggi",
+  "address": "Jl. K.H Guru Mughni No. 1",
+  "lat": -6.22577,
+  "lng": 106.82131
+ },
+ {
+  "id": "kel-karet-tengsin",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Karet Tengsin",
+  "address": "Jl. Karet Pasar Baru Barat VII No. 17",
+  "lat": -6.21214,
+  "lng": 106.81537
+ },
+ {
+  "id": "kel-kartini",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kartini",
+  "address": "Jl. Kartini V Dalam",
+  "lat": -6.15322,
+  "lng": 106.83172
+ },
+ {
+  "id": "kel-kayu-manis",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kayu Manis",
+  "address": "Jl. Kayu Manis VIII No. 36, RT.5/RW.8",
+  "lat": -6.20684,
+  "lng": 106.86352
+ },
+ {
+  "id": "kel-kayu-putih",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kayu Putih",
+  "address": "Jl. Genteng No. 2",
+  "lat": -6.186,
+  "lng": 106.88754
+ },
+ {
+  "id": "kel-keagungan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Keagungan",
+  "address": "Jl. Keagungan No. 57-59",
+  "lat": -6.15091,
+  "lng": 106.81495
+ },
+ {
+  "id": "kel-kebagusan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebagusan",
+  "address": "Jl. Kebagusan IV No. 1",
+  "lat": -6.31323,
+  "lng": 106.82993
+ },
+ {
+  "id": "kel-kebayoran-lama-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebayoran Lama Selatan",
+  "address": "Jl. Bungur Raya No. 1",
+  "lat": -6.2484,
+  "lng": 106.78289
+ },
+ {
+  "id": "kel-kebayoran-lama-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebayoran Lama Utara",
+  "address": "Jl. Ciputat Raya",
+  "lat": -6.24173,
+  "lng": 106.78122
+ },
+ {
+  "id": "kel-kebon-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Baru",
+  "address": "Jl. Asem Baris Raya",
+  "lat": -6.23233,
+  "lng": 106.85943
+ },
+ {
+  "id": "kel-kebon-bawang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Bawang",
+  "address": "Jl. Swasembada Timur",
+  "lat": -6.11628,
+  "lng": 106.88864
+ },
+ {
+  "id": "kel-kebon-jeruk",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan kebon Jeruk",
+  "address": "Jl. kebon Jeruk Baru",
+  "lat": -6.18997,
+  "lng": 106.77296
+ },
+ {
+  "id": "kel-kebon-kacang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Kacang",
+  "address": "Jl. KH. Mas Mansyur No. 30",
+  "lat": -6.19108,
+  "lng": 106.81451
+ },
+ {
+  "id": "kel-kebon-kelapa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Kelapa",
+  "address": "Jl. Batu Tulis VII",
+  "lat": -6.16468,
+  "lng": 106.82521
+ },
+ {
+  "id": "kel-kebon-kosong",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Kosong",
+  "address": "Jl. Dakota V",
+  "lat": -6.15349,
+  "lng": 106.85836
+ },
+ {
+  "id": "kel-kebon-manggis",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Manggis",
+  "address": "Jl. Kebon Manggis 1",
+  "lat": -6.20558,
+  "lng": 106.8556
+ },
+ {
+  "id": "kel-kebon-melati",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Melati",
+  "address": "Jl. Lontar Raya No. 3",
+  "lat": -6.19128,
+  "lng": 106.81266
+ },
+ {
+  "id": "kel-kebon-pala",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Pala",
+  "address": "Jl. Jengki, Cipinang Asem RT. 011 RW. 04, Kelurahan Kebon Pala, Kecamatan Makasar, Jakarta Timur",
+  "lat": -6.25775,
+  "lng": 106.87918
+ },
+ {
+  "id": "kel-kebon-sirih",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kebon Sirih",
+  "address": "Jl. Jaksa No. 8",
+  "lat": -6.18399,
+  "lng": 106.82938
+ },
+ {
+  "id": "kel-kedaung-kaliangke",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kedaung Kaliangke",
+  "address": "Jl. Komp. Depag",
+  "lat": -6.15358,
+  "lng": 106.76215
+ },
+ {
+  "id": "kel-kedoya-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kedoya Selatan",
+  "address": "Jl. Raya Kedoya",
+  "lat": -6.17989,
+  "lng": 106.75899
+ },
+ {
+  "id": "kel-kedoya-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kedoya Utara",
+  "address": "Jl. Ratu Flamboyan",
+  "lat": -6.17699,
+  "lng": 106.76739
+ },
+ {
+  "id": "kel-kelapa-dua",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kelapa Dua",
+  "address": "Jl. Raya Kelapa Dua No. 2",
+  "lat": -6.21435,
+  "lng": 106.76957
+ },
+ {
+  "id": "kel-kelapa-dua-wetan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kelapa Dua Wetan",
+  "address": "Jl. Raya PKP",
+  "lat": -6.33858,
+  "lng": 106.88232
+ },
+ {
+  "id": "kel-kelapa-gading-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kelapa Gading Barat",
+  "address": "Jl. Tabah I",
+  "lat": -6.16288,
+  "lng": 106.88472
+ },
+ {
+  "id": "kel-kelapa-gading-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kelapa Gading Timur",
+  "address": "Jl. Gading Barat Elok III Blok DF No. 1",
+  "lat": -6.16667,
+  "lng": 106.90245
+ },
+ {
+  "id": "kel-kemanggisan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kemanggisan",
+  "address": "Jl. Kemanggisan Ilir I No. 2",
+  "lat": -6.19238,
+  "lng": 106.78662
+ },
+ {
+  "id": "kel-kemayoran",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kemayoran",
+  "address": "Jl. Kepu Barat No. 05",
+  "lat": -6.16775,
+  "lng": 106.84371
+ },
+ {
+  "id": "kel-kembangan-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kembangan Selatan",
+  "address": "Jl. Raya Kembangan Selatan No. 2",
+  "lat": -6.18328,
+  "lng": 106.75181
+ },
+ {
+  "id": "kel-kembangan-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kembangan Utara",
+  "address": "Jl. KH. Saanan",
+  "lat": -6.17911,
+  "lng": 106.73534
+ },
+ {
+  "id": "kel-kenari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kenari",
+  "address": "Jl. Jambrut No. 12",
+  "lat": -6.19073,
+  "lng": 106.84608
+ },
+ {
+  "id": "kel-klender",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Klender",
+  "address": "Jl. H. Maisin",
+  "lat": -6.21684,
+  "lng": 106.90809
+ },
+ {
+  "id": "kel-koja",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Koja",
+  "address": "Jl. Sindang No. 1",
+  "lat": -6.11229,
+  "lng": 106.89759
+ },
+ {
+  "id": "kel-kota-bambu-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kota Bambu Selatan",
+  "address": "Jl. H. Sa'aman No. 41",
+  "lat": -6.18509,
+  "lng": 106.80193
+ },
+ {
+  "id": "kel-kota-bambu-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kota Bambu Utara",
+  "address": "Jl. Kota Bambu Utara II No. 7",
+  "lat": -6.18551,
+  "lng": 106.80744
+ },
+ {
+  "id": "kel-kramat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kramat",
+  "address": "Jl. Kramat Pulo Dalam II No. F/7",
+  "lat": -6.18516,
+  "lng": 106.84777
+ },
+ {
+  "id": "kel-kramat-jati",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kramat Jati",
+  "address": "Jl. Kerja Bakti No. 32 Kecamatan Kramatjati Jakarta Timur. Kode Pos 13510",
+  "lat": -6.27744,
+  "lng": 106.87195
+ },
+ {
+  "id": "kel-kramat-pela",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kramat Pela",
+  "address": "Jl. Gandaria Tengah V",
+  "lat": -6.24496,
+  "lng": 106.79059
+ },
+ {
+  "id": "kel-krendang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Krendang",
+  "address": "Jl. Krendang Selatan No. 20",
+  "lat": -6.15213,
+  "lng": 106.80186
+ },
+ {
+  "id": "kel-krukut",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Krukut",
+  "address": "Jl. Keutamaan Dalam",
+  "lat": -6.15569,
+  "lng": 106.81655
+ },
+ {
+  "id": "kel-kuningan-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kuningan Barat",
+  "address": "Jl. Kuningan Barat I",
+  "lat": -6.23675,
+  "lng": 106.82065
+ },
+ {
+  "id": "kel-kuningan-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kuningan Timur",
+  "address": "Jl. Mega Kuningan Barat III",
+  "lat": -6.23175,
+  "lng": 106.82552
+ },
+ {
+  "id": "kel-kwitang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Kwitang",
+  "address": "Jl. Kramant IV",
+  "lat": -6.1867,
+  "lng": 106.84083
+ },
+ {
+  "id": "kel-lagoa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Lagoa",
+  "address": "Jl. Mangga No. 7",
+  "lat": -6.11408,
+  "lng": 106.9107
+ },
+ {
+  "id": "kel-lebak-bulus",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Lebak Bulus",
+  "address": "Jl. Manunggal Jaya",
+  "lat": -6.30457,
+  "lng": 106.7844
+ },
+ {
+  "id": "kel-lenteng-agung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Lenteng Agung",
+  "address": "Jl. Agung Raya I",
+  "lat": -6.32374,
+  "lng": 106.83743
+ },
+ {
+  "id": "kel-lubang-buaya",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Lubang Buaya",
+  "address": "Jl. Monumen Pancasila Sakti",
+  "lat": -6.28934,
+  "lng": 106.90417
+ },
+ {
+  "id": "kel-makassar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Makassar",
+  "address": "Jl. Gelanggang Olahraga Remaja",
+  "lat": -6.28034,
+  "lng": 106.87658
+ },
+ {
+  "id": "kel-malaka-jaya",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Malaka Jaya",
+  "address": "Jl. Teratai Putih Raya",
+  "lat": -6.22211,
+  "lng": 106.93256
+ },
+ {
+  "id": "kel-malaka-sari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Malaka Sari",
+  "address": "Jl. Malaka Raya",
+  "lat": -6.22759,
+  "lng": 106.92791
+ },
+ {
+  "id": "kel-mampang-prapatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Mampang Prapatan",
+  "address": "Jl. Mampang Prapatan IV",
+  "lat": -6.24495,
+  "lng": 106.8289
+ },
+ {
+  "id": "kel-mangga-besar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Mangga Besar",
+  "address": "Jl. Mangga Besar III No. 1",
+  "lat": -6.14735,
+  "lng": 106.81929
+ },
+ {
+  "id": "kel-mangga-dua-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Mangga Dua Selatan",
+  "address": "Jl. Mangga Dua Dalam",
+  "lat": -6.13814,
+  "lng": 106.82703
+ },
+ {
+  "id": "kel-manggarai",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Manggarai",
+  "address": "Jl. Lapangan Menara Air II",
+  "lat": -6.21773,
+  "lng": 106.85158
+ },
+ {
+  "id": "kel-manggarai-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Manggarai Selatan",
+  "address": "Jl. Rambutan IV/D",
+  "lat": -6.21772,
+  "lng": 106.84714
+ },
+ {
+  "id": "kel-maphar",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Maphar",
+  "address": "Jl. Kebon Jeruk XVI",
+  "lat": -6.1539,
+  "lng": 106.81956
+ },
+ {
+  "id": "kel-marunda",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Marunda",
+  "address": "Jl. Marunda Baru No. 5",
+  "lat": -6.12461,
+  "lng": 106.95834
+ },
+ {
+  "id": "kel-melawai",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Melawai",
+  "address": "Jl. Wijaya IX",
+  "lat": -6.24845,
+  "lng": 106.80272
+ },
+ {
+  "id": "kel-menteng",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Menteng",
+  "address": "",
+  "lat": -6.20381,
+  "lng": 106.84461
+ },
+ {
+  "id": "kel-menteng-atas",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Menteng Atas",
+  "address": "Jl. Menteng Pulo",
+  "lat": -6.22183,
+  "lng": 106.83834
+ },
+ {
+  "id": "kel-menteng-dalam",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Menteng Dalam",
+  "address": "Jl. Rasamala III No. 4",
+  "lat": -6.23475,
+  "lng": 106.83663
+ },
+ {
+  "id": "kel-meruya-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Meruya Selatan",
+  "address": "Jl. Sa'aba",
+  "lat": -6.21465,
+  "lng": 106.73633
+ },
+ {
+  "id": "kel-meruya-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Meruya Utara",
+  "address": "Jl. Aries Permai Raya",
+  "lat": -6.19634,
+  "lng": 106.7476
+ },
+ {
+  "id": "kel-munjul",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Munjul",
+  "address": "Jl. Buni No. 1",
+  "lat": -6.34849,
+  "lng": 106.8939
+ },
+ {
+  "id": "kel-pademangan-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pademangan Barat",
+  "address": "Jl. Budi Mulia Raya No. 1 RT. 14 RW. 10, Pademangan Barat Jakarta Utara",
+  "lat": -6.13258,
+  "lng": 106.84044
+ },
+ {
+  "id": "kel-pademangan-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pademangan Timur",
+  "address": "Jl. Pademangan Raya VII A No. 40 RT 04 RW 10, Pademangan Timur Jakarta Pusat",
+  "lat": -6.13096,
+  "lng": 106.84526
+ },
+ {
+  "id": "kel-palmerah",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Palmerah",
+  "address": "Jl. Komplek Sandang No. 2",
+  "lat": -6.20214,
+  "lng": 106.78711
+ },
+ {
+  "id": "kel-palmeriam",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Palmeriam",
+  "address": "Jl. Palmeriam Selatan",
+  "lat": -6.20701,
+  "lng": 106.86137
+ },
+ {
+  "id": "kel-pancoran",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pancoran",
+  "address": "Jl. Pancoran Barat I",
+  "lat": -6.24866,
+  "lng": 106.84096
+ },
+ {
+  "id": "kel-papanggo",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Papanggo",
+  "address": "Jl. Bisma Timur II",
+  "lat": -6.13026,
+  "lng": 106.87196
+ },
+ {
+  "id": "kel-pasar-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pasar Baru",
+  "address": "Jl. Krekot Jaya",
+  "lat": -6.16118,
+  "lng": 106.83001
+ },
+ {
+  "id": "kel-pasar-manggis",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pasar Manggis",
+  "address": "Jl. Bogor Lama No. 121",
+  "lat": -6.20999,
+  "lng": 106.84208
+ },
+ {
+  "id": "kel-pasar-minggu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pasar Minggu",
+  "address": "Jl. Raya Ragunan",
+  "lat": -6.28592,
+  "lng": 106.84052
+ },
+ {
+  "id": "kel-paseban",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Paseban",
+  "address": "Jl. Paseban Raya No. 71",
+  "lat": -6.1916,
+  "lng": 106.85395
+ },
+ {
+  "id": "kel-pegadungan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pegadungan",
+  "address": "Komplek Citra 3",
+  "lat": -6.12985,
+  "lng": 106.7109
+ },
+ {
+  "id": "kel-pegangsaan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pegangsaan",
+  "address": "Jl. Taman Amir Hamzah No. 1",
+  "lat": -6.20413,
+  "lng": 106.85032
+ },
+ {
+  "id": "kel-pegangsaan-dua",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pegangsaan Dua",
+  "address": "Jl. Kelapa Nias",
+  "lat": -6.15437,
+  "lng": 106.91081
+ },
+ {
+  "id": "kel-pejaten-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pejaten Barat",
+  "address": "Jl. Siaga Raya",
+  "lat": -6.26982,
+  "lng": 106.83748
+ },
+ {
+  "id": "kel-pejaten-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pejaten Timur",
+  "address": "Jl. Swadaya I",
+  "lat": -6.29444,
+  "lng": 106.84537
+ },
+ {
+  "id": "kel-pekayon",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pekayon",
+  "address": "Jl. Madrasah",
+  "lat": -6.34316,
+  "lng": 106.86186
+ },
+ {
+  "id": "kel-pekojan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pekojan",
+  "address": "Jl. Pekojan III No. 97",
+  "lat": -6.13946,
+  "lng": 106.80075
+ },
+ {
+  "id": "kel-pela-mampang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pela Mampang",
+  "address": "Jl. Bangka X",
+  "lat": -6.25284,
+  "lng": 106.81137
+ },
+ {
+  "id": "kel-pengadegan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pengadegan",
+  "address": "Jl. Pengadegan Timur I",
+  "lat": -6.25085,
+  "lng": 106.86119
+ },
+ {
+  "id": "kel-penggilingan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Penggilingan",
+  "address": "Jl. Komplek PIK Penggilingan",
+  "lat": -6.20285,
+  "lng": 106.93091
+ },
+ {
+  "id": "kel-penjagalan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Penjagalan",
+  "address": "Jl. Boncel Raya",
+  "lat": -6.13353,
+  "lng": 106.77986
+ },
+ {
+  "id": "kel-penjaringan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Penjaringan",
+  "address": "Jl. Pluit Selatan Raya",
+  "lat": -6.1256,
+  "lng": 106.80095
+ },
+ {
+  "id": "kel-pesanggrahan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pesanggrahan",
+  "address": "Jl. Cenek",
+  "lat": -6.25704,
+  "lng": 106.75725
+ },
+ {
+  "id": "kel-petamburan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petamburan",
+  "address": "Jl. Petamburan II No. 58",
+  "lat": -6.19304,
+  "lng": 106.80793
+ },
+ {
+  "id": "kel-petogogan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petogogan",
+  "address": "Jl. Wijaya Timur",
+  "lat": -6.24427,
+  "lng": 106.81354
+ },
+ {
+  "id": "kel-petojo-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petojo Selatan",
+  "address": "Jl. Petojo Melintang",
+  "lat": -6.17187,
+  "lng": 106.81688
+ },
+ {
+  "id": "kel-petojo-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petojo Utara",
+  "address": "Jl. Pembangunan II Taman",
+  "lat": -6.16249,
+  "lng": 106.81756
+ },
+ {
+  "id": "kel-petukangan-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petukangan Selatan",
+  "address": "Jl. Damai PDK I",
+  "lat": -6.24955,
+  "lng": 106.7528
+ },
+ {
+  "id": "kel-petukangan-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Petukangan Utara",
+  "address": "Jl. Masjid Darul Falah",
+  "lat": -6.22696,
+  "lng": 106.75304
+ },
+ {
+  "id": "kel-pinang-ranti",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pinang Ranti",
+  "address": "Jl. SMU 48",
+  "lat": -6.28754,
+  "lng": 106.88142
+ },
+ {
+  "id": "kel-pinangsia",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pinangsia",
+  "address": "Jl. Mangga Dua 3",
+  "lat": -6.13805,
+  "lng": 106.81968
+ },
+ {
+  "id": "kel-pisangan-baru",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pisangan Baru",
+  "address": "Jl. Pisangan Baru Utara",
+  "lat": -6.20933,
+  "lng": 106.87116
+ },
+ {
+  "id": "kel-pisangan-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pisangan Timur",
+  "address": "Jl. Haji Mugeni II",
+  "lat": -6.20853,
+  "lng": 106.87715
+ },
+ {
+  "id": "kel-pluit",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pluit",
+  "address": "Jl. Pluit Karang Permai",
+  "lat": -6.122,
+  "lng": 106.77565
+ },
+ {
+  "id": "kel-pondok-bambu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Bambu",
+  "address": "Jl. Pahlawan Revolusi 147",
+  "lat": -6.23533,
+  "lng": 106.89555
+ },
+ {
+  "id": "kel-pondok-kelapa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Kelapa",
+  "address": "Jl. H. Dogon",
+  "lat": -6.23962,
+  "lng": 106.93484
+ },
+ {
+  "id": "kel-pondok-kopi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Kopi",
+  "address": "Jl. Arabika III No. 1",
+  "lat": -6.22924,
+  "lng": 106.94464
+ },
+ {
+  "id": "kel-pondok-labu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Labu",
+  "address": "Jl. Swakarya",
+  "lat": -6.30639,
+  "lng": 106.79848
+ },
+ {
+  "id": "kel-pondok-pinang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Pinang",
+  "address": "Jl. Pondok Pinang VII",
+  "lat": -6.26982,
+  "lng": 106.77596
+ },
+ {
+  "id": "kel-pondok-ranggon",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pondok Ranggon",
+  "address": "Jl. Kramat Ganceng RT. 001 RW. 04, Kelurahan Pondok Ranggon, Kecamatan Cipayung, Jakarta Timur",
+  "lat": -6.34779,
+  "lng": 106.91447
+ },
+ {
+  "id": "kel-pulau-harapan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Harapan",
+  "address": "Jl. Dermaga Utara Harapan",
+  "lat": -5.65257,
+  "lng": 106.57811
+ },
+ {
+  "id": "kel-pulau-kelapa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Kelapa",
+  "address": "Pulau Kelapa",
+  "lat": -5.65339,
+  "lng": 106.57146
+ },
+ {
+  "id": "kel-pulau-panggang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Panggang",
+  "address": "",
+  "lat": -5.74118,
+  "lng": 106.60314
+ },
+ {
+  "id": "kel-pulau-pari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Pari",
+  "address": "Jl. Bandeng",
+  "lat": -5.92782,
+  "lng": 106.58376
+ },
+ {
+  "id": "kel-pulau-tidung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Tidung",
+  "address": "",
+  "lat": -5.79874,
+  "lng": 106.49911
+ },
+ {
+  "id": "kel-pulau-untung-jawa",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulau Untung Jawa",
+  "address": "Jl. Bougenville",
+  "lat": -5.97872,
+  "lng": 106.70639
+ },
+ {
+  "id": "kel-pulo",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulo",
+  "address": "Jl. Prapanca Raya No. 5",
+  "lat": -6.25082,
+  "lng": 106.80994
+ },
+ {
+  "id": "kel-pulo-gadung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulo Gadung",
+  "address": "Jl. Kayu Putih IV",
+  "lat": -6.18587,
+  "lng": 106.8938
+ },
+ {
+  "id": "kel-pulo-gebang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Pulo Gebang",
+  "address": "Jl. Stasiun Cakung KM 4",
+  "lat": -6.21611,
+  "lng": 106.95462
+ },
+ {
+  "id": "kel-ragunan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ragunan",
+  "address": "Jl. Saco No. 1 Ragunan",
+  "lat": -6.30526,
+  "lng": 106.81956
+ },
+ {
+  "id": "kel-rambutan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rambutan",
+  "address": "Jl. Gudang Air No. 36",
+  "lat": -6.30188,
+  "lng": 106.87205
+ },
+ {
+  "id": "kel-rawa-badak-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Badak Selatan",
+  "address": "Jl. Alur Laut",
+  "lat": -6.12826,
+  "lng": 106.89883
+ },
+ {
+  "id": "kel-rawa-badak-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Badak Utara",
+  "address": "Jl. Alur Laut No. 1",
+  "lat": -6.1192,
+  "lng": 106.89866
+ },
+ {
+  "id": "kel-rawa-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Barat",
+  "address": "Jl. Laksana III",
+  "lat": -6.23806,
+  "lng": 106.81632
+ },
+ {
+  "id": "kel-rawa-buaya",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Buaya",
+  "address": "Jl. Bojong Raya",
+  "lat": -6.16973,
+  "lng": 106.73446
+ },
+ {
+  "id": "kel-rawa-bunga",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Bunga",
+  "address": "Jl. Jatinegara Timur IV",
+  "lat": -6.2218,
+  "lng": 106.86986
+ },
+ {
+  "id": "kel-rawa-terate",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawa Terate",
+  "address": "Jl. Rawa Terate",
+  "lat": -6.18585,
+  "lng": 106.92284
+ },
+ {
+  "id": "kel-rawajati",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawajati",
+  "address": "Jl. Rawajati Barat RT.06 RW.4",
+  "lat": -6.26027,
+  "lng": 106.85254
+ },
+ {
+  "id": "kel-rawamangun",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawamangun",
+  "address": "Jl. Rawamangun Muka Barat No. 3",
+  "lat": -6.19885,
+  "lng": 106.88076
+ },
+ {
+  "id": "kel-rawasari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rawasari",
+  "address": "Jl. Pramuka Sari I",
+  "lat": -6.19035,
+  "lng": 106.87094
+ },
+ {
+  "id": "kel-roa-malaka",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Roa Malaka",
+  "address": "Jl. Tiang Bendera V No. 36",
+  "lat": -6.13248,
+  "lng": 106.80758
+ },
+ {
+  "id": "kel-rorotan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Rorotan",
+  "address": "Jl. Rorotan IV",
+  "lat": -6.15193,
+  "lng": 106.95603
+ },
+ {
+  "id": "kel-selong",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Selong",
+  "address": "Jl. Bakti Gg. Limo No. 1 RT03/04",
+  "lat": -6.23195,
+  "lng": 106.81436
+ },
+ {
+  "id": "kel-semanan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Semanan",
+  "address": "Jl. Semanan Raya No. 39",
+  "lat": -6.16003,
+  "lng": 106.70542
+ },
+ {
+  "id": "kel-semper-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Semper Barat",
+  "address": "Jl. Pemadam Kebakaran",
+  "lat": -6.12988,
+  "lng": 106.9268
+ },
+ {
+  "id": "kel-semper-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Semper Timur",
+  "address": "Jl. Madya Kebantenan",
+  "lat": -6.11377,
+  "lng": 106.92608
+ },
+ {
+  "id": "kel-senayan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Senayan",
+  "address": "Jl. Tulodong Bawah X",
+  "lat": -6.2277,
+  "lng": 106.81268
+ },
+ {
+  "id": "kel-senen",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Senen",
+  "address": "Jl. Senen Dalam No. VI",
+  "lat": -6.1726,
+  "lng": 106.84245
+ },
+ {
+  "id": "kel-serdang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Serdang",
+  "address": "Jl. Dakota Raya",
+  "lat": -6.15899,
+  "lng": 106.85632
+ },
+ {
+  "id": "kel-setiabudi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Setiabudi",
+  "address": "Jl. Setiabudi Barat No. 8L",
+  "lat": -6.20823,
+  "lng": 106.82391
+ },
+ {
+  "id": "kel-setu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Setu",
+  "address": "Jl. Setu Raya",
+  "lat": -6.30933,
+  "lng": 106.91502
+ },
+ {
+  "id": "kel-slipi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Slipi",
+  "address": "Jl. Ks. Tubun III Dalam",
+  "lat": -6.19364,
+  "lng": 106.8019
+ },
+ {
+  "id": "kel-srengseng",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Srengseng",
+  "address": "Jl. Raya Srengseng",
+  "lat": -6.20358,
+  "lng": 106.75673
+ },
+ {
+  "id": "kel-srengseng-sawah",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Srengseng Sawah",
+  "address": "Jl. Raya Srengseng Sawah No. 8",
+  "lat": -6.3455,
+  "lng": 106.83105
+ },
+ {
+  "id": "kel-sukabumi-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sukabumi Selatan",
+  "address": "Jl. Panjang Sukabumi Selatan",
+  "lat": -6.21781,
+  "lng": 106.76994
+ },
+ {
+  "id": "kel-sukabumi-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sukabumi Utara",
+  "address": "Jl. Madrasah II",
+  "lat": -6.21003,
+  "lng": 106.77764
+ },
+ {
+  "id": "kel-sukapura",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sukapura",
+  "address": "Jl. Tipar Cakung No. 17",
+  "lat": -6.14813,
+  "lng": 106.92416
+ },
+ {
+  "id": "kel-sumur-batu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sumur Batu",
+  "address": "Jl. Howitzer No. 05",
+  "lat": -6.16455,
+  "lng": 106.87126
+ },
+ {
+  "id": "kel-sungai-bambu",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sungai Bambu",
+  "address": "Jl. Ganggeng No. 16",
+  "lat": -6.11881,
+  "lng": 106.88215
+ },
+ {
+  "id": "kel-sunter-agung",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sunter Agung",
+  "address": "Jl. Sunter Karya Utara",
+  "lat": -6.13924,
+  "lng": 106.87128
+ },
+ {
+  "id": "kel-sunter-jaya",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Sunter Jaya",
+  "address": "Jl. Bentengan IV",
+  "lat": -6.14971,
+  "lng": 106.8674
+ },
+ {
+  "id": "kel-susukan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Susukan",
+  "address": "Jl. H Baping",
+  "lat": -6.31266,
+  "lng": 106.87485
+ },
+ {
+  "id": "kel-tamansari",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tamansari",
+  "address": "Jl. Mangga Besar IV Raya",
+  "lat": -6.15063,
+  "lng": 106.82325
+ },
+ {
+  "id": "kel-tambora",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tambora",
+  "address": "Jl. Tambora III",
+  "lat": -6.14674,
+  "lng": 106.80857
+ },
+ {
+  "id": "kel-tanah-sereal",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanah Sereal",
+  "address": "Jl. K.H.Moch Mansyur No. 116",
+  "lat": -6.15866,
+  "lng": 106.80874
+ },
+ {
+  "id": "kel-tanah-tinggi",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanah Tinggi",
+  "address": "Jl. Kramat Pulo Gundul",
+  "lat": -6.18363,
+  "lng": 106.84968
+ },
+ {
+  "id": "kel-tanjung-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanjung Barat",
+  "address": "Jl. Ranco Indah RT 08/02, Tanjung Barat",
+  "lat": -6.30963,
+  "lng": 106.85052
+ },
+ {
+  "id": "kel-tanjung-duren-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanjung Duren Selatan",
+  "address": "Jl. Tanjung Duren Timur Dalam VI",
+  "lat": -6.18122,
+  "lng": 106.78775
+ },
+ {
+  "id": "kel-tanjung-duren-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanjung Duren Utara",
+  "address": "Jl. Tanjung Duren Raya",
+  "lat": -6.17335,
+  "lng": 106.78896
+ },
+ {
+  "id": "kel-tanjung-priok",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tanjung Priok",
+  "address": "Jl. Tenggiri No. 47",
+  "lat": -6.11299,
+  "lng": 106.88123
+ },
+ {
+  "id": "kel-tebet-barat",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tebet Barat",
+  "address": "Jl. Tebet Barat IV",
+  "lat": -6.23308,
+  "lng": 106.84846
+ },
+ {
+  "id": "kel-tebet-timur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tebet Timur",
+  "address": "Jl. Tebet Timur Dalam III M",
+  "lat": -6.22865,
+  "lng": 106.85795
+ },
+ {
+  "id": "kel-tegal-alur",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tegal Alur",
+  "address": "Jl. BLKD",
+  "lat": -6.11837,
+  "lng": 106.71979
+ },
+ {
+  "id": "kel-tegal-parang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tegal Parang",
+  "address": "Jl. Tegal Parang V",
+  "lat": -6.24999,
+  "lng": 106.83364
+ },
+ {
+  "id": "kel-tengah",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tengah",
+  "address": "Jl. SMP 126;Jl. Al Bariyah No. 4",
+  "lat": -6.29011,
+  "lng": 106.86458
+ },
+ {
+  "id": "kel-tomang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tomang",
+  "address": "Jl. Mandala Selatan IV",
+  "lat": -6.17183,
+  "lng": 106.80014
+ },
+ {
+  "id": "kel-tugu-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tugu Selatan",
+  "address": "Jl. Bendungan Melayu Utara",
+  "lat": -6.13094,
+  "lng": 106.90764
+ },
+ {
+  "id": "kel-tugu-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Tugu Utara",
+  "address": "Jl. Mahoni No. 1",
+  "lat": -6.12181,
+  "lng": 106.91302
+ },
+ {
+  "id": "kel-ujung-menteng",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ujung Menteng",
+  "address": "Jl. Kelurahan",
+  "lat": -6.18655,
+  "lng": 106.96291
+ },
+ {
+  "id": "kel-ulujami",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Ulujami",
+  "address": "Jl. Kelurahan No. 1, RW.7, Ulujami, Pesanggrahan, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12250",
+  "lat": -6.24542,
+  "lng": 106.76218
+ },
+ {
+  "id": "kel-utan-kayu-selatan",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Utan Kayu Selatan",
+  "address": "Jl. Halus Sari Timur No. 1",
+  "lat": -6.20061,
+  "lng": 106.86871
+ },
+ {
+  "id": "kel-utan-kayu-utara",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Utan Kayu Utara",
+  "address": "Jl. Utan Kayu Raya No. 5",
+  "lat": -6.19825,
+  "lng": 106.86515
+ },
+ {
+  "id": "kel-utan-panjang",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Utan Panjang",
+  "address": "Jl. Bendungan Jago No. 49",
+  "lat": -6.16262,
+  "lng": 106.85503
+ },
+ {
+  "id": "kel-warakas",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Warakas",
+  "address": "Jl. Warakas III Gang 12",
+  "lat": -6.11959,
+  "lng": 106.87529
+ },
+ {
+  "id": "kel-wijaya-kusuma",
+  "type": "kelurahan",
+  "name": "Kantor Kelurahan Wijaya Kusuma",
+  "address": "Jl. Wijaya Kusuma II",
+  "lat": -6.15364,
+  "lng": 106.77244
+ }
+]

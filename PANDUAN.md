@@ -50,7 +50,7 @@ pengguna yang memilih "kurangi gerakan").
 2. Warga ajukan akta kelahiran → dapat resi
 3. Login `loket@resi.demo` → selesaikan verifikasi
 4. HP: buka `/lacak/<resi>` → timeline ter-update
-5. Login `admin@resi.demo` → mode demo → majukan +2 hari → tahap merah
+5. Login `admin@resi.demo` → mode demo → majukan +2 hari kerja → tahap merah
 6. Login `pimpinan@resi.demo` → eskalasi muncul
 7. `/rapor` → dampak & roadmap
 

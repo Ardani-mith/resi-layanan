@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { Suspense } from "react";
+import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import { Button, Skeleton } from "@/components/ui";
 import type { SearchParamsOf } from "@/lib/api";
@@ -26,50 +27,57 @@ async function Success({ searchParams }: SearchParamsOf) {
   }
 
   return (
-    <div className="text-center">
-      <span aria-hidden className="mx-auto grid size-14 place-items-center rounded-full bg-ok-soft text-ok">
-        <Check className="size-7" />
-      </span>
-      <h1 className="mt-4 text-2xl font-bold tracking-tight">
-        {isLoket ? "Permohonan terdaftar" : "Permohonan terkirim"}
-      </h1>
-      <p className="mt-2 text-muted">
-        {isLoket
-          ? "Berikan nomor resi ini kepada warga."
-          : "Simpan nomor resi ini. Anda membutuhkannya untuk melacak permohonan."}
-      </p>
+    <div className="space-y-10">
+      <div className="mx-auto max-w-xl text-center">
+        <span aria-hidden className="mx-auto grid size-14 place-items-center rounded-full bg-ok-soft text-ok">
+          <Check className="size-7" />
+        </span>
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">
+          {isLoket ? "Permohonan terdaftar" : "Permohonan terkirim"}
+        </h1>
+        <p className="mt-2 text-muted">
+          {isLoket
+            ? "Berikan nomor resi ini kepada warga."
+            : "Simpan nomor resi ini. Anda membutuhkannya untuk melacak permohonan."}
+        </p>
 
-      <div className="mt-6 rounded-card border-2 border-dashed border-brand bg-brand-soft px-4 py-6">
-        <p className="text-sm text-muted">Nomor resi</p>
-        <p className="mt-1 font-mono text-3xl font-bold tracking-widest select-all sm:text-4xl">{resi}</p>
+        <div className="mt-6 rounded-card border-2 border-dashed border-brand bg-brand-soft px-4 py-6">
+          <p className="text-sm text-muted">Nomor resi</p>
+          <p className="mt-1 font-mono text-3xl font-bold tracking-widest select-all sm:text-4xl">{resi}</p>
+        </div>
+
+        <div className="mt-4 text-left">
+          <ReceiptCard {...await receiptFor(resi)} title="Simpan bukti resi" />
+        </div>
+
+        <ul className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm">
+          <li>• Petugas loket akan memverifikasi berkas paling lambat 1 hari kerja.</li>
+          <li>
+            • Jika ada berkas yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi
+            dihentikan sampai Anda melengkapinya.
+          </li>
+          <li>• Untuk melihat detail, siapkan 4 digit terakhir nomor HP yang Anda daftarkan.</li>
+        </ul>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button href={`/lacak/${resi}`}>Lacak sekarang</Button>
+          <Button href={isLoket ? "/kerja/baru" : "/"} variant="secondary">
+            {isLoket ? "Input warga berikutnya" : "Kembali ke beranda"}
+          </Button>
+        </div>
       </div>
 
-      <div className="mt-4 text-left">
-        <ReceiptCard {...await receiptFor(resi)} title="Simpan bukti resi" />
-      </div>
-
-      <ul className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm">
-        <li>• Petugas loket akan memverifikasi berkas paling lambat 1 hari kerja.</li>
-        <li>
-          • Jika ada berkas yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi
-          dihentikan sampai Anda melengkapinya.
-        </li>
-        <li>• Untuk melihat detail, siapkan 4 digit terakhir nomor HP yang Anda daftarkan.</li>
-      </ul>
-
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Button href={`/lacak/${resi}`}>Lacak sekarang</Button>
-        <Button href={isLoket ? "/kerja/baru" : "/"} variant="secondary">
-          {isLoket ? "Input warga berikutnya" : "Kembali ke beranda"}
-        </Button>
-      </div>
+      {/* Warga online: loket tujuan untuk verifikasi berkas asli & pengambilan dokumen. */}
+      {!isLoket && (
+        <OfficeMap intro="Perekaman biometrik, penyerahan berkas asli, dan pengambilan dokumen bisa dilakukan di kantor kelurahan atau kecamatan sesuai domisili, Suku Dinas Dukcapil, atau Mal Pelayanan Publik." />
+      )}
     </div>
   );
 }
 
 export default function SuccessPage({ searchParams }: SearchParamsOf) {
   return (
-    <div className="mx-auto max-w-xl px-4 py-14">
+    <div className="mx-auto max-w-4xl px-4 py-14">
       <Suspense fallback={<Skeleton className="h-80" />}>
         <Success searchParams={searchParams} />
       </Suspense>

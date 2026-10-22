@@ -93,7 +93,8 @@ export const trackActionSchema = z.discriminatedUnion("action", [
 ]);
 
 export const advanceSchema = z.object({
-  days: z.number().int().min(-30).max(30).default(1),
+  /** Hari kerja yang ditambahkan ke jam sistem. */
+  days: z.number().int().min(1).max(30).default(1),
   reset: z.boolean().default(false),
 });
 

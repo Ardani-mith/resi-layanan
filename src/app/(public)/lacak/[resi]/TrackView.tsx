@@ -3,6 +3,7 @@
 import { Check, Copy, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
+import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
@@ -208,6 +209,22 @@ export default function TrackView({
           </div>
         </dl>
       </section>
+
+      {/* Saat warga perlu datang ke loket: lengkapi berkas atau ambil dokumen. */}
+      {(data.status === "perlu_perbaikan" || data.status === "siap_diambil") && (
+        <OfficeMap
+          title={
+            data.status === "siap_diambil"
+              ? "Ambil dokumen di lokasi layanan"
+              : "Lengkapi berkas di lokasi layanan"
+          }
+          intro={
+            data.status === "siap_diambil"
+              ? "Dokumen Anda sudah siap. Bawa bukti resi ini ke lokasi layanan terdekat."
+              : "Berkas bisa dilengkapi langsung di lokasi layanan terdekat, atau dikonfirmasi lewat halaman ini."
+          }
+        />
+      )}
 
       <ReceiptCard {...receipt} />
 

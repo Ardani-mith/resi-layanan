@@ -258,3 +258,32 @@ body {
     border: none;
   }
 }
+
+/* Peta (Leaflet): kontrol, popup, & atribusi mengikuti token tema. Tile OSM diredam agar
+   bersih; di mode gelap dibalik warnanya (laut & jalan tetap terbaca). */
+.map-tiles {
+  filter: saturate(0.55) contrast(0.95) brightness(1.02);
+}
+[data-theme="dark"] .map-tiles {
+  filter: invert(1) hue-rotate(180deg) saturate(0.45) brightness(0.85) contrast(0.92);
+}
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--surface-2);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip,
+.leaflet-bar a {
+  background: var(--surface);
+  color: var(--text);
+}
+.leaflet-bar a {
+  border-color: var(--line);
+}
+.leaflet-control-attribution {
+  background: color-mix(in oklab, var(--surface) 85%, transparent) !important;
+  color: var(--muted) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--brand) !important;
+}

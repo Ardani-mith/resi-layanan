@@ -26,7 +26,7 @@ export default function DemoControls({ hasOffset }: { hasOffset: boolean }) {
       tone: "success",
       text: body.reset
         ? `Jam sistem kembali ke waktu nyata. Eskalasi simulasi dibatalkan pada ${cancelled} permohonan.`
-        : `Jam sistem sekarang +${offsetDays.toLocaleString("id-ID")} hari. ${escalated} eskalasi baru tercatat.`,
+        : `Jam sistem dimajukan ${body.days} hari kerja (total +${offsetDays.toLocaleString("id-ID", { maximumFractionDigits: 1 })} hari kalender). ${escalated} eskalasi baru tercatat.`,
     });
     router.refresh();
   }
@@ -40,7 +40,7 @@ export default function DemoControls({ hasOffset }: { hasOffset: boolean }) {
           onClick={() => send("1", { days: 1 })}
           className={buttonClass("primary")}
         >
-          {pending === "1" ? "Memajukan…" : "Majukan +1 hari"}
+          {pending === "1" ? "Memajukan…" : "Majukan +1 hari kerja"}
         </button>
         <button
           type="button"
@@ -48,7 +48,7 @@ export default function DemoControls({ hasOffset }: { hasOffset: boolean }) {
           onClick={() => send("2", { days: 2 })}
           className={buttonClass("secondary")}
         >
-          {pending === "2" ? "Memajukan…" : "Majukan +2 hari"}
+          {pending === "2" ? "Memajukan…" : "Majukan +2 hari kerja"}
         </button>
         <button
           type="button"
