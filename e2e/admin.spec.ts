@@ -24,9 +24,9 @@ test("admin membuat & mengubah layanan, lalu layanan tampil di katalog", async (
   const row = admin.getByRole("listitem").filter({ hasText: "/layanan/surat-pindah" });
   await expect(row).toContainText("2 tahap · target 1 hari kerja · 2 persyaratan");
   await row.getByRole("button", { name: "Ubah" }).click();
-  await row.getByLabel("SLA (hari kerja)").first().fill("3");
+  await row.getByLabel("SLA (jam kerja)").first().fill("3");
   await row.getByRole("button", { name: "Simpan perubahan" }).click();
-  await expect(row).toContainText("target 3 hari kerja");
+  await expect(row).toContainText("target 3 jam kerja");
   await expect(admin.getByText("Layanan diubah · Surat Keterangan Pindah")).toBeVisible();
 
   await gotoReady(admin, "/layanan/surat-pindah");

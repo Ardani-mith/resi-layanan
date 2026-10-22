@@ -24,10 +24,11 @@ const service = {
   slug: "akta-kelahiran",
   requirements: ["Surat keterangan lahir"],
   steps: [
-    { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaDays: 1 },
-    { key: "entri", name: "Entri data", role: "petugas_teknis", slaDays: 2 },
-    { key: "persetujuan", name: "Persetujuan", role: "pimpinan", slaDays: 1 },
-    { key: "penyerahan", name: "Siap diambil", role: "petugas_loket", slaDays: null },
+    // Jam kerja: 8 = 1 hari kerja (jam yang sama di hari kerja berikutnya).
+    { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
+    { key: "entri", name: "Entri data", role: "petugas_teknis", slaHours: 16 },
+    { key: "persetujuan", name: "Persetujuan", role: "pimpinan", slaHours: 8 },
+    { key: "penyerahan", name: "Siap diambil", role: "petugas_loket", slaHours: null },
   ],
 } satisfies Pick<ServiceData, "_id" | "name" | "slug" | "requirements" | "steps">;
 const loket: Actor = { id: "u1", name: "Rina", role: "petugas_loket" };
@@ -162,15 +163,20 @@ describe("ditolak", () => {
 });
 
 describe("hak akses tahap", () => {
-  it("peran harus cocok dengan tahap; pimpinan & admin selalu boleh", () => {
+  it("hanya peran pemilik tahap; pimpinan & admin tidak bisa menindak tahap peran lain", () => {
     const app = newApp();
     expect(canActOn(app, "petugas_loket")).toBe(true);
     expect(canActOn(app, "petugas_teknis")).toBe(false);
-    expect(canActOn(app, "pimpinan")).toBe(true);
-    expect(canActOn(app, "admin")).toBe(true);
+    expect(canActOn(app, "pimpinan")).toBe(false);
+    expect(canActOn(app, "admin")).toBe(false);
     act(app, "complete", loket, wib("2026-10-12T10:00:00"));
     expect(canActOn(app, "petugas_loket")).toBe(false);
     expect(canActOn(app, "petugas_teknis")).toBe(true);
+    act(app, "complete", teknis, wib("2026-10-13T10:00:00"));
+    expect(canActOn(app, "pimpinan")).toBe(true);
+    act(app, "complete", pimpinan, wib("2026-10-14T10:00:00"));
+    // Setelah menyetujui, pimpinan tidak bisa ikut menyelesaikan tahap berikutnya.
+    expect(canActOn(app, "pimpinan")).toBe(false);
   });
 });
 
@@ -193,14 +199,14 @@ describe("eskalasi (logika murni)", () => {
     expect(pendingEscalations(newApp(), wib("2026-10-13T08:59:00"))).toEqual([]);
   });
 
-  it("lewat tenggat → level 1 (Kasi); lewat 3 hari kerja → level 2 (Kabid)", () => {
+  it("lewat tenggat → level 1 (Kasi); lewat 1 hari kerja lagi → level 2 (Kabid)", () => {
     const app = newApp(); // tenggat verifikasi: Selasa 13 Okt 09.00
     const late1 = pendingEscalations(app, wib("2026-10-13T10:00:00"));
     expect(late1.map((e) => [e.stepKey, e.level, e.target])).toEqual([["verifikasi", 1, "Kepala Seksi"]]);
 
-    // Selasa + 3 hari kerja = Jumat 16 Okt 09.00
-    expect(pendingEscalations(app, wib("2026-10-16T08:59:00")).map((e) => e.level)).toEqual([1]);
-    expect(pendingEscalations(app, wib("2026-10-16T09:01:00")).map((e) => e.level)).toEqual([1, 2]);
+    // Selasa 09.00 + 8 jam kerja = Rabu 14 Okt 09.00
+    expect(pendingEscalations(app, wib("2026-10-14T08:59:00")).map((e) => e.level)).toEqual([1]);
+    expect(pendingEscalations(app, wib("2026-10-14T09:01:00")).map((e) => e.level)).toEqual([1, 2]);
   });
 
   it("akhir pekan tidak mempercepat eskalasi level 2", () => {
@@ -211,15 +217,19 @@ describe("eskalasi (logika murni)", () => {
       resi: "x",
       now: wib("2026-10-15T09:00:00"),
     });
-    // Tenggat Jumat 16 Okt 09.00; Senin 19 Okt = 3 hari kalender tapi baru 1 hari kerja.
-    expect(pendingEscalations(friday, wib("2026-10-19T10:00:00")).map((e) => e.level)).toEqual([1]);
-    expect(pendingEscalations(friday, wib("2026-10-21T09:01:00")).map((e) => e.level)).toEqual([1, 2]);
+    // Tenggat Jumat 16 Okt 09.00; Senin 08.59 = 3 hari kalender tapi belum 8 jam kerja.
+    expect(pendingEscalations(friday, wib("2026-10-19T08:59:00")).map((e) => e.level)).toEqual([1]);
+    expect(pendingEscalations(friday, wib("2026-10-19T09:01:00")).map((e) => e.level)).toEqual([1, 2]);
   });
 
   it("libur ikut dihitung pada ambang level 2", () => {
     const app = newApp();
-    expect(pendingEscalations(app, wib("2026-10-16T09:01:00"), ["2026-10-14"]).map((e) => e.level)).toEqual([
+    // Rabu 14 Okt libur: ambang level 2 bergeser ke Kamis 09.00.
+    expect(pendingEscalations(app, wib("2026-10-14T09:01:00"), ["2026-10-14"]).map((e) => e.level)).toEqual([
       1,
+    ]);
+    expect(pendingEscalations(app, wib("2026-10-15T09:01:00"), ["2026-10-14"]).map((e) => e.level)).toEqual([
+      1, 2,
     ]);
   });
 

@@ -53,8 +53,8 @@ export interface StepTemplate {
   key: string;
   name: string;
   role: Role;
-  /** Hari kerja. null = tanpa tenggat (mis. menunggu warga mengambil dokumen). */
-  slaDays: number | null;
+  /** Jam kerja (1 hari kerja = 8 jam). null = tanpa tenggat (mis. menunggu warga mengambil dokumen). */
+  slaHours: number | null;
 }
 
 export interface Step extends StepTemplate {
@@ -63,6 +63,8 @@ export interface Step extends StepTemplate {
   completedAt: Date | null;
   pausedAt: Date | null;
   pausedMs: number;
+  /** Bagian jeda yang jatuh di jam kerja (untuk lama kerja efektif dalam jam kerja). */
+  pausedWorkMs: number;
   handledBy: Types.ObjectId | string | null;
   handledByName: string | null;
   publicNote: string | null;
@@ -187,8 +189,9 @@ export function statusForStep(index: number, total: number): Status {
 
 function startStep(step: Step, now: Date, holidays?: Holidays) {
   step.startedAt = now;
-  step.dueAt = computeDueAt(now, step.slaDays, holidays);
+  step.dueAt = computeDueAt(now, step.slaHours, holidays);
   step.pausedMs = 0;
+  step.pausedWorkMs = 0;
   step.pausedAt = null;
 }
 
@@ -214,12 +217,13 @@ export function buildApplication<R extends string | null>({
     key: s.key,
     name: s.name,
     role: s.role,
-    slaDays: s.slaDays ?? null,
+    slaHours: s.slaHours ?? null,
     startedAt: null,
     dueAt: null,
     completedAt: null,
     pausedAt: null,
     pausedMs: 0,
+    pausedWorkMs: 0,
     handledBy: null,
     handledByName: null,
     publicNote: null,
@@ -251,9 +255,13 @@ type WorkflowApp = Pick<
   "status" | "currentStep" | "currentDueAt" | "steps" | "escalations" | "rejectionReason" | "completedAt"
 >;
 
-/** Peran yang boleh menindak tahap saat ini. Pimpinan & admin selalu boleh. */
+/**
+ * Peran yang boleh menindak tahap saat ini: HANYA peran pemilik tahap (pemisahan tugas).
+ * Pimpinan & admin tidak bisa menyelesaikan tahap peran lain, termasuk yang terlambat: mereka
+ * memantau lewat eskalasi, supaya jelas siapa yang mengerjakan apa di timeline & audit log.
+ * Pengecualian: berkas yang menunggu perbaikan ditangani petugas loket.
+ */
 export function canActOn(app: Pick<ApplicationData, "status" | "currentStep" | "steps">, role: ActorRole) {
-  if (role === "admin" || role === "pimpinan") return true;
   const step = app.steps[app.currentStep];
   if (!step) return false;
   if (app.status === STATUS.PERLU_PERBAIKAN && role === "petugas_loket") return true;
@@ -339,7 +347,7 @@ export function applyAction(
       if (app.status !== STATUS.PERLU_PERBAIKAN) {
         throw new WorkflowError("invalid_state", "Permohonan ini tidak sedang menunggu perbaikan.");
       }
-      resumeStep(step, now);
+      resumeStep(step, now, holidays);
       if (cleanInternal) step.internalNote = cleanInternal;
       app.status = statusForStep(app.currentStep, app.steps.length);
       app.currentDueAt = step.dueAt;
@@ -351,7 +359,7 @@ export function applyAction(
         throw new WorkflowError("invalid_state", "Permohonan ini sudah final.");
       }
       requireNote(cleanPublic, "Alasan penolakan wajib diisi dan akan dibaca warga.");
-      if (step.pausedAt) resumeStep(step, now);
+      if (step.pausedAt) resumeStep(step, now, holidays);
       step.handledBy = actor.id ?? null;
       step.handledByName = actor.name ?? null;
       step.publicNote = cleanPublic;

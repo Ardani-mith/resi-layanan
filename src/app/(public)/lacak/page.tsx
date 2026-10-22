@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ResiSearch from "@/components/application/ResiSearch";
 import { site } from "@/config/site";
 
@@ -13,6 +14,12 @@ export default function TrackSearchPage() {
       <div className="mt-6">
         <ResiSearch example={site.hero.exampleResi} autoFocus />
       </div>
+      <p className="mt-6 text-sm text-muted">
+        Lupa nomor resi?{" "}
+        <Link href="/lacak/lupa" className="font-semibold text-brand hover:underline">
+          Cari dengan NIK & nomor HP
+        </Link>
+      </p>
     </div>
   );
 }

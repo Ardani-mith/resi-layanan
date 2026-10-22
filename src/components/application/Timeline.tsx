@@ -2,7 +2,7 @@
 
 import { STEP_STATE } from "@/components/application/StatusBadge";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatDuration } from "@/lib/format";
+import { formatDateTime, formatDuration, formatWorkHours } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import type { PublicView, StepViewState } from "@/lib/present";
 
@@ -78,7 +78,9 @@ function StepDetail({ step, state, now }: { step: TimelineStep; state: StepViewS
         </p>
       );
     case "menunggu":
-      return step.slaDays ? <p className="text-sm text-muted">Target {step.slaDays} hari kerja</p> : null;
+      return step.slaHours ? (
+        <p className="text-sm text-muted">Target {formatWorkHours(step.slaHours)}</p>
+      ) : null;
     default:
       return null;
   }

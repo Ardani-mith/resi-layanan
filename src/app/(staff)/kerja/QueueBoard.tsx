@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import type { Queue } from "@/lib/dal";
 import { formatDateTime, formatDuration } from "@/lib/format";
 import { useAutoRefresh, useNow } from "@/lib/hooks";
+import { ROLE_LABELS } from "@/lib/roles";
 
 type Item = Queue["items"][number];
 
@@ -49,6 +50,12 @@ function Row({ item, now }: { item: Item; now: number }) {
           </span>
         </span>
         <span className="flex flex-wrap items-center gap-2 text-xs text-muted md:justify-end">
+          {/* Bukan tugas peran ini (pimpinan/admin melihat semua): hanya dipantau, tidak bisa ditindak. */}
+          {!item.mine && item.stepRole && (
+            <span className="rounded-full border border-line px-2 py-0.5 font-semibold">
+              Dipantau · {ROLE_LABELS[item.stepRole]}
+            </span>
+          )}
           {item.escalationLevel > 0 && (
             <span className="rounded-full bg-late px-2 py-0.5 font-semibold text-surface">
               Eskalasi {item.escalationLevel === 2 ? "Kabid" : "Kasi"}

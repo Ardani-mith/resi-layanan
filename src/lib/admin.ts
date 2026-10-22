@@ -62,7 +62,7 @@ function stepKeys(steps: ServiceInput["steps"]): StepTemplate[] {
     let key = base;
     for (let i = 2; used.has(key); i += 1) key = `${base}-${i}`;
     used.add(key);
-    return { key, name: step.name, role: step.role, slaDays: step.slaDays };
+    return { key, name: step.name, role: step.role, slaHours: step.slaHours };
   });
 }
 

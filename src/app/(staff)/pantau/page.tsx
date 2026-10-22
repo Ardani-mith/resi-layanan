@@ -5,7 +5,7 @@ import ColumnChart from "@/components/charts/ColumnChart";
 import { DemoClockBanner, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getClockInfo, getStats, requireStaffPage } from "@/lib/dal";
-import { formatDuration, formatHours, formatPercent } from "@/lib/format";
+import { formatDuration, formatPercent, formatWorkHours } from "@/lib/format";
 import type { Stats } from "@/lib/stats";
 
 export const metadata = { title: "Pantau kinerja" };
@@ -53,13 +53,9 @@ async function Dashboard() {
           note={`dari ${overall.completed} permohonan selesai`}
         />
         <StatTile
-          label="Rata-rata lama layanan"
-          value={
-            overall.avgCompletionDays === null
-              ? "—"
-              : `${overall.avgCompletionDays.toLocaleString("id-ID")} hari`
-          }
-          note="kalender, tanpa waktu tunggu perbaikan"
+          label="Terbit ≤ 24 jam"
+          value={formatPercent(overall.promiseRate)}
+          note={`rata-rata ${formatWorkHours(overall.avgIssueHours)} setelah berkas lengkap`}
         />
         <StatTile
           label="Kepuasan warga"
@@ -74,7 +70,7 @@ async function Dashboard() {
             Eskalasi terbuka
           </h2>
           <p className="text-sm text-muted">
-            Level 1 diteruskan ke Kepala Seksi; lewat 3 hari kerja naik ke Kepala Bidang.
+            Level 1 diteruskan ke Kepala Seksi; lewat 1 hari kerja dari tenggat naik ke Kepala Bidang.
           </p>
         </div>
         {escalations.length ? (
@@ -148,8 +144,8 @@ async function Dashboard() {
             Analisis bottleneck per tahap
           </h2>
           <p className="text-sm text-muted">
-            Rata-rata lama pengerjaan (tanpa waktu jeda) dibanding target, dan seberapa sering tahap itu
-            terlambat.
+            Rata-rata lama pengerjaan dalam jam kerja (tanpa waktu jeda) dibanding target, dan seberapa sering
+            tahap itu terlambat.
           </p>
         </div>
         <div className="space-y-4">
@@ -160,7 +156,8 @@ async function Dashboard() {
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                   <h3 className="font-bold">{service.name}</h3>
                   <p className="text-sm text-muted">
-                    {formatPercent(service.onTimeRate)} tepat waktu · target {service.targetDays} hari kerja ·{" "}
+                    {formatPercent(service.onTimeRate)} tepat waktu · {formatPercent(service.promiseRate)}{" "}
+                    terbit ≤ 24 jam · target terbit {formatWorkHours(service.issueTargetHours)} ·{" "}
                     {service.open} berjalan
                   </p>
                 </div>
@@ -199,12 +196,12 @@ async function Dashboard() {
                             )}
                           </td>
                           <td className="py-2.5 pr-3 text-muted tabular-nums">
-                            {step.slaDays ? `${step.slaDays} hari kerja` : "—"}
+                            {step.slaHours ? formatWorkHours(step.slaHours) : "—"}
                           </td>
-                          <td className="py-2.5 pr-3 tabular-nums">{formatHours(step.avgHours)}</td>
+                          <td className="py-2.5 pr-3 tabular-nums">{formatWorkHours(step.avgHours)}</td>
                           <td className="py-2.5">
                             <Meter
-                              value={step.slaDays ? step.lateRate : null}
+                              value={step.slaHours ? step.lateRate : null}
                               label={`Tingkat terlambat ${step.name}`}
                               severity
                             />

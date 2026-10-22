@@ -5,7 +5,7 @@ import { StatTile } from "@/components/charts";
 import { Button, Skeleton } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
 import { getServiceCatalog } from "@/lib/dal";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, formatWorkHours } from "@/lib/format";
 import { ROLE_LABELS } from "@/lib/roles";
 
 export const metadata = { title: "Detail layanan" };
@@ -40,9 +40,9 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
             note={`dari ${perf.completed} permohonan`}
           />
           <StatTile
-            label="Rata-rata lama"
-            value={number(perf.avgCompletionDays, " hari")}
-            note={`target ${service.totalSlaDays} hari kerja`}
+            label="Terbit ≤ 24 jam"
+            value={formatPercent(perf.promiseRate)}
+            note={`rata-rata ${formatWorkHours(perf.avgIssueHours)} setelah berkas lengkap`}
           />
           <StatTile
             label="Kepuasan warga"
@@ -79,8 +79,10 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
             Tahapan & janji waktu
           </h2>
           <p className="text-sm text-muted">
-            Total target {service.totalSlaDays} hari kerja. Waktu menunggu perbaikan berkas dari warga tidak
-            dihitung.
+            Verifikasi berkas paling lama {formatWorkHours(service.steps[0]?.slaHours)}; setelah berkas
+            lengkap, dokumen terbit paling lama {formatWorkHours(service.issueSlaHours)} (Permendagri 19/2018:
+            maksimal 24 jam). Jam kerja Senin–Jumat 08.00–16.00 WIB. Waktu menunggu perbaikan berkas dari
+            warga tidak dihitung.
           </p>
           <ol className="mt-4 space-y-3">
             {service.steps.map((step, i) => (
@@ -91,7 +93,8 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
                 <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3">
                   <p className="font-medium">{step.name}</p>
                   <p className="text-sm text-muted">
-                    {ROLE_LABELS[step.role]} · {step.slaDays ? `${step.slaDays} hari kerja` : "tanpa tenggat"}
+                    {ROLE_LABELS[step.role]} ·{" "}
+                    {step.slaHours ? formatWorkHours(step.slaHours) : "tanpa tenggat"}
                   </p>
                 </div>
               </li>

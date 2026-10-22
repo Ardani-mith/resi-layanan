@@ -40,7 +40,10 @@ async function DemoPanel() {
             resinya.
           </li>
           <li>Petugas loket menyelesaikan verifikasi di antrean.</li>
-          <li>Majukan jam +2 hari kerja di sini: tahap entri data melewati tenggat.</li>
+          <li>
+            Majukan jam +4 jam kerja di sini: tahap entri data (target 2 jam kerja) melewati tenggat dan
+            diteruskan ke Kepala Seksi. +1 hari kerja lagi: naik ke Kepala Bidang.
+          </li>
           <li>Buka resi di HP (tahap merah) dan dashboard pimpinan (eskalasi muncul).</li>
           <li>Kembalikan ke waktu nyata setelah demo selesai.</li>
         </ol>

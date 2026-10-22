@@ -51,11 +51,23 @@ export function formatDayMonth(value: DateInput): string {
   return valid(value) ? dayMonthFmt.format(new Date(value)) : "—";
 }
 
-/** Jam → "5 jam" / "1,5 hari" (1 hari = 24 jam kalender). */
-export function formatHours(hours: number | null | undefined): string {
+/** Jam kerja per hari kerja (08.00–16.00); sama dengan WORKDAY_HOURS di sla.ts. */
+const WORKDAY_HOURS = 8;
+const num = (n: number) => n.toLocaleString("id-ID", { maximumFractionDigits: 1 });
+
+/**
+ * Jam KERJA → teks: 2 → "2 jam kerja", 8 → "1 hari kerja", 12 → "1 hari 4 jam kerja",
+ * 6,5 → "6,5 jam kerja". `short` tanpa kata "kerja" (untuk kolom sempit).
+ */
+export function formatWorkHours(hours: number | null | undefined, { short = false } = {}): string {
   if (hours === null || hours === undefined) return "—";
-  if (hours < 24) return `${Math.round(hours)} jam`;
-  return `${(hours / 24).toLocaleString("id-ID", { maximumFractionDigits: 1 })} hari`;
+  const unit = short ? "" : " kerja";
+  if (hours < WORKDAY_HOURS) return `${num(hours)} jam${unit}`;
+  const days = Math.floor(hours / WORKDAY_HOURS);
+  const rest = hours - days * WORKDAY_HOURS;
+  if (!rest) return `${days} hari${unit}`;
+  if (Number.isInteger(rest)) return `${days} hari ${rest} jam${unit}`;
+  return `${num(hours / WORKDAY_HOURS)} hari${unit}`;
 }
 
 const MINUTE = 60_000;

@@ -3,11 +3,19 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApplication, performAction, performCitizenAction, verifyApplicant } from "@/lib/applications";
+import {
+  createApplication,
+  DAILY_ONLINE_LIMIT,
+  performAction,
+  performCitizenAction,
+  recoverResi,
+  startVerification,
+  verifyApplicant,
+} from "@/lib/applications";
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
 import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
-import { publicView } from "@/lib/present";
+import { checkNik, publicView } from "@/lib/present";
 import type { Role } from "@/lib/roles";
 import { DAY_MS } from "@/lib/sla";
 import { computeStats, openEscalations } from "@/lib/stats";
@@ -49,20 +57,32 @@ const actor = (role: Role): Actor => {
   return { id: String(u._id), name: u.name, role: u.role };
 };
 
+let nikSeq = 0;
+/** NIK valid & unik (lahir 15-05-1990) agar tidak terkena aturan permohonan ganda. */
+const uniqueNik = () => `3299011505900${String((nikSeq += 1)).padStart(3, "0")}`;
+
+/** Permohonan lewat loket (tanpa OTP); jalur online diuji terpisah di "pengaman pengajuan online". */
 async function newApplication(clock = clockAt()) {
   return createApplication({
     input: {
       serviceSlug: "akta-kelahiran",
-      channel: "online",
-      applicant: { name: "Uji Coba", phone: "081200009999", email: "", nik: "3299000000000001" },
+      channel: "loket",
+      applicant: { name: "Uji Coba", phone: "081200009999", email: "", nik: uniqueNik() },
       requirementsChecked: ["Kartu Keluarga orang tua", "bukan syarat resmi"],
+      consent: false,
     },
-    actor: null,
+    actor: actor("petugas_loket"),
     clock,
   });
 }
 
 describe("seed", () => {
+  it("NIK data demo lolos aturan pengajuan (tanggal lahir valid, pemohon ≥17 tahun)", async () => {
+    const apps = await Application.find().select("+applicant.nik serviceSlug").lean<ApplicationData[]>();
+    const bad = apps.filter((a) => !checkNik(a.applicant.nik ?? "", a.serviceSlug, NOW).ok);
+    expect(bad.map((a) => a.applicant.nik)).toEqual([]);
+  });
+
   it("membuat data dengan status beragam dan tanggal mundur yang dipertahankan", async () => {
     const apps = await Application.find().lean();
     expect(apps).toHaveLength(60);
@@ -126,8 +146,9 @@ describe("pengajuan", () => {
         input: {
           serviceSlug: "tidak-ada",
           channel: "online",
-          applicant: { name: "X Y Z", phone: "081200000000", nik: "3299000000000009" },
+          applicant: { name: "X Y Z", phone: "081200000000", nik: uniqueNik() },
           requirementsChecked: [],
+          consent: true,
         },
         actor: null,
         clock: clockAt(),
@@ -139,13 +160,13 @@ describe("pengajuan", () => {
     const app = await newApplication();
     await Service.updateOne(
       { slug: "akta-kelahiran" },
-      { $set: { "steps.1.slaDays": 10, "steps.1.name": "Diganti" } },
+      { $set: { "steps.1.slaHours": 10, "steps.1.name": "Diganti" } },
     );
     const saved = await stored(app.resi);
-    expect(saved.steps[1]).toMatchObject({ name: "Entri & validasi data", slaDays: 2 });
+    expect(saved.steps[1]).toMatchObject({ name: "Entri & validasi data", slaHours: 2 });
     await Service.updateOne(
       { slug: "akta-kelahiran" },
-      { $set: { "steps.1.slaDays": 2, "steps.1.name": "Entri & validasi data" } },
+      { $set: { "steps.1.slaHours": 2, "steps.1.name": "Entri & validasi data" } },
     );
   });
 });
@@ -166,11 +187,12 @@ describe("pengajuan KTP-el", () => {
     createApplication({
       input: {
         serviceSlug: "perekaman-ktp-el",
-        channel: "online",
+        channel: "loket",
         applicant: { name: "Dewi Lestari", phone: "081200001111", email: "", nik, ...extra },
         requirementsChecked: [],
+        consent: false,
       },
-      actor: null,
+      actor: actor("petugas_loket"),
       clock: clockAt(),
     });
 
@@ -190,6 +212,101 @@ describe("pengajuan KTP-el", () => {
       fields: { "applicant.ktp.marital": expect.stringContaining("17 tahun") },
     });
     await expect(submit("3299010101120001", { ktp: { ...ktp, marital: "KAWIN" } })).resolves.toBeTruthy();
+  });
+});
+
+describe("pengaman pengajuan online", () => {
+  const input = (nik: string, phone: string, extra: Partial<ApplicationInput> = {}): ApplicationInput => ({
+    serviceSlug: "akta-kelahiran",
+    channel: "online",
+    applicant: { name: "Rina Wati", phone, email: "", nik },
+    requirementsChecked: [],
+    consent: true,
+    ...extra,
+  });
+  /** Alur warga: kirim kode → isi kode → permohonan dibuat. */
+  async function submitOnline(data: ApplicationInput) {
+    const otp = await startVerification({ input: data, clock: clockAt() });
+    return createApplication({
+      input: { ...data, otp: { id: otp.otpId, code: otp.code } },
+      actor: null,
+      clock: clockAt(),
+    });
+  }
+
+  it("wajib OTP yang benar, sekali pakai", async () => {
+    const data = input(uniqueNik(), "081277770001");
+    await expect(createApplication({ input: data, actor: null, clock: clockAt() })).rejects.toMatchObject({
+      fields: { otp: expect.any(String) },
+    });
+    const otp = await startVerification({ input: data, clock: clockAt() });
+    const wrong = otp.code === "000000" ? "111111" : "000000";
+    await expect(
+      createApplication({
+        input: { ...data, otp: { id: otp.otpId, code: wrong } },
+        actor: null,
+        clock: clockAt(),
+      }),
+    ).rejects.toMatchObject({ fields: { otp: expect.stringContaining("Sisa") } });
+    const ok = { ...data, otp: { id: otp.otpId, code: otp.code } };
+    await expect(createApplication({ input: ok, actor: null, clock: clockAt() })).resolves.toBeTruthy();
+    // Kode yang sama tidak bisa dipakai ulang (mis. untuk NIK lain atau pengajuan kedua).
+    await expect(createApplication({ input: ok, actor: null, clock: clockAt() })).rejects.toMatchObject({
+      status: 422,
+    });
+  });
+
+  it("menolak pemohon di bawah 17 tahun, pernyataan tidak dicentang, dan permohonan ganda", async () => {
+    // 01-01-2012: 14 tahun.
+    await expect(
+      startVerification({ input: input("3299010101120002", "081277770002"), clock: clockAt() }),
+    ).rejects.toMatchObject({ fields: { "applicant.nik": expect.stringContaining("minimal 17 tahun") } });
+    await expect(
+      startVerification({ input: input(uniqueNik(), "081277770002", { consent: false }), clock: clockAt() }),
+    ).rejects.toMatchObject({ fields: { consent: expect.any(String) } });
+
+    const nik = uniqueNik();
+    await submitOnline(input(nik, "081277770003"));
+    const second = submitOnline(input(nik, "081277770004"));
+    await expect(second).rejects.toMatchObject({ status: 409 });
+    // Pesan tidak membocorkan resi atau data permohonan yang sudah ada.
+    await expect(second).rejects.toThrow(/^(?!.*RL-).*masih berjalan/);
+  });
+
+  it(`maksimal ${DAILY_ONLINE_LIMIT} pengajuan online per nomor HP per hari`, async () => {
+    const phone = "081277770009";
+    for (let i = 0; i < DAILY_ONLINE_LIMIT; i += 1) await submitOnline(input(uniqueNik(), phone));
+    await expect(
+      startVerification({ input: input(uniqueNik(), phone), clock: clockAt() }),
+    ).rejects.toMatchObject({
+      status: 429,
+    });
+  });
+});
+
+describe("lupa resi", () => {
+  it("daftar resi hanya keluar setelah OTP ke nomor yang didaftarkan; data tak cocok tetap dapat kode", async () => {
+    const app = await newApplication();
+    const nik = (await Application.findById(app._id).select("+applicant.nik").lean<ApplicationData>())!
+      .applicant.nik!;
+    const phone = app.applicant.phone;
+
+    // NIK benar, HP salah: kode tetap dikirim (tidak membocorkan), tapi hasilnya kosong.
+    const other = await recoverResi({ nik, phone: "081299990000" });
+    const empty = await recoverResi({
+      nik,
+      phone: "081299990000",
+      otp: { id: other.otp!.otpId, code: other.otp!.code },
+    });
+    expect(empty.applications).toEqual([]);
+
+    const sent = await recoverResi({ nik, phone });
+    expect(sent.applications).toBeUndefined();
+    await expect(
+      recoverResi({ nik, phone, otp: { id: sent.otp!.otpId, code: "12345x" } }),
+    ).rejects.toBeTruthy();
+    const found = await recoverResi({ nik, phone, otp: { id: sent.otp!.otpId, code: sent.otp!.code } });
+    expect(found.applications?.map((a) => a.resi)).toEqual([app.resi]);
   });
 });
 
@@ -238,7 +355,7 @@ describe("aksi petugas", () => {
   it("dua petugas menyelesaikan tahap yang sama bersamaan: hanya satu yang berhasil", async () => {
     const app = await newApplication();
     const results = await Promise.allSettled(
-      [actor("petugas_loket"), actor("admin")].map((a) =>
+      [actor("petugas_loket"), actor("petugas_loket")].map((a) =>
         performAction({ resi: app.resi, input: { action: "complete" }, actor: a, clock: clockAt() }),
       ),
     );
@@ -346,6 +463,11 @@ describe("statistik", () => {
     expect(stats.services.reduce((n, s) => n + s.total, 0)).toBe(apps.length);
     expect(stats.trend).toHaveLength(8);
     expect(stats.services[0].steps.length).toBeGreaterThan(0);
+    // Janji Permendagri 19/2018: sebagian besar dokumen demo terbit ≤ 1 hari kerja setelah berkas lengkap.
+    expect(stats.overall.issued).toBeGreaterThan(10);
+    expect(stats.overall.promiseRate).toBeGreaterThan(0.5);
+    expect(stats.overall.avgIssueHours).toBeGreaterThan(0);
+    expect(stats.services.every((s) => s.issueTargetHours! <= 8)).toBe(true);
 
     const open = openEscalations(apps, NOW);
     expect(open.some((e) => e.resi === "RL-HJ26-AKTA")).toBe(true);

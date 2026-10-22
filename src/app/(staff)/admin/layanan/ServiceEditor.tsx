@@ -9,19 +9,20 @@ import { type FormEvent, useState } from "react";
 import { Alert, buttonClass, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { AdminService } from "@/lib/dal";
+import { formatWorkHours } from "@/lib/format";
 import { type FormErrors, formErrors, postJson } from "@/lib/http";
 import { type Role, ROLE_LABELS, ROLES } from "@/lib/roles";
 
-type StepDraft = { name: string; role: Role | ""; slaDays: string };
+type StepDraft = { name: string; role: Role | ""; slaHours: string };
 
 const toDraft = (service?: AdminService): StepDraft[] =>
   service?.steps.map((s) => ({
     name: s.name,
     role: s.role,
-    slaDays: s.slaDays ? String(s.slaDays) : "",
+    slaHours: s.slaHours ? String(s.slaHours) : "",
   })) ?? [
-    { name: "Verifikasi berkas", role: "petugas_loket", slaDays: "1" },
-    { name: "Siap diambil di loket", role: "petugas_loket", slaDays: "" },
+    { name: "Verifikasi berkas", role: "petugas_loket", slaHours: "8" },
+    { name: "Siap diambil di loket", role: "petugas_loket", slaHours: "" },
   ];
 
 const small = buttonClass("secondary", "min-h-9 px-3");
@@ -60,7 +61,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
       steps: steps.map((s) => ({
         name: s.name,
         role: s.role,
-        slaDays: s.slaDays ? Number(s.slaDays) : null,
+        slaHours: s.slaHours ? Number(s.slaHours) : null,
       })),
       isActive: form.get("isActive") === "on",
       order: Number(form.get("order") || 0),
@@ -74,7 +75,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
     onDone();
   }
 
-  const totalSla = steps.reduce((sum, s) => sum + (Number(s.slaDays) || 0), 0);
+  const totalSla = steps.reduce((sum, s) => sum + (Number(s.slaHours) || 0), 0);
 
   return (
     <form method="post" onSubmit={submit} noValidate className="space-y-4">
@@ -120,11 +121,13 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
 
       <fieldset className="rounded-xl border border-line p-4">
         <legend className="px-1 text-sm font-semibold">
-          Tahapan <span className="font-normal text-muted">· total target {totalSla} hari kerja</span>
+          Tahapan <span className="font-normal text-muted">· total target {formatWorkHours(totalSla)}</span>
         </legend>
         <p className="text-sm text-muted">
-          Kosongkan SLA untuk tahap tanpa tenggat (mis. menunggu warga mengambil dokumen). Perubahan hanya
-          berlaku untuk permohonan baru.
+          SLA dalam jam kerja (Senin–Jumat 08.00–16.00 WIB; 8 jam = 1 hari kerja). Agar sesuai Permendagri
+          19/2018, total tahap setelah verifikasi sebaiknya ≤ 8 jam (dokumen terbit ≤ 24 jam setelah berkas
+          lengkap). Kosongkan SLA untuk tahap tanpa tenggat (mis. menunggu warga mengambil dokumen). Perubahan
+          hanya berlaku untuk permohonan baru.
         </p>
         <ol className="mt-3 space-y-3">
           {steps.map((step, i) => (
@@ -158,13 +161,14 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
                 ))}
               </Field>
               <Field
-                label="SLA (hari kerja)"
+                label="SLA (jam kerja)"
                 type="number"
                 min={1}
-                max={60}
-                value={step.slaDays}
-                onChange={(e) => update(i, { slaDays: e.target.value })}
-                error={errors[`steps.${i}.slaDays`]}
+                max={480}
+                placeholder="mis. 2"
+                value={step.slaHours}
+                onChange={(e) => update(i, { slaHours: e.target.value })}
+                error={errors[`steps.${i}.slaHours`]}
               />
               <div className="flex items-end gap-1">
                 <button
@@ -201,7 +205,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
         {errors.steps && <p className="mt-2 text-sm text-late">{errors.steps}</p>}
         <button
           type="button"
-          onClick={() => setSteps((list) => [...list, { name: "", role: "", slaDays: "" }])}
+          onClick={() => setSteps((list) => [...list, { name: "", role: "", slaHours: "" }])}
           className={cn(small, "mt-3")}
         >
           <Plus aria-hidden className="size-4" /> Tambah tahap
@@ -252,7 +256,7 @@ export function NewService() {
 /** Satu layanan di daftar: ringkasan + editor saat "Ubah". */
 export function ServiceRow({ service }: { service: AdminService }) {
   const [editing, setEditing] = useState(false);
-  const totalSla = service.steps.reduce((sum, s) => sum + (s.slaDays || 0), 0);
+  const totalSla = service.steps.reduce((sum, s) => sum + (s.slaHours || 0), 0);
   return (
     <li className={cn("space-y-4 px-5 py-4", !service.isActive && "bg-surface-2/60")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -269,8 +273,8 @@ export function ServiceRow({ service }: { service: AdminService }) {
             <Link href={`/layanan/${service.slug}`} className="font-mono hover:text-brand">
               /layanan/{service.slug}
             </Link>{" "}
-            · {service.steps.length} tahap · target {totalSla} hari kerja · {service.requirements.length}{" "}
-            persyaratan
+            · {service.steps.length} tahap · target {formatWorkHours(totalSla)} ·{" "}
+            {service.requirements.length} persyaratan
           </p>
         </div>
         {!editing && (

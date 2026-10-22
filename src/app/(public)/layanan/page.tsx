@@ -29,8 +29,9 @@ export default function ServicesPage() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Layanan</h1>
       <p className="mt-1 max-w-2xl text-muted">
-        Setiap layanan punya tahapan dengan tenggat dalam hari kerja. Angka tepat waktu dihitung langsung dari
-        permohonan yang sudah selesai.
+        Setiap layanan punya tahapan dengan tenggat dalam jam kerja; dokumen terbit paling lama 24 jam setelah
+        berkas lengkap (Permendagri 19/2018). Angka tepat waktu dihitung langsung dari permohonan yang sudah
+        selesai.
       </p>
       <div className="mt-6">
         <Suspense fallback={<Skeleton className="h-64" />}>

@@ -22,7 +22,7 @@ const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">Op
 /** Lebih jauh dari ini, lokasi pengguna dianggap di luar Jakarta. */
 const FAR_KM = 50;
 /** Jumlah lokasi di daftar sebelum "Lihat semua". */
-const PREVIEW = 5;
+const PREVIEW = 3;
 
 type Pos = { lat: number; lng: number };
 type Leaflet = typeof import("leaflet");
@@ -80,6 +80,50 @@ const INITIAL_VIEW: View = {
 /** Kantor kelurahan (ratusan) baru ditampilkan dari zoom ini, agar peta tidak penuh sesak. */
 const KELURAHAN_ZOOM = 14;
 
+type PanelProps = { offices?: Office[]; title?: string; intro?: string };
+
+/**
+ * Peta lokasi layanan. `defaultOpen={false}` = tampil sebagai satu baris ringkas dulu (Leaflet
+ * belum dimuat), dipakai saat warga belum perlu datang sekarang agar halaman tidak panjang.
+ */
+export default function OfficeMap({
+  defaultOpen = true,
+  summary,
+  ...props
+}: PanelProps & { defaultOpen?: boolean; summary?: string }) {
+  const [open, setOpen] = useState(defaultOpen);
+  if (open) return <MapPanel {...props} />;
+  return (
+    <section
+      aria-labelledby="loket-title"
+      className="flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface p-4"
+    >
+      <span
+        aria-hidden
+        className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"
+      >
+        <MapPin className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 id="loket-title" className="font-bold">
+          {props.title ?? "Lokasi layanan terdekat"}
+        </h2>
+        <p className="text-sm text-muted">
+          {summary ??
+            `${(props.offices ?? OFFICES).length} kantor kelurahan, kecamatan, Dukcapil, dan MPP di DKI Jakarta.`}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={buttonClass("secondary", "min-h-9 px-3")}
+      >
+        Tampilkan peta
+      </button>
+    </section>
+  );
+}
+
 const inside = (o: Pos, v: View) =>
   o.lat >= v.south && o.lat <= v.north && o.lng >= v.west && o.lng <= v.east;
 
@@ -88,15 +132,7 @@ const inside = (o: Pos, v: View) =>
  * yang sedang terlihat (geser/zoom = hasil diperbarui), bisa difilter per jenis, diurutkan
  * dari lokasi pengguna atau tengah peta. Leaflet dimuat di browser saja (butuh window).
  */
-export default function OfficeMap({
-  offices = OFFICES,
-  title = "Lokasi layanan terdekat",
-  intro,
-}: {
-  offices?: Office[];
-  title?: string;
-  intro?: string;
-}) {
+function MapPanel({ offices = OFFICES, title = "Lokasi layanan terdekat", intro }: PanelProps) {
   const container = useRef<HTMLDivElement>(null);
   const leaflet = useRef<{ L: Leaflet; map: LeafletMap; markers: Map<string, Marker>; user?: Marker } | null>(
     null,
@@ -318,7 +354,7 @@ export default function OfficeMap({
           ref={container}
           role="region"
           aria-label="Peta lokasi layanan"
-          className="relative isolate z-0 h-80 overflow-hidden rounded-xl border border-line bg-surface-2 @2xl:h-auto @2xl:min-h-[30rem]"
+          className="relative isolate z-0 h-80 overflow-hidden rounded-xl border border-line bg-surface-2 @2xl:h-auto @2xl:min-h-[26rem]"
         />
         <div className="space-y-2">
           <p role="status" className="text-sm">

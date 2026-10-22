@@ -54,10 +54,13 @@ export default function ActionPanel({
   resi,
   status,
   stepName,
+  next,
 }: {
   resi: string;
   status: Status;
   stepName: string | null;
+  /** Tahap & peran berikutnya, ditampilkan sebelum menyelesaikan agar jelas ke mana berkas pergi. */
+  next: string | null;
 }) {
   const router = useRouter();
   const available: Action[] =
@@ -75,6 +78,10 @@ export default function ActionPanel({
     const publicNote = String(form.get("publicNote") ?? "").trim();
     if (spec.publicRequired && !publicNote) {
       setErrors({ publicNote: "Wajib diisi, karena catatan ini dibaca warga." });
+      return;
+    }
+    if (action === "reject" && !form.get("confirmFinal")) {
+      setErrors({ confirmFinal: "Centang untuk memastikan penolakan memang disengaja." });
       return;
     }
     setPending(true);
@@ -126,6 +133,18 @@ export default function ActionPanel({
       {spec && (
         <form method="post" onSubmit={submit} noValidate className="mt-5 space-y-4 border-t border-line pt-5">
           {spec.hint && <p className="text-sm text-muted">{spec.hint}</p>}
+          {action === "complete" && (
+            <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
+              {next ? (
+                <>
+                  Setelah ini berkas diteruskan ke <span className="font-semibold">{next}</span>. Anda tidak
+                  bisa membatalkannya.
+                </>
+              ) : (
+                "Ini tahap terakhir: permohonan akan berstatus Selesai."
+              )}
+            </p>
+          )}
           {spec.publicLabel && (
             <div>
               <label htmlFor="publicNote" className="mb-1.5 block text-sm font-medium">
@@ -159,6 +178,15 @@ export default function ActionPanel({
               className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
             />
           </div>
+          {action === "reject" && (
+            <div>
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" name="confirmFinal" className="mt-0.5 size-4 accent-late" />
+                Saya paham penolakan bersifat final dan warga harus mengajukan ulang dari awal.
+              </label>
+              {errors.confirmFinal && <p className="mt-1 text-sm text-late">{errors.confirmFinal}</p>}
+            </div>
+          )}
           <Alert>{errors.form}</Alert>
           <button type="submit" disabled={pending} className={buttonClass(spec.variant)}>
             {pending ? "Menyimpan…" : spec.confirm}

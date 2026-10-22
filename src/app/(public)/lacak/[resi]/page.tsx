@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
@@ -13,12 +14,18 @@ export const metadata = { title: "Lacak resi" };
 
 function Problem({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-6 shadow-card">
+    <div className="mx-auto max-w-2xl rounded-card border border-line bg-surface p-6 shadow-card">
       <h1 className="text-xl font-bold">{title}</h1>
       <p className="mt-2 text-muted">{body}</p>
       <div className="mt-5">
         <ResiSearch example={site.hero.exampleResi} />
       </div>
+      <p className="mt-4 text-sm text-muted">
+        Lupa nomor resi?{" "}
+        <Link href="/lacak/lupa" className="font-semibold text-brand hover:underline">
+          Cari dengan NIK & nomor HP
+        </Link>
+      </p>
     </div>
   );
 }
@@ -26,8 +33,10 @@ function Problem({ title, body }: { title: string; body: string }) {
 function TrackSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Memuat status permohonan">
-      <Skeleton className="h-52" />
-      <Skeleton className="h-80" />
+      <div className="grid gap-5 lg:grid-cols-[1fr_21rem]">
+        <Skeleton className="h-80" />
+        <Skeleton className="h-80" />
+      </div>
     </div>
   );
 }
@@ -62,7 +71,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <Suspense fallback={<TrackSkeleton />}>
         <Tracking params={params} />
       </Suspense>

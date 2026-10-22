@@ -69,7 +69,7 @@ export const site = {
       {
         icon: "timer",
         title: "Setiap tahap punya tenggat",
-        body: "Verifikasi, proses, tanda tangan, cetak. Tenggat dihitung dalam hari kerja dan tampil ke warga.",
+        body: "Verifikasi, proses, tanda tangan, cetak. Tenggat dalam jam kerja, dokumen terbit ≤ 24 jam setelah berkas lengkap.",
       },
       {
         icon: "bell",

@@ -1,13 +1,49 @@
-import { Check } from "lucide-react";
-import { Suspense } from "react";
+import { Check, CheckCircle2 } from "lucide-react";
+import { type ReactNode, Suspense } from "react";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import { Button, Skeleton } from "@/components/ui";
 import type { SearchParamsOf } from "@/lib/api";
+import { cn } from "@/lib/cn";
+import { getTracking } from "@/lib/dal";
+import { formatDateTime } from "@/lib/format";
 import { receiptFor } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 
 export const metadata = { title: "Permohonan terkirim" };
+
+/** Satu langkah di urutan "apa yang terjadi selanjutnya". */
+function Step({
+  n,
+  done,
+  title,
+  children,
+}: {
+  n: number;
+  done?: boolean;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className="group relative flex gap-3 pb-5 last:pb-0">
+      {/* garis penghubung antarlangkah */}
+      <span aria-hidden className="absolute top-8 bottom-0 left-[0.9375rem] w-px bg-line group-last:hidden" />
+      <span
+        aria-hidden
+        className={cn(
+          "relative grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold",
+          done ? "bg-ok text-surface" : "bg-brand-soft text-brand",
+        )}
+      >
+        {done ? <Check className="size-4" /> : n}
+      </span>
+      <div className="min-w-0 pt-1 text-sm">
+        <p className="font-semibold text-text">{title}</p>
+        <div className="mt-0.5 text-muted">{children}</div>
+      </div>
+    </li>
+  );
+}
 
 async function Success({ searchParams }: SearchParamsOf) {
   const params = await searchParams;
@@ -26,58 +62,115 @@ async function Success({ searchParams }: SearchParamsOf) {
     );
   }
 
+  const [data, receipt] = await Promise.all([getTracking(resi), receiptFor(resi)]);
+  const current = data?.steps[data.currentStep];
+  const bring = [
+    "Bukti resi (QR di halaman ini)",
+    "KTP-el atau KK asli pemohon",
+    ...(data?.requirements ?? []),
+  ];
+
   return (
-    <div className="space-y-10">
-      <div className="mx-auto max-w-xl text-center">
-        <span aria-hidden className="mx-auto grid size-14 place-items-center rounded-full bg-ok-soft text-ok">
-          <Check className="size-7" />
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-center gap-4">
+        <span
+          aria-hidden
+          className="grid size-12 shrink-0 place-items-center rounded-full bg-ok-soft text-ok"
+        >
+          <Check className="size-6" />
         </span>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">
-          {isLoket ? "Permohonan terdaftar" : "Permohonan terkirim"}
-        </h1>
-        <p className="mt-2 text-muted">
-          {isLoket
-            ? "Berikan nomor resi ini kepada warga."
-            : "Simpan nomor resi ini. Anda membutuhkannya untuk melacak permohonan."}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isLoket ? "Permohonan terdaftar" : "Permohonan terkirim"}
+          </h1>
+          <p className="text-muted">
+            {data?.serviceName && <span className="font-medium text-text">{data.serviceName} · </span>}
+            {isLoket
+              ? "Berikan nomor resi ini kepada warga dan jelaskan langkah berikut."
+              : "Simpan nomor resi ini untuk melacak permohonan."}
+          </p>
+        </div>
+        <p className="rounded-xl border-2 border-dashed border-brand bg-brand-soft px-4 py-2 font-mono text-2xl font-bold tracking-widest select-all">
+          {resi}
         </p>
+      </header>
 
-        <div className="mt-6 rounded-card border-2 border-dashed border-brand bg-brand-soft px-4 py-6">
-          <p className="text-sm text-muted">Nomor resi</p>
-          <p className="mt-1 font-mono text-3xl font-bold tracking-widest select-all sm:text-4xl">{resi}</p>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+        <div className="min-w-0 space-y-6">
+          <section
+            aria-labelledby="next-title"
+            className="rounded-card border border-line bg-surface p-5 shadow-card"
+          >
+            <h2 id="next-title" className="text-lg font-bold">
+              Apa yang terjadi selanjutnya?
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {isLoket ? "Warga" : "Anda"} tidak perlu datang ke kantor sampai dokumen siap diambil, kecuali
+              diminta melengkapi berkas.
+            </p>
+            <ol className="mt-5">
+              <Step n={1} done title="Permohonan diterima">
+                Nomor resi {resi} sudah aktif dan bisa dilacak kapan saja.
+              </Step>
+              <Step n={2} title={current ? `${current.name}` : "Pemeriksaan berkas"}>
+                {current?.dueAt ? (
+                  <>
+                    Paling lambat{" "}
+                    <span className="font-medium text-text">{formatDateTime(current.dueAt)}</span>.{" "}
+                  </>
+                ) : null}
+                Jika ada yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi dihentikan
+                sampai berkas dilengkapi.
+              </Step>
+              <Step n={3} title="Dokumen terbit ≤ 24 jam setelah berkas lengkap">
+                Sesuai Permendagri 19/2018, dihitung dalam jam kerja (Senin–Jumat 08.00–16.00 WIB).
+                {data?.estimatedCompletion && (
+                  <>
+                    {" "}
+                    Perkiraan siap diambil{" "}
+                    <span className="font-medium text-text">{formatDateTime(data.estimatedCompletion)}</span>.
+                  </>
+                )}{" "}
+                Tahap yang terlambat diteruskan otomatis ke atasan petugas.
+              </Step>
+              <Step n={4} title="Ambil dokumen di lokasi layanan">
+                <p>Status berubah menjadi &ldquo;Siap Diambil&rdquo;. Bawa berkas berikut:</p>
+                <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-text sm:grid-cols-2">
+                  {bring.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </Step>
+            </ol>
+          </section>
+
+          {/* Belum perlu sekarang: peta ringkas, dibuka bila warga ingin tahu lokasinya. */}
+          {!isLoket && <OfficeMap defaultOpen={false} title="Lokasi pengambilan dokumen nanti" />}
         </div>
 
-        <div className="mt-4 text-left">
-          <ReceiptCard {...await receiptFor(resi)} title="Simpan bukti resi" />
-        </div>
-
-        <ul className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm">
-          <li>• Petugas loket akan memverifikasi berkas paling lambat 1 hari kerja.</li>
-          <li>
-            • Jika ada berkas yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi
-            dihentikan sampai Anda melengkapinya.
-          </li>
-          <li>• Untuk melihat detail, siapkan 4 digit terakhir nomor HP yang Anda daftarkan.</li>
-        </ul>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button href={`/lacak/${resi}`}>Lacak sekarang</Button>
-          <Button href={isLoket ? "/kerja/baru" : "/"} variant="secondary">
-            {isLoket ? "Input warga berikutnya" : "Kembali ke beranda"}
-          </Button>
-        </div>
+        <aside className="space-y-4 lg:sticky lg:top-24">
+          <ReceiptCard {...receipt} title="Simpan bukti resi" />
+          <p className="text-center text-xs text-muted">
+            Untuk melihat detail di halaman lacak, siapkan 4 digit terakhir nomor HP yang didaftarkan.
+          </p>
+          <div className="grid gap-2">
+            <Button href={`/lacak/${resi}`}>Lacak sekarang</Button>
+            <Button href={isLoket ? "/kerja/baru" : "/"} variant="secondary">
+              {isLoket ? "Input warga berikutnya" : "Kembali ke beranda"}
+            </Button>
+          </div>
+        </aside>
       </div>
-
-      {/* Warga online: loket tujuan untuk verifikasi berkas asli & pengambilan dokumen. */}
-      {!isLoket && (
-        <OfficeMap intro="Perekaman biometrik, penyerahan berkas asli, dan pengambilan dokumen bisa dilakukan di kantor kelurahan atau kecamatan sesuai domisili, Suku Dinas Dukcapil, atau Mal Pelayanan Publik." />
-      )}
     </div>
   );
 }
 
 export default function SuccessPage({ searchParams }: SearchParamsOf) {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-14">
+    <div className="mx-auto max-w-6xl px-4 py-10">
       <Suspense fallback={<Skeleton className="h-80" />}>
         <Success searchParams={searchParams} />
       </Suspense>

@@ -4,10 +4,10 @@
 
 import bcrypt from "bcryptjs";
 import mongoose, { type UpdateQuery } from "mongoose";
-import { User, type UserData } from "../models.ts";
+import { Service, User, type UserData } from "../models.ts";
 import { type AdminActor, logAdminEvent } from "./admin.ts";
 import { randomCode } from "./resi.ts";
-import type { Role } from "./roles.ts";
+import { type Role, ROLE_LABELS } from "./roles.ts";
 import type { PasswordChangeInput, StaffCreateInput } from "./validators.ts";
 import { AppError } from "./workflow.ts";
 
@@ -148,6 +148,7 @@ export async function updateStaff(
   actor: AdminActor,
 ) {
   const user = await loadOther(id, actor, "Akun Anda sendiri tidak bisa diubah dari halaman ini.");
+  if (role !== user.role) await ensureRoleCovered(user, "mengganti peran");
   const update: UpdateQuery<UserData> = { $set: { name, role, unit: unit || null } };
   if (role !== user.role) update.$inc = { sessionVersion: 1 };
   const saved = await save(id, update);
@@ -160,9 +161,28 @@ export async function updateStaff(
   return toAccount(saved);
 }
 
+/**
+ * Tolak perubahan yang membuat suatu peran tanpa akun aktif padahal peran itu memegang tahap
+ * di layanan aktif: permohonan akan macet di tahap tersebut tanpa ada yang bisa menindak.
+ */
+async function ensureRoleCovered(user: UserData, action: string) {
+  if (!user.isActive) return;
+  const needed =
+    user.role === "petugas_loket" || (await Service.exists({ isActive: true, "steps.role": user.role }));
+  if (!needed) return;
+  const others = await User.countDocuments({ _id: { $ne: user._id }, role: user.role, isActive: true });
+  if (others === 0) {
+    throw new AppError(
+      409,
+      `Tidak bisa ${action}: ini satu-satunya akun aktif ${ROLE_LABELS[user.role]}, padahal peran ini memegang tahap layanan. Buat atau aktifkan akun pengganti dulu.`,
+    );
+  }
+}
+
 /** Nonaktifkan (bukan hapus: audit log tetap merujuk akun ini) atau aktifkan kembali. */
 export async function setStaffActive(id: string, isActive: boolean, actor: AdminActor) {
-  await loadOther(id, actor, "Anda tidak bisa menonaktifkan akun sendiri.");
+  const user = await loadOther(id, actor, "Anda tidak bisa menonaktifkan akun sendiri.");
+  if (!isActive) await ensureRoleCovered(user, "menonaktifkan akun");
   const saved = await save(id, { $set: { isActive }, $inc: { sessionVersion: 1 } });
   await logAdminEvent(actor, isActive ? "account_activated" : "account_deactivated", label(saved));
   return toAccount(saved);

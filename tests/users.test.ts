@@ -147,6 +147,26 @@ describe("admin tidak bisa mengunci dirinya sendiri", () => {
   });
 });
 
+describe("setiap peran pemegang tahap selalu punya akun aktif", () => {
+  it("akun terakhir sebuah peran tidak bisa dinonaktifkan atau diganti perannya", async () => {
+    await Service.create({
+      name: "Uji Pimpinan",
+      slug: "uji-pimpinan",
+      steps: [
+        { key: "setuju", name: "Persetujuan", role: "pimpinan", slaHours: 1 },
+        { key: "ambil", name: "Siap diambil", role: "petugas_loket", slaHours: null },
+      ],
+    });
+    const { account } = await newStaff({ role: "pimpinan" });
+    await expectAppError(setStaffActive(account.id, false, admin), 409);
+    await expectAppError(updateStaff(account.id, { name: account.name, role: "petugas_teknis" }, admin), 409);
+
+    const { account: backup } = await newStaff({ role: "pimpinan" });
+    await setStaffActive(account.id, false, admin); // sudah ada pengganti
+    await expectAppError(setStaffActive(backup.id, false, admin), 409);
+  });
+});
+
 describe("ganti kata sandi sendiri", () => {
   it("kata sandi saat ini salah atau sama → error di field yang tepat", async () => {
     const { account, tempPassword } = await newStaff();
@@ -231,9 +251,9 @@ describe("kelola layanan & hari libur", () => {
     output: "Surat pindah",
     requirements: ["KK asli"],
     steps: [
-      { name: "Verifikasi berkas", role: "petugas_loket" as const, slaDays: 1 },
-      { name: "Verifikasi berkas", role: "petugas_teknis" as const, slaDays: 2 },
-      { name: "Siap diambil", role: "petugas_loket" as const, slaDays: null },
+      { name: "Verifikasi berkas", role: "petugas_loket" as const, slaHours: 1 },
+      { name: "Verifikasi berkas", role: "petugas_teknis" as const, slaHours: 2 },
+      { name: "Siap diambil", role: "petugas_loket" as const, slaHours: null },
     ],
     isActive: true,
     order: 9,

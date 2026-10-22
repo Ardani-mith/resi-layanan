@@ -56,6 +56,15 @@ export const ktpSchema = z.object({
   job: ktpText(60, "Isi pekerjaan."),
 });
 
+/** Kode verifikasi nomor HP (OTP) yang dikirim balik oleh warga. */
+const otpSchema = z.object({
+  id: z.string().max(64),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Masukkan 6 digit kode."),
+});
+
 export const applicationSchema = z.object({
   serviceSlug: z.string().trim().min(1, "Pilih layanan."),
   channel: z.enum(["online", "loket"]).default("online"),
@@ -67,6 +76,20 @@ export const applicationSchema = z.object({
     ktp: ktpSchema.optional(),
   }),
   requirementsChecked: z.array(z.string().trim().max(200)).max(20).default([]),
+  /** Pernyataan kebenaran data (wajib untuk pengajuan online). */
+  consent: z.boolean().default(false),
+  /** Kode verifikasi nomor HP; tanpa ini pengajuan online baru sampai tahap kirim kode. */
+  otp: otpSchema.optional(),
+});
+
+/** Lupa resi: NIK + nomor HP yang didaftarkan, lalu kode OTP. */
+export const recoverSchema = z.object({
+  nik: z
+    .string()
+    .trim()
+    .regex(/^\d{16}$/, "NIK harus 16 digit angka."),
+  phone: phoneSchema,
+  otp: otpSchema.optional(),
 });
 
 export const actionSchema = z.object({
@@ -93,8 +116,8 @@ export const trackActionSchema = z.discriminatedUnion("action", [
 ]);
 
 export const advanceSchema = z.object({
-  /** Hari kerja yang ditambahkan ke jam sistem. */
-  days: z.number().int().min(1).max(30).default(1),
+  /** Jam kerja yang ditambahkan ke jam sistem (8 = 1 hari kerja). */
+  hours: z.number().int().min(1).max(240).default(1),
   reset: z.boolean().default(false),
 });
 
@@ -137,7 +160,7 @@ const stepInputSchema = z.object({
   name: trimmed(80).min(3, "Nama tahap minimal 3 huruf."),
   role: z.enum(ROLES, { error: "Pilih peran." }),
   // null = tanpa tenggat (mis. menunggu warga mengambil dokumen).
-  slaDays: z.number().int("Hari kerja harus bilangan bulat.").min(1).max(60).nullable(),
+  slaHours: z.number().int("Jam kerja harus bilangan bulat.").min(1).max(480).nullable(),
 });
 
 export const serviceSchema = z.object({
@@ -162,6 +185,7 @@ export const holidaysSchema = z.object({
 });
 
 export type ApplicationInput = z.infer<typeof applicationSchema>;
+export type RecoverInput = z.infer<typeof recoverSchema>;
 export type ActionInput = z.infer<typeof actionSchema>;
 export type TrackActionInput = z.infer<typeof trackActionSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;

@@ -2,7 +2,17 @@
 // permohonan (lean); volume demo kecil, jadi agregasi di JS lebih mudah dibaca
 // daripada pipeline $group yang panjang.
 
-import { type DateLike, DAY_MS, finishedLate, isOverdue, workedMs } from "./sla.ts";
+import {
+  type DateLike,
+  DAY_MS,
+  finishedLate,
+  type Holidays,
+  HOUR_MS,
+  isOverdue,
+  ISSUE_PROMISE_HOURS,
+  issuePromise,
+  workedWorkMs,
+} from "./sla.ts";
 import {
   type ApplicationData,
   type Escalation,
@@ -27,7 +37,7 @@ type StatsApp = Pick<
   | "createdAt"
   | "completedAt"
 >;
-type StatsService = { _id: unknown; slug: string; name: string; steps?: Pick<StepTemplate, "slaDays">[] };
+type StatsService = { _id: unknown; slug: string; name: string; steps?: Pick<StepTemplate, "slaHours">[] };
 
 const WEEK_MS = 7 * DAY_MS;
 
@@ -50,19 +60,19 @@ const completedOnTime = (app: StatsApp) => app.steps.every((s) => !finishedLate(
 const isOverdueNow = (app: StatsApp, now: DateLike) =>
   RUNNING_STATUSES.includes(app.status) && isOverdue(app.steps[app.currentStep], now);
 
-function totalPausedMs(app: StatsApp): number {
-  return app.steps.reduce((sum, s) => sum + (s.pausedMs || 0), 0);
+/** Lama terbit (jam kerja, ms) sejak berkas lengkap; null jika dokumen belum terbit. */
+function issueWorkMs(app: StatsApp, now: DateLike, holidays?: Holidays): number | null {
+  const promise = issuePromise(app.steps, now, holidays);
+  return promise?.issuedAt ? promise.workMs : null;
 }
 
-/** Lama layanan efektif (hari kalender, tanpa waktu menunggu perbaikan dari warga). */
-function completionDays(app: StatsApp): number {
-  const ms = Number(app.completedAt) - Number(app.createdAt) - totalPausedMs(app);
-  return ms / DAY_MS;
-}
-
-function summarize(apps: StatsApp[], now: DateLike) {
+function summarize(apps: StatsApp[], now: DateLike, holidays?: Holidays) {
   const completed = apps.filter(isCompleted);
   const rated = completed.filter((a) => a.rating?.score);
+  const issued = apps
+    .filter((a) => a.status !== STATUS.DITOLAK)
+    .map((a) => issueWorkMs(a, now, holidays))
+    .filter((ms): ms is number => ms !== null);
   return {
     total: apps.length,
     open: apps.filter((a) => OPEN_STATUSES.includes(a.status)).length,
@@ -71,7 +81,14 @@ function summarize(apps: StatsApp[], now: DateLike) {
     completed: completed.length,
     rejected: apps.filter((a) => a.status === STATUS.DITOLAK).length,
     onTimeRate: round(ratio(completed.filter(completedOnTime).length, completed.length), 3),
-    avgCompletionDays: round(average(completed.map(completionDays))),
+    issued: issued.length,
+    /** Rata-rata jam kerja dari berkas lengkap sampai dokumen terbit. */
+    avgIssueHours: round((average(issued) ?? NaN) / HOUR_MS),
+    /** Porsi dokumen yang terbit ≤ 1 hari kerja setelah berkas lengkap (Permendagri 19/2018). */
+    promiseRate: round(
+      ratio(issued.filter((ms) => ms <= ISSUE_PROMISE_HOURS * HOUR_MS).length, issued.length),
+      3,
+    ),
     ratingAvg: round(average(rated.map((a) => a.rating?.score ?? 0))),
     ratingCount: rated.length,
   };
@@ -81,14 +98,14 @@ function summarize(apps: StatsApp[], now: DateLike) {
 interface StepRow {
   key: string;
   name: string;
-  slaDays: number | null;
+  slaHours: number | null;
   durations: number[];
   done: number;
   late: number;
   overdueNow: number;
 }
 
-function stepBreakdown(apps: StatsApp[], now: DateLike) {
+function stepBreakdown(apps: StatsApp[], now: DateLike, holidays?: Holidays) {
   const byKey = new Map<string, StepRow>();
   for (const app of apps) {
     for (const step of app.steps) {
@@ -96,7 +113,7 @@ function stepBreakdown(apps: StatsApp[], now: DateLike) {
       const row = byKey.get(step.key) ?? {
         key: step.key,
         name: step.name,
-        slaDays: step.slaDays,
+        slaHours: step.slaHours,
         durations: [],
         done: 0,
         late: 0,
@@ -104,7 +121,7 @@ function stepBreakdown(apps: StatsApp[], now: DateLike) {
       };
       if (step.completedAt) {
         row.done += 1;
-        row.durations.push(workedMs(step, now));
+        row.durations.push(workedWorkMs(step, now, holidays));
         if (finishedLate(step)) row.late += 1;
       } else if (RUNNING_STATUSES.includes(app.status) && isOverdue(step, now)) {
         row.overdueNow += 1;
@@ -115,7 +132,8 @@ function stepBreakdown(apps: StatsApp[], now: DateLike) {
   return [...byKey.values()].map(({ durations, done, late, ...row }) => ({
     ...row,
     completed: done,
-    avgHours: round((average(durations) ?? NaN) / 3_600_000),
+    /** Rata-rata lama tahap dalam jam kerja. */
+    avgHours: round((average(durations) ?? NaN) / HOUR_MS),
     lateRate: round(ratio(late, done), 3),
   }));
 }
@@ -139,19 +157,27 @@ function weeklyTrend(apps: StatsApp[], now: DateLike, weeks: number) {
   });
 }
 
-export function computeStats(apps: StatsApp[], services: StatsService[], now: DateLike, { weeks = 8 } = {}) {
+export function computeStats(
+  apps: StatsApp[],
+  services: StatsService[],
+  now: DateLike,
+  { weeks = 8, holidays }: { weeks?: number; holidays?: Holidays } = {},
+) {
   return {
     generatedAt: new Date(now),
-    overall: summarize(apps, now),
+    overall: summarize(apps, now, holidays),
     services: services.map((service) => {
       const own = apps.filter((a) => String(a.serviceId) === String(service._id));
       return {
         id: String(service._id),
         slug: service.slug,
         name: service.name,
-        targetDays: service.steps?.reduce((sum, step) => sum + (step.slaDays || 0), 0) ?? null,
-        ...summarize(own, now),
-        steps: stepBreakdown(own, now),
+        targetHours: service.steps?.reduce((sum, step) => sum + (step.slaHours || 0), 0) ?? null,
+        /** Target terbit setelah berkas lengkap (tahap ber-SLA setelah verifikasi). */
+        issueTargetHours:
+          service.steps?.slice(1).reduce((sum, step) => sum + (step.slaHours || 0), 0) ?? null,
+        ...summarize(own, now, holidays),
+        steps: stepBreakdown(own, now, holidays),
       };
     }),
     trend: weeklyTrend(apps, now, weeks),

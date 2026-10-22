@@ -1,18 +1,31 @@
 "use client";
 
-import { Check, Copy, Star } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  FileWarning,
+  type LucideIcon,
+  PackageCheck,
+  ShieldCheck,
+  Star,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
-import { Alert, buttonClass, DemoClockBanner } from "@/components/ui";
+import { Alert, Button, buttonClass, DemoClockBanner } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { formatDate, formatDateTime } from "@/lib/format";
+import type { Tracking } from "@/lib/dal";
+import { formatDateTime, formatDuration } from "@/lib/format";
 import { useAutoRefresh } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
-import type { PublicView, VerifiedView } from "@/lib/present";
+import type { VerifiedView } from "@/lib/present";
 import type { Receipt } from "@/lib/qr";
 import { OPEN_STATUSES } from "@/lib/workflow";
 
@@ -78,34 +91,145 @@ function Last4Field({
   );
 }
 
-const BANNER_TONES = {
-  late: "border-late bg-late-soft",
-  pause: "border-pause bg-pause-soft",
-  ok: "border-ok bg-ok-soft",
-};
-
-function Banner({
-  tone,
-  title,
-  children,
-}: {
-  tone: keyof typeof BANNER_TONES;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className={cn("rounded-card border-l-4 p-4", BANNER_TONES[tone])}>
-      <h2 className="font-bold">{title}</h2>
-      <div className="mt-1 text-sm">{children}</div>
-    </section>
-  );
-}
-
 /** Error dari server hanya tampil di bawah form yang mengirimnya. */
 type CitizenAction = "verify" | "resubmit" | "rate";
 
 function FormError({ errors, action }: { errors: FormErrors; action: CitizenAction }) {
   return <Alert className="w-full">{errors.formAction === action && errors.form}</Alert>;
+}
+
+const TONES = {
+  brand: { box: "border-brand/40", icon: "bg-brand-soft text-brand" },
+  late: { box: "border-late/50", icon: "bg-late-soft text-late" },
+  pause: { box: "border-pause/50", icon: "bg-pause-soft text-pause" },
+  ok: { box: "border-ok/50", icon: "bg-ok-soft text-ok" },
+};
+
+/**
+ * Kartu "Langkah Anda berikutnya": satu jawaban jelas untuk "lalu saya harus apa?" sesuai status.
+ * Semua pesan status (terlambat, perbaikan, siap diambil, ditolak, penilaian) ada di sini, tidak
+ * tersebar menjadi banner terpisah.
+ */
+function NextStep({
+  tone,
+  icon: Icon,
+  title,
+  children,
+}: {
+  tone: keyof typeof TONES;
+  icon: LucideIcon;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-labelledby="next-title"
+      className={cn("rounded-card border-2 bg-surface p-5 shadow-card", TONES[tone].box)}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className={cn("grid size-10 shrink-0 place-items-center rounded-xl", TONES[tone].icon)}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-muted uppercase">Langkah Anda berikutnya</p>
+          <h2 id="next-title" className="text-lg leading-snug font-bold">
+            {title}
+          </h2>
+          <div className="mt-2 space-y-3 text-sm">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Daftar berkas ringkas (dua kolom di layar lebar). */
+function Checklist({ items }: { items: string[] }) {
+  return (
+    <ul className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+      {items.map((item) => (
+        <li key={item} className="flex gap-2">
+          <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Tahap ke berapa dari berapa, sebagai bar bersegmen. */
+function Progress({ data }: { data: Tracking }) {
+  const total = data.steps.length;
+  const done = data.status === "selesai" ? total : data.steps.filter((s) => s.state === "selesai").length;
+  return (
+    <div className="mt-4">
+      <div className="flex justify-between text-xs text-muted">
+        <span>
+          {data.status === "selesai" ? "Semua tahap selesai" : `Tahap ${data.currentStep + 1} dari ${total}`}
+        </span>
+        <span className="tabular-nums">{Math.round((done / total) * 100)}%</span>
+      </div>
+      <div aria-hidden className="mt-1.5 flex gap-1">
+        {data.steps.map((s, i) => (
+          <span
+            key={s.key}
+            className={cn(
+              "h-1.5 flex-1 rounded-full",
+              data.status === "selesai" || s.state === "selesai"
+                ? "bg-ok"
+                : i === data.currentStep
+                  ? s.state === "terlambat" || s.state === "ditolak"
+                    ? "bg-late"
+                    : s.state === "dijeda"
+                      ? "bg-pause"
+                      : "bg-brand"
+                  : "bg-surface-2",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Janji Permendagri 19/2018 (dokumen terbit ≤ 24 jam setelah berkas lengkap), dihitung dalam
+ * jam kerja: belum dimulai, berjalan (dengan batas waktunya), ditepati, atau terlewati.
+ */
+function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
+  const base = "mt-4 flex gap-2 rounded-xl px-3 py-2 text-sm";
+  if (!promise) {
+    return (
+      <p className={cn(base, "bg-surface-2 text-muted")}>
+        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+        Setelah berkas dinyatakan lengkap, dokumen terbit paling lama 24 jam (1 hari kerja), sesuai
+        Permendagri 19/2018.
+      </p>
+    );
+  }
+  const took = formatDuration(promise.workMs);
+  if (promise.issuedAt) {
+    return (
+      <p className={cn(base, promise.kept ? "bg-ok-soft text-ok" : "bg-late-soft text-late")}>
+        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+        {promise.kept
+          ? `Dokumen terbit ${took} kerja setelah berkas lengkap: sesuai janji ≤ 24 jam.`
+          : `Dokumen terbit ${took} kerja setelah berkas lengkap: melewati janji 24 jam.`}
+      </p>
+    );
+  }
+  return (
+    <p className={cn(base, promise.kept ? "bg-brand-soft text-text" : "bg-late-soft text-late")}>
+      <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+      <span>
+        {promise.kept ? "Janji terbit: paling lambat " : "Janji terbit ≤ 24 jam terlewati sejak "}
+        <span className="font-semibold">{formatDateTime(promise.dueAt)}</span>
+        <span className="text-muted"> · berkas lengkap {formatDateTime(promise.verifiedAt)}</span>
+      </span>
+    </p>
+  );
 }
 
 export default function TrackView({
@@ -114,7 +238,7 @@ export default function TrackView({
   offsetMs,
   receipt,
 }: {
-  data: PublicView;
+  data: Tracking;
   serverNow: string;
   offsetMs: number;
   receipt: Receipt;
@@ -159,259 +283,311 @@ export default function TrackView({
 
   const verified = Boolean(detail);
   const current = data.steps[data.currentStep];
+  const bring = ["Bukti resi (QR di halaman ini)", "KTP-el atau KK asli pemohon", ...data.requirements];
+
+  function nextStep() {
+    switch (data.status) {
+      case "perlu_perbaikan":
+        return (
+          <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
+            <blockquote className="rounded-xl bg-pause-soft px-3 py-2 font-medium">{data.fixNote}</blockquote>
+            <p className="text-muted">
+              Hitung mundur instansi dihentikan sementara dan tidak merugikan Anda. Lengkapi berkas langsung
+              di lokasi layanan terdekat (peta di bawah), lalu konfirmasi di sini agar proses berlanjut.
+            </p>
+            <form
+              method="post"
+              className="flex flex-wrap items-end gap-3"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (await send("resubmit"))
+                  setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
+              }}
+            >
+              {!verified && (
+                <Last4Field id="fix-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+              )}
+              <button type="submit" disabled={pending === "resubmit"} className={buttonClass("primary")}>
+                {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
+              </button>
+              <FormError errors={errors} action="resubmit" />
+            </form>
+          </NextStep>
+        );
+      case "siap_diambil":
+        return (
+          <NextStep tone="ok" icon={PackageCheck} title="Dokumen siap diambil">
+            <p>Datang ke lokasi layanan pada jam kerja dan bawa:</p>
+            <Checklist items={bring.slice(0, 2)} />
+            <p className="text-muted">
+              Berhalangan? Pengambilan bisa diwakilkan dengan surat kuasa dan KTP-el wakil.
+            </p>
+          </NextStep>
+        );
+      case "selesai":
+        return data.rated ? (
+          <NextStep tone="ok" icon={CheckCircle2} title="Permohonan selesai">
+            <p>Terima kasih sudah menilai layanan kami. Penilaian Anda tampil di rapor SLA publik.</p>
+          </NextStep>
+        ) : (
+          <NextStep tone="brand" icon={Star} title="Bagaimana pelayanan kami?">
+            <p className="text-muted">Permohonan selesai. Penilaian Anda tampil di rapor SLA publik.</p>
+            <form
+              method="post"
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!score) {
+                  setErrors({ score: "Pilih 1–5 bintang." });
+                  return;
+                }
+                if (await send("rate", { score, comment })) setNotice("Terima kasih atas penilaian Anda.");
+              }}
+            >
+              <fieldset>
+                <legend className="sr-only">Nilai</legend>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setScore(n)}
+                      aria-label={`${n} bintang`}
+                      aria-pressed={score === n}
+                      className="grid size-11 place-items-center rounded-xl hover:bg-surface-2"
+                    >
+                      <Star
+                        aria-hidden
+                        className={cn("size-7", n <= score ? "fill-warn text-warn" : "text-line")}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {errors.score && <p className="mt-1 text-sm text-late">{errors.score}</p>}
+              </fieldset>
+              <div>
+                <label htmlFor="comment" className="mb-1.5 block font-medium">
+                  Komentar (opsional)
+                </label>
+                <textarea
+                  id="comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
+                />
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                {!verified && (
+                  <Last4Field id="rate-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+                )}
+                <button type="submit" disabled={pending === "rate"} className={buttonClass("primary")}>
+                  {pending === "rate" ? "Mengirim…" : "Kirim penilaian"}
+                </button>
+              </div>
+              <FormError errors={errors} action="rate" />
+            </form>
+          </NextStep>
+        );
+      case "ditolak":
+        return (
+          <NextStep tone="late" icon={XCircle} title="Permohonan ditolak">
+            <blockquote className="rounded-xl bg-late-soft px-3 py-2 font-medium">
+              {data.rejectionReason}
+            </blockquote>
+            <p className="text-muted">
+              Perbaiki hal di atas lalu ajukan lagi. Jika alasan ini keliru, tanyakan ke lokasi layanan dengan
+              membawa nomor resi.
+            </p>
+            <Button href={`/ajukan?layanan=${data.serviceSlug}`}>Ajukan ulang {data.serviceName}</Button>
+          </NextStep>
+        );
+      default:
+        return data.isLate ? (
+          <NextStep tone="late" icon={AlertTriangle} title={`Tahap "${current?.name}" melewati tenggat`}>
+            <p>
+              Keterlambatan ini tercatat dan{" "}
+              {data.isEscalated ? "sudah diteruskan otomatis" : "akan diteruskan"} ke atasan petugas. Anda
+              tidak perlu melapor ulang atau datang ke kantor.
+            </p>
+          </NextStep>
+        ) : (
+          <NextStep tone="brand" icon={Clock} title="Tidak ada yang perlu Anda lakukan sekarang">
+            <p>
+              Petugas sedang mengerjakan tahap <span className="font-semibold">{current?.name}</span>
+              {current?.dueAt && (
+                <>
+                  , paling lambat <span className="font-semibold">{formatDateTime(current.dueAt)}</span>
+                </>
+              )}
+              . Halaman ini akan memberi tahu jika berkas perlu dilengkapi dan saat dokumen siap diambil.
+            </p>
+            <details className="group rounded-xl bg-surface-2 px-3 py-2">
+              <summary className="cursor-pointer font-semibold">
+                Siapkan dari sekarang: berkas asli yang dibawa saat pengambilan
+              </summary>
+              <div className="mt-2">
+                <Checklist items={bring} />
+              </div>
+            </details>
+          </NextStep>
+        );
+    }
+  }
+
+  // Peta terbuka saat warga memang perlu datang; selain itu ringkas (bisa dibuka bila perlu).
+  const mustVisit = data.status === "perlu_perbaikan" || data.status === "siap_diambil";
+  const mapTitle = {
+    perlu_perbaikan: "Lengkapi berkas di lokasi layanan",
+    siap_diambil: "Ambil dokumen di lokasi layanan",
+    ditolak: "Tanyakan ke lokasi layanan",
+  }[data.status as string];
 
   return (
     <div className="space-y-5">
       <DemoClockBanner offsetMs={offsetMs} />
 
-      {/* Ringkasan */}
-      <section className="rounded-card border border-line bg-surface p-5 shadow-card">
-        <div className="flex items-center gap-2">
-          <p className="font-mono text-sm tracking-wider text-muted">{data.resi}</p>
-          <CopyResi resi={data.resi} />
-        </div>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">{data.serviceName}</h1>
-        <div className="mt-3">
-          <StatusBadge status={data.status} late={data.isLate} size="lg" />
-        </div>
-
-        <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-          <div className="col-span-2 sm:col-span-1">
-            <dt className="text-muted">
-              {data.status === "selesai"
-                ? "Selesai"
-                : data.status === "ditolak"
-                  ? "Ditolak"
-                  : "Perkiraan selesai"}
-            </dt>
-            <dd className="text-base font-semibold">
-              {data.completedAt
-                ? formatDate(data.completedAt)
-                : data.estimatedCompletion
-                  ? formatDate(data.estimatedCompletion)
-                  : "Menunggu perbaikan berkas"}
-            </dd>
-          </div>
-          <div className="col-span-2 sm:col-span-1">
-            <dt className="text-muted">Tahap saat ini</dt>
-            <dd className="font-semibold">
-              {data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted">Pemohon</dt>
-            <dd className="font-medium">{detail?.applicant.name ?? data.applicantMasked}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Diajukan</dt>
-            <dd className="font-medium">{formatDateTime(data.createdAt)}</dd>
-            <dd className="text-muted">{data.channel === "loket" ? "Lewat loket" : "Online"}</dd>
-          </div>
-        </dl>
-      </section>
-
-      {/* Saat warga perlu datang ke loket: lengkapi berkas atau ambil dokumen. */}
-      {(data.status === "perlu_perbaikan" || data.status === "siap_diambil") && (
-        <OfficeMap
-          title={
-            data.status === "siap_diambil"
-              ? "Ambil dokumen di lokasi layanan"
-              : "Lengkapi berkas di lokasi layanan"
-          }
-          intro={
-            data.status === "siap_diambil"
-              ? "Dokumen Anda sudah siap. Bawa bukti resi ini ke lokasi layanan terdekat."
-              : "Berkas bisa dilengkapi langsung di lokasi layanan terdekat, atau dikonfirmasi lewat halaman ini."
-          }
-        />
-      )}
-
-      <ReceiptCard {...receipt} />
-
-      {/* Situasi khusus */}
-      {data.isLate && (
-        <Banner tone="late" title={`Tahap "${current?.name}" melewati tenggat`}>
-          Keterlambatan ini tercatat dan {data.isEscalated ? "sudah diteruskan otomatis" : "akan diteruskan"}{" "}
-          ke atasan petugas. Anda tidak perlu melapor ulang.
-        </Banner>
-      )}
-
-      {data.status === "ditolak" && (
-        <Banner tone="late" title="Permohonan ditolak">
-          <p className="font-medium">{data.rejectionReason}</p>
-          <p className="mt-2 text-muted">Jika alasan ini keliru, datangi loket dengan membawa nomor resi.</p>
-        </Banner>
-      )}
-
-      {data.status === "siap_diambil" && (
-        <Banner tone="ok" title="Dokumen siap diambil">
-          Datang ke loket Disdukcapil pada jam kerja dengan menunjukkan nomor resi dan KTP-el/KK asli.
-        </Banner>
-      )}
-
-      {data.status === "perlu_perbaikan" && (
-        <section className="rounded-card border-l-4 border-pause bg-pause-soft p-4">
-          <h2 className="font-bold">Berkas perlu diperbaiki</h2>
-          <p className="mt-1 text-sm">{data.fixNote}</p>
-          <p className="mt-2 text-sm text-muted">
-            Hitung mundur instansi dihentikan sementara. Setelah berkas dilengkapi (atau dibawa ke loket),
-            konfirmasi di bawah agar proses berlanjut.
-          </p>
-          <form
-            method="post"
-            className="mt-4 flex flex-wrap items-end gap-3"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (await send("resubmit"))
-                setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
-            }}
-          >
-            {!verified && (
-              <Last4Field id="fix-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-            )}
-            <button type="submit" disabled={pending === "resubmit"} className={buttonClass("primary")}>
-              {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
-            </button>
-            <FormError errors={errors} action="resubmit" />
-          </form>
-        </section>
-      )}
-
-      <Alert tone="success" className="rounded-card px-4 py-3">
-        {notice}
-      </Alert>
-
-      {/* Timeline */}
-      <section className="rounded-card border border-line bg-surface p-5">
-        <h2 className="mb-5 text-lg font-bold">Perjalanan permohonan</h2>
-        <Timeline steps={data.steps} serverNow={serverNow} offsetMs={offsetMs} />
-      </section>
-
-      {/* Rating */}
-      {data.status === "selesai" && !data.rated && (
-        <section className="rounded-card border border-line bg-surface p-5">
-          <h2 className="text-lg font-bold">Bagaimana pelayanan kami?</h2>
-          <p className="mt-1 text-sm text-muted">Penilaian Anda tampil di rapor SLA publik.</p>
-          <form
-            method="post"
-            className="mt-4 space-y-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!score) {
-                setErrors({ score: "Pilih 1–5 bintang." });
-                return;
-              }
-              if (await send("rate", { score, comment })) setNotice("Terima kasih atas penilaian Anda.");
-            }}
-          >
-            <fieldset>
-              <legend className="mb-1.5 text-sm font-medium">Nilai</legend>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setScore(n)}
-                    aria-label={`${n} bintang`}
-                    aria-pressed={score === n}
-                    className="grid size-11 place-items-center rounded-xl hover:bg-surface-2"
-                  >
-                    <Star
-                      aria-hidden
-                      className={cn("size-7", n <= score ? "fill-warn text-warn" : "text-line")}
-                    />
-                  </button>
-                ))}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+        <div className="min-w-0 space-y-5">
+          {/* Ringkasan */}
+          <section className="rounded-card border border-line bg-surface p-5 shadow-card">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-sm tracking-wider text-muted">{data.resi}</p>
+                  <CopyResi resi={data.resi} />
+                </div>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight">{data.serviceName}</h1>
               </div>
-              {errors.score && <p className="mt-1 text-sm text-late">{errors.score}</p>}
-            </fieldset>
-            <div>
-              <label htmlFor="comment" className="mb-1.5 block text-sm font-medium">
-                Komentar (opsional)
-              </label>
-              <textarea
-                id="comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                maxLength={500}
-                rows={3}
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
-              />
+              <StatusBadge status={data.status} late={data.isLate} size="lg" />
             </div>
-            {!verified && (
-              <Last4Field id="rate-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-            )}
-            <button type="submit" disabled={pending === "rate"} className={buttonClass("primary")}>
-              {pending === "rate" ? "Mengirim…" : "Kirim penilaian"}
-            </button>
-            <FormError errors={errors} action="rate" />
-          </form>
-        </section>
-      )}
 
-      {/* Detail pemohon (butuh verifikasi) */}
-      <section className="rounded-card border border-line bg-surface p-5">
-        <h2 className="text-lg font-bold">Detail pemohon</h2>
-        {detail ? (
-          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-muted">Nama</dt>
-              <dd className="font-medium">{detail.applicant.name}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Nomor HP</dt>
-              <dd className="font-mono">{detail.applicant.phoneMasked}</dd>
-            </div>
-            {detail.applicant.email && (
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
               <div>
-                <dt className="text-muted">Email</dt>
-                <dd>{detail.applicant.email}</dd>
+                <dt className="text-muted">
+                  {data.status === "selesai"
+                    ? "Selesai"
+                    : data.status === "ditolak"
+                      ? "Ditolak"
+                      : "Perkiraan selesai"}
+                </dt>
+                <dd className="font-semibold">
+                  {data.completedAt
+                    ? formatDateTime(data.completedAt)
+                    : data.estimatedCompletion
+                      ? formatDateTime(data.estimatedCompletion)
+                      : "Menunggu perbaikan berkas"}
+                </dd>
               </div>
-            )}
-            <div className="sm:col-span-2">
-              <dt className="text-muted">Persyaratan yang dinyatakan lengkap</dt>
-              <dd>
-                {detail.requirementsChecked.length ? (
-                  <ul className="mt-1 list-inside list-disc">
-                    {detail.requirementsChecked.map((r) => (
-                      <li key={r}>{r}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  "—"
-                )}
-              </dd>
-            </div>
-          </dl>
-        ) : (
-          <>
-            <p className="mt-1 text-sm text-muted">
-              Demi privasi, nama lengkap dan data pemohon hanya tampil setelah memasukkan 4 digit terakhir
-              nomor HP yang didaftarkan.
-            </p>
-            <form
-              method="post"
-              className="mt-4 flex flex-wrap items-end gap-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                send("verify");
-              }}
-            >
-              <Last4Field id="verify-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-              <button type="submit" disabled={pending === "verify"} className={buttonClass("secondary")}>
-                {pending === "verify" ? "Memeriksa…" : "Tampilkan detail"}
-              </button>
-              <FormError errors={errors} action="verify" />
-            </form>
-          </>
-        )}
-      </section>
+              <div>
+                <dt className="text-muted">Tahap saat ini</dt>
+                <dd className="font-semibold">
+                  {data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">Pemohon</dt>
+                <dd className="font-medium">{detail?.applicant.name ?? data.applicantMasked}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Diajukan</dt>
+                <dd className="font-medium">{formatDateTime(data.createdAt)}</dd>
+                <dd className="text-xs text-muted">{data.channel === "loket" ? "Lewat loket" : "Online"}</dd>
+              </div>
+            </dl>
+            {data.status !== "ditolak" && <Progress data={data} />}
+            {data.status !== "ditolak" && <PromiseLine promise={data.issuePromise} />}
+          </section>
 
-      <p className="text-center text-xs text-muted">
-        {isOpen
-          ? "Halaman ini memperbarui status secara otomatis."
-          : "Simpan tautan halaman ini sebagai bukti."}
-      </p>
+          {nextStep()}
+
+          <Alert tone="success" className="rounded-card px-4 py-3">
+            {notice}
+          </Alert>
+
+          {data.status !== "selesai" && (
+            <OfficeMap
+              key={data.status}
+              defaultOpen={mustVisit}
+              title={mapTitle ?? "Lokasi pengambilan dokumen nanti"}
+            />
+          )}
+
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="mb-5 text-lg font-bold">Perjalanan permohonan</h2>
+            <Timeline steps={data.steps} serverNow={serverNow} offsetMs={offsetMs} />
+          </section>
+        </div>
+
+        {/* Kolom samping: bukti & data pribadi, tetap terlihat saat menggulir di layar lebar. */}
+        <aside className="space-y-5 lg:sticky lg:top-24">
+          <ReceiptCard {...receipt} />
+
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="font-bold">Detail pemohon</h2>
+            {detail ? (
+              <dl className="mt-3 space-y-2 text-sm">
+                <div>
+                  <dt className="text-muted">Nama</dt>
+                  <dd className="font-medium">{detail.applicant.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Nomor HP</dt>
+                  <dd className="font-mono">{detail.applicant.phoneMasked}</dd>
+                </div>
+                {detail.applicant.email && (
+                  <div>
+                    <dt className="text-muted">Email</dt>
+                    <dd className="break-all">{detail.applicant.email}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-muted">Persyaratan yang dinyatakan lengkap</dt>
+                  <dd>
+                    {detail.requirementsChecked.length ? (
+                      <ul className="mt-1 list-inside list-disc">
+                        {detail.requirementsChecked.map((r) => (
+                          <li key={r}>{r}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      "—"
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-muted">
+                  Demi privasi, nama lengkap dan data pemohon tampil setelah memasukkan 4 digit terakhir nomor
+                  HP.
+                </p>
+                <form
+                  method="post"
+                  className="mt-4 flex flex-wrap items-end gap-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    send("verify");
+                  }}
+                >
+                  <Last4Field id="verify-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+                  <button type="submit" disabled={pending === "verify"} className={buttonClass("secondary")}>
+                    {pending === "verify" ? "Memeriksa…" : "Tampilkan detail"}
+                  </button>
+                  <FormError errors={errors} action="verify" />
+                </form>
+              </>
+            )}
+          </section>
+
+          <p className="text-center text-xs text-muted">
+            {isOpen
+              ? "Status diperbarui otomatis setiap 20 detik, tidak perlu memuat ulang."
+              : "Simpan tautan halaman ini sebagai bukti."}
+          </p>
+        </aside>
+      </div>
     </div>
   );
 }

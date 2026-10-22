@@ -7,7 +7,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/cn";
 import type { CatalogService } from "@/lib/dal";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, formatWorkHours } from "@/lib/format";
 import { AktaArt, GenericDocArt, KartuKeluargaArt, KtpArt } from "./DocumentArt";
 
 const TINTS = 3;
@@ -91,7 +91,9 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted">{service.description}</p>
 
         <ul className="mt-4 flex flex-wrap gap-1.5 text-[11px] font-medium text-muted">
-          <li className="rounded-sm bg-surface-2 px-2 py-1">{service.totalSlaDays} hari kerja</li>
+          <li className="rounded-sm bg-surface-2 px-2 py-1">
+            terbit ≤ {formatWorkHours(service.issueSlaHours, { short: true })}
+          </li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">{service.steps.length} tahap</li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">{service.requirements.length} syarat</li>
         </ul>

@@ -28,9 +28,13 @@ export default async function SummaryStats() {
         note={`dari ${overall.completed} permohonan`}
       />
       <Stat
-        value={overall.avgCompletionDays === null ? "—" : `${number(overall.avgCompletionDays)} hari`}
-        label="Rata-rata lama layanan"
-        note="tanpa waktu tunggu perbaikan"
+        value={formatPercent(overall.promiseRate)}
+        label="Terbit ≤ 24 jam"
+        note={
+          overall.avgIssueHours === null
+            ? "setelah berkas lengkap"
+            : `rata-rata ${number(overall.avgIssueHours)} jam kerja setelah berkas lengkap`
+        }
       />
       <Stat
         value={overall.ratingAvg === null ? "—" : `${number(overall.ratingAvg)}/5`}

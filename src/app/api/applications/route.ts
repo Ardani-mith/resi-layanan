@@ -1,8 +1,9 @@
 import { after } from "next/server";
 import { fail, ok, parseBody, route } from "@/lib/api";
-import { createApplication } from "@/lib/applications";
+import { createApplication, startVerification } from "@/lib/applications";
 import { getClock } from "@/lib/clock";
 import { notifyApplicant } from "@/lib/notify";
+import { maskPhone } from "@/lib/present";
 import { siteOrigin } from "@/lib/qr";
 import type { Role } from "@/lib/roles";
 import { getSession } from "@/lib/session";
@@ -21,6 +22,25 @@ export const POST = route(async (request) => {
   }
 
   const clock = await getClock();
+
+  // Online tanpa kode: periksa semua isian dulu, lalu kirim OTP ke nomor HP (langkah terakhir warga).
+  if (data.channel === "online" && !data.otp) {
+    const otp = await startVerification({ input: data, clock });
+    // Belum ada penyedia SMS/WhatsApp: mode demo menampilkan kode di layar. Sambungkan pengirimnya di
+    // sini (mis. WhatsApp Business API) lalu hapus `demoCode` dari respons.
+    console.info(`[otp] kode untuk ${maskPhone(otp.phone)}: ${otp.code}`);
+    return ok(
+      {
+        otpRequired: true,
+        otpId: otp.otpId,
+        phoneMasked: maskPhone(otp.phone),
+        expiresAt: otp.expiresAt,
+        demoCode: otp.code,
+      },
+      202,
+    );
+  }
+
   const app = await createApplication({
     input: data,
     actor: data.channel === "loket" ? user : null,
@@ -29,5 +49,8 @@ export const POST = route(async (request) => {
   // Email dikirim setelah respons terkirim: warga tidak menunggu, dan gagal kirim tidak menggagalkan pengajuan.
   const origin = await siteOrigin();
   after(() => notifyApplicant("created", app, origin));
-  return ok({ resi: app.resi, serviceName: app.serviceName, createdAt: app.createdAt }, 201);
+  return ok(
+    { otpRequired: false, resi: app.resi, serviceName: app.serviceName, createdAt: app.createdAt },
+    201,
+  );
 });

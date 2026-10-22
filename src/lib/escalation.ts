@@ -2,22 +2,23 @@
 // lalu ditulis secara idempoten: pembacaan berulang/paralel tidak membuat duplikat.
 
 import { Application, Event } from "../models.ts";
-import { addWorkdays, type DateLike, type Holidays } from "./sla.ts";
+import { addWorkHours, type DateLike, type Holidays, WORKDAY_HOURS } from "./sla.ts";
 import { type ApplicationData, type Escalation, RUNNING_STATUSES } from "./workflow.ts";
 
 /** Bagian permohonan yang dibutuhkan eskalasi (hasil query lean dengan select). */
 type EscalationApp = Pick<ApplicationData, "_id" | "status" | "currentStep" | "steps" | "escalations">;
 
-// Ambang dalam hari kerja, sama seperti SLA: tenggat Jumat yang dicek Senin baru
-// terlambat 1 hari kerja, bukan 3 hari, jadi tidak langsung naik ke Kabid.
+// Ambang dalam jam kerja, sama seperti SLA: lewat tenggat → Kasi; masih belum selesai
+// 1 hari kerja setelah tenggat → Kabid. Malam & akhir pekan tidak dihitung, jadi tenggat
+// Jumat sore yang dicek Senin pagi belum langsung naik ke Kabid.
 export const ESCALATION_LEVELS = [
-  { level: 1, afterWorkdays: 0, target: "Kepala Seksi" },
-  { level: 2, afterWorkdays: 3, target: "Kepala Bidang" },
+  { level: 1, afterWorkHours: 0, target: "Kepala Seksi" },
+  { level: 2, afterWorkHours: WORKDAY_HOURS, target: "Kepala Bidang" },
 ];
 
 /** Saat sebuah level eskalasi mulai berlaku untuk tenggat tertentu. */
-export function escalationThreshold(dueAt: DateLike, afterWorkdays: number, holidays?: Holidays): Date {
-  return afterWorkdays ? addWorkdays(dueAt, afterWorkdays, holidays) : new Date(dueAt);
+export function escalationThreshold(dueAt: DateLike, afterWorkHours: number, holidays?: Holidays): Date {
+  return afterWorkHours ? addWorkHours(dueAt, afterWorkHours, holidays) : new Date(dueAt);
 }
 
 /** Eskalasi yang seharusnya ada untuk tahap berjalan tetapi belum tercatat. Murni. */
@@ -29,8 +30,8 @@ export function pendingEscalations(app: EscalationApp, now: DateLike, holidays?:
 
   const existing = app.escalations ?? [];
   return ESCALATION_LEVELS.filter(
-    ({ level, afterWorkdays }) =>
-      new Date(now) > escalationThreshold(dueAt, afterWorkdays, holidays) &&
+    ({ level, afterWorkHours }) =>
+      new Date(now) > escalationThreshold(dueAt, afterWorkHours, holidays) &&
       !existing.some((e) => e.stepKey === step.key && e.level === level),
   ).map(({ level, target }) => ({
     stepKey: step.key,

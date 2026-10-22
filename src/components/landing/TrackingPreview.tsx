@@ -6,18 +6,18 @@ import StatusBadge from "@/components/application/StatusBadge";
 import { cn } from "@/lib/cn";
 import { useReducedMotion } from "@/lib/hooks";
 
-// Sisa waktu awal tahap berjalan (ilustrasi): 1 hari 03:12:45.
-const START_SECONDS = 27 * 3600 + 12 * 60 + 45;
-// Lama tahap entri data = 2 hari kerja; dipakai untuk progress bar.
-const STEP_SECONDS = 48 * 3600;
+// Sisa waktu awal tahap berjalan (ilustrasi): 01:12:45.
+const START_SECONDS = 1 * 3600 + 12 * 60 + 45;
+// Lama tahap entri data = 2 jam kerja; dipakai untuk progress bar.
+const STEP_SECONDS = 2 * 3600;
 
 type PreviewState = "done" | "current" | "waiting";
 
 const STEPS: { name: string; state: PreviewState; detail?: string }[] = [
   { name: "Verifikasi berkas", state: "done", detail: "Selesai · tepat waktu" },
   { name: "Entri & validasi data", state: "current" },
-  { name: "Persetujuan & tanda tangan elektronik", state: "waiting", detail: "Target 1 hari kerja" },
-  { name: "Pencetakan akta", state: "waiting", detail: "Target 1 hari kerja" },
+  { name: "Persetujuan & tanda tangan elektronik", state: "waiting", detail: "Target 1 jam kerja" },
+  { name: "Pencetakan akta", state: "waiting", detail: "Target 1 jam kerja" },
   { name: "Siap diambil di loket", state: "waiting" },
 ];
 
@@ -118,8 +118,8 @@ export default function TrackingPreview({
             <StatusBadge status="diproses" />
           </div>
           <p className="mt-1 text-xs text-muted">
-            Pemohon {applicant} · perkiraan selesai{" "}
-            <span className="font-semibold text-text">3 hari kerja lagi</span>
+            Pemohon {applicant} · dokumen terbit{" "}
+            <span className="font-semibold text-text">hari ini, ±15.30 WIB</span>
           </p>
 
           <ol className="mt-5 space-y-4">
@@ -144,7 +144,7 @@ export default function TrackingPreview({
                         <span className="font-semibold text-run tabular-nums">
                           Sisa {formatCountdown(left)}
                         </span>
-                        <span className="text-muted"> · tenggat 2 hari kerja</span>
+                        <span className="text-muted"> · tenggat 2 jam kerja</span>
                       </p>
                       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
                         <div

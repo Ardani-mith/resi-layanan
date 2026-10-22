@@ -30,12 +30,13 @@ const stepSchema = new Schema<Step>(
     key: { type: String, required: true },
     name: { type: String, required: true },
     role: { type: String, enum: ROLES, required: true },
-    slaDays: { type: Number, default: null },
+    slaHours: { type: Number, default: null },
     startedAt: { type: Date, default: null },
     dueAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     pausedAt: { type: Date, default: null },
     pausedMs: { type: Number, default: 0 },
+    pausedWorkMs: { type: Number, default: 0 },
     handledBy: { type: ObjectId, ref: "User", default: null },
     handledByName: { type: String, default: null },
     publicNote: { type: String, default: null },
@@ -119,8 +120,42 @@ applicationSchema.index({ status: 1, currentStep: 1 });
 applicationSchema.index({ "steps.dueAt": 1 });
 applicationSchema.index({ status: 1, currentDueAt: 1 });
 applicationSchema.index({ serviceId: 1, createdAt: -1 });
+// Cek permohonan ganda (NIK + layanan yang masih berjalan) & batas pengajuan harian.
+applicationSchema.index({ "applicant.nik": 1, serviceSlug: 1, status: 1 });
+applicationSchema.index({ "applicant.phone": 1, createdAt: -1 });
 
 export const Application = defineModel("Application", applicationSchema);
+
+// --- Kode verifikasi nomor HP (OTP) -------------------------------------------------
+
+export interface VerificationData {
+  _id: Types.ObjectId;
+  phone: string;
+  nik: string;
+  /** Hanya hash kode yang disimpan. */
+  codeHash: string;
+  attempts: number;
+  usedAt: Date | null;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+const verificationSchema = new Schema<VerificationData>(
+  {
+    phone: { type: String, required: true },
+    nik: { type: String, required: true },
+    codeHash: { type: String, required: true },
+    attempts: { type: Number, default: 0 },
+    usedAt: { type: Date, default: null },
+    expiresAt: { type: Date, required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+// Dokumen dihapus otomatis oleh MongoDB 1 jam setelah kedaluwarsa (cukup untuk batas per jam).
+verificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 3600 });
+verificationSchema.index({ phone: 1, createdAt: -1 });
+
+export const Verification = defineModel("Verification", verificationSchema);
 
 // --- Layanan ------------------------------------------------------------------------
 
@@ -129,7 +164,7 @@ const stepTemplateSchema = new Schema<StepTemplate>(
     key: { type: String, required: true, trim: true },
     name: { type: String, required: true, trim: true },
     role: { type: String, enum: ROLES, required: true },
-    slaDays: { type: Number, min: 0, default: null },
+    slaHours: { type: Number, min: 0, default: null },
   },
   { _id: false },
 );

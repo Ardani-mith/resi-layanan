@@ -31,8 +31,11 @@ export default function AdminHolidaysPage() {
         <h1 className="text-2xl font-bold tracking-tight">Hari libur</h1>
         <p className="mt-1 text-muted">
           Tanggal di sini tidak dihitung sebagai hari kerja, jadi tenggat yang jatuh di hari libur bergeser ke
-          hari kerja berikutnya. Masukkan libur nasional & cuti bersama sesuai SKB 3 Menteri. Berlaku untuk
-          tenggat yang dihitung setelah disimpan.
+          hari kerja berikutnya. Masukkan libur nasional & cuti bersama sesuai SKB 3 Menteri.
+        </p>
+        <p className="mt-3 rounded-xl border-l-4 border-warn bg-warn-soft px-3 py-2 text-sm">
+          Hari libur baru hanya berlaku untuk tahap yang <strong>dimulai setelah disimpan</strong>. Tenggat
+          tahap yang sedang berjalan tidak ikut bergeser.
         </p>
       </div>
       <Suspense fallback={<Skeleton className="h-64" />}>

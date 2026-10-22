@@ -7,6 +7,7 @@ import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
 import { DemoClockBanner, Skeleton } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { getStaffApplication, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
 import { receiptFor } from "@/lib/qr";
@@ -41,6 +42,7 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
   if (!app) notFound();
 
   const current = app.steps[app.currentStep];
+  const next = app.status === "perlu_perbaikan" ? null : app.steps[app.currentStep + 1];
   return (
     <>
       <DemoClockBanner offsetMs={app.offsetMs} />
@@ -62,13 +64,30 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
       <div className="grid gap-5 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="space-y-5">
           {app.canAct ? (
-            <ActionPanel resi={app.resi} status={app.status} stepName={current?.name} />
+            <ActionPanel
+              resi={app.resi}
+              status={app.status}
+              stepName={current?.name}
+              next={next ? `${next.name} (${ROLE_LABELS[next.role]})` : null}
+            />
           ) : (
             app.status !== "selesai" &&
             app.status !== "ditolak" && (
-              <p className="rounded-card bg-surface-2 px-4 py-3 text-sm text-muted">
+              <p
+                className={cn(
+                  "rounded-card px-4 py-3 text-sm",
+                  app.isLate ? "border-l-4 border-late bg-late-soft" : "bg-surface-2 text-muted",
+                )}
+              >
                 Tahap &ldquo;{current?.name}&rdquo; ditangani {ROLE_LABELS[current?.role] ?? "peran lain"}.
                 Anda hanya bisa melihat.
+                {app.isLate && (
+                  <span className="mt-1 block">
+                    Tahap ini melewati tenggat dan tercatat di eskalasi. Penyelesaiannya tetap oleh{" "}
+                    {ROLE_LABELS[current?.role] ?? "peran pemilik tahap"} agar timeline dan audit log jelas
+                    siapa mengerjakan apa; tindak lanjuti dengan menghubungi petugasnya.
+                  </span>
+                )}
               </p>
             )
           )}

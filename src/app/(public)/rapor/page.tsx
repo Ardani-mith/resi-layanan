@@ -6,14 +6,12 @@ import { Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { getStats } from "@/lib/dal";
-import { formatDateTime, formatPercent } from "@/lib/format";
+import { formatDateTime, formatPercent, formatWorkHours } from "@/lib/format";
 
 export const metadata = {
   title: "Rapor SLA publik",
   description: `Seberapa sering ${site.agency} menepati janji waktu layanannya.`,
 };
-
-const days = (value: number | null) => (value === null ? "—" : `${value.toLocaleString("id-ID")} hari`);
 
 async function Report() {
   const { overall, services, trend, generatedAt } = await getStats();
@@ -31,9 +29,9 @@ async function Report() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatTile
-            label="Rata-rata lama layanan"
-            value={days(overall.avgCompletionDays)}
-            note="tanpa waktu tunggu perbaikan"
+            label="Terbit ≤ 24 jam"
+            value={formatPercent(overall.promiseRate)}
+            note={`rata-rata ${formatWorkHours(overall.avgIssueHours)} setelah berkas lengkap`}
           />
           <StatTile
             label="Kepuasan warga"
@@ -93,9 +91,11 @@ async function Report() {
               </div>
               <div className="grid grid-cols-2 gap-4 sm:contents">
                 <p className="text-sm tabular-nums">
-                  <span className="block text-xs text-muted sm:hidden">Rata-rata lama</span>
-                  {days(s.avgCompletionDays)}
-                  <span className="block text-xs text-muted">janji {s.targetDays} hari kerja</span>
+                  <span className="block text-xs text-muted sm:hidden">Rata-rata terbit</span>
+                  {formatWorkHours(s.avgIssueHours)}
+                  <span className="block text-xs text-muted">
+                    janji ≤ {formatWorkHours(s.issueTargetHours)} · {formatPercent(s.promiseRate)} tepat janji
+                  </span>
                 </p>
                 <p className="text-sm tabular-nums">
                   <span className="block text-xs text-muted sm:hidden">Kepuasan</span>
@@ -110,7 +110,8 @@ async function Report() {
 
       <p className="text-xs text-muted">
         Diperbarui {formatDateTime(generatedAt)}. Angka dihitung langsung dari data permohonan; tidak ada data
-        pribadi yang ditampilkan. Tenggat dihitung dalam hari kerja.
+        pribadi yang ditampilkan. Tenggat dihitung dalam jam kerja (Senin–Jumat 08.00–16.00 WIB). Janji terbit
+        mengikuti Permendagri 19/2018: dokumen terbit paling lama 24 jam setelah berkas dinyatakan lengkap.
       </p>
     </>
   );

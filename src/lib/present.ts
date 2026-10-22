@@ -8,6 +8,7 @@ import {
   estimateCompletion,
   finishedLate,
   type Holidays,
+  issuePromise,
   remainingMs,
   type StepState,
   stepState,
@@ -95,6 +96,47 @@ export function ktpAgeAllowed(birthDate: string, marital: string, now?: Date): b
   return marital !== "BELUM KAWIN" || ageOn(birthDate, now) >= KTP_MIN_AGE;
 }
 
+/** Pemohon (yang mengajukan & bertanggung jawab atas data) minimal 17 tahun: cakap hukum. */
+export const APPLICANT_MIN_AGE = 17;
+
+export type NikCheck =
+  | {
+      ok: true;
+      birthDate: string;
+      gender: "LAKI-LAKI" | "PEREMPUAN";
+      age: number;
+      /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
+      needsMarried: boolean;
+    }
+  | { ok: false; message: string };
+
+/**
+ * Pemeriksaan NIK pemohon tanpa database (dipakai di browser saat mengetik DAN di server):
+ * format, tanggal lahir di digit 7–12, dan umur pemohon. Kode wilayah (digit 1–6) sengaja
+ * TIDAK dipakai untuk menolak: NIK tidak berubah saat warga pindah, jadi domisili dibuktikan
+ * dari KK, bukan dari NIK. Layanan KTP-el boleh di bawah 17 tahun jika sudah/pernah kawin
+ * (dicek lagi bersama status perkawinan di form KTP).
+ */
+export function checkNik(nik: string, serviceSlug: string, now: Date = new Date()): NikCheck {
+  if (!/^\d{16}$/.test(nik)) return { ok: false, message: "NIK harus 16 digit angka." };
+  const info = nikInfo(nik, now);
+  const [day, month, year] = info?.birthDate.split("-").map(Number) ?? [];
+  if (!info || Date.UTC(year, month - 1, day) > now.getTime()) {
+    return {
+      ok: false,
+      message: "Digit tanggal lahir di NIK (digit 7–12) tidak valid. Periksa kembali NIK Anda.",
+    };
+  }
+  const age = ageOn(info.birthDate, now);
+  if (age < APPLICANT_MIN_AGE && !needsKtpData(serviceSlug)) {
+    return {
+      ok: false,
+      message: `Menurut NIK, pemohon berusia ${age} tahun. Pemohon minimal ${APPLICANT_MIN_AGE} tahun: untuk anak, ajukan oleh orang tua/wali dengan NIK orang tua/wali.`,
+    };
+  }
+  return { ok: true, ...info, age, needsMarried: age < APPLICANT_MIN_AGE };
+}
+
 // --- Tampilan permohonan ------------------------------------------------------------
 
 export type StepViewState = StepState | "ditolak" | "dibatalkan";
@@ -114,7 +156,7 @@ function stepView(app: ApplicationData, step: Step, index: number, now: DateLike
     key: step.key,
     name: step.name,
     role: step.role,
-    slaDays: step.slaDays,
+    slaHours: step.slaHours,
     state,
     isCurrent,
     startedAt: step.startedAt,
@@ -149,6 +191,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
       app.status === STATUS.SELESAI || app.status === STATUS.DITOLAK
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
+    /** Janji terbit ≤ 24 jam (1 hari kerja) setelah berkas lengkap, Permendagri 19/2018. */
+    issuePromise: app.status === STATUS.DITOLAK ? null : issuePromise(app.steps, now, holidays),
     fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
     rejectionReason: app.rejectionReason,
     rated: Boolean(app.rating?.score),

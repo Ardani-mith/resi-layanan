@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures.ts";
-import { gotoReady, hasHorizontalScroll, MOBILE } from "./helpers.ts";
+import { confirmOtp, gotoReady, hasHorizontalScroll, MOBILE } from "./helpers.ts";
 
 // Alur warga di HP: lacak, verifikasi HP, perbaikan berkas, rating, pengajuan.
 
@@ -72,6 +72,15 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
   await gotoReady(page, "/ajukan?layanan=akta-kelahiran");
   const submit = page.getByRole("button", { name: "Ajukan & dapatkan resi" });
 
+  await expect(submit).toBeDisabled(); // terkunci sampai NIK lolos
+
+  // Pemohon di bawah 17 tahun ditolak sejak langkah NIK.
+  const nik = page.getByLabel("NIK", { exact: true });
+  await nik.fill("3299010101120001");
+  await expect(page.getByText(/pemohon berusia 14 tahun/)).toBeVisible();
+  await nik.fill("3299012208950001");
+  await expect(page.getByText(/NIK valid · lahir 22-08-1995/)).toBeVisible();
+
   await submit.click();
   await expect(page.getByText("Pastikan semua persyaratan sudah Anda siapkan.")).toBeVisible();
 
@@ -81,9 +90,10 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
   await expect(page.getByText("Nama minimal 3 huruf.")).toBeVisible(); // validasi dari server
 
   await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Ardani Setiawan");
-  await page.getByLabel("NIK", { exact: true }).fill("3299000011112222");
   await page.getByLabel("Nomor HP", { exact: true }).fill("0812 3456 7777");
   await submit.click();
+  await expect(page.getByText(/Kode 6 digit dikirim ke 0812\*+7777/)).toBeVisible();
+  await confirmOtp(page);
 
   await page.waitForURL("**/ajukan/sukses?resi=*");
   const resi = new URL(page.url()).searchParams.get("resi");
@@ -145,7 +155,8 @@ test("katalog layanan: persyaratan, tahapan & SLA, lalu ajukan", async ({ openPa
   await page.getByRole("link", { name: /Akta Kelahiran/ }).click();
   await page.waitForURL("**/layanan/akta-kelahiran");
   await expect(page.getByRole("heading", { name: "Tahapan & janji waktu" })).toBeVisible();
-  await expect(page.getByText("Verifikasi berkas")).toBeVisible();
+  await expect(page.getByText("Verifikasi berkas", { exact: true })).toBeVisible();
+  await expect(page.getByText(/dokumen terbit paling lama 4 jam kerja/)).toBeVisible();
   expect(await hasHorizontalScroll(page)).toBe(false);
   await page.getByRole("link", { name: "Ajukan sekarang" }).click();
   await page.waitForURL("**/ajukan?layanan=akta-kelahiran");
@@ -160,13 +171,19 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
   await expect(preview).toBeVisible();
   const shows = (text: string) => expect(preview.locator("text", { hasText: text })).toHaveCount(1);
 
-  await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Siti Rahmawati");
+  // NIK lebih dulu: bagian lain form terkunci sampai NIK valid.
   await page.getByLabel("NIK", { exact: true }).fill("3299019913080002");
-  await expect(page.getByText(/Digit tanggal lahir di NIK/).filter({ visible: true })).toBeVisible();
+  await expect(
+    page
+      .getByText(/Digit tanggal lahir di NIK/)
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
   await page.getByLabel("NIK", { exact: true }).fill("3299015508080002");
+  await expect(page.getByText(/NIK valid · lahir 15-08-2008 · perempuan/)).toBeVisible();
+  await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Siti Rahmawati");
   await shows("SITI RAHMAWATI");
   await shows("3299 0155 0808 0002");
-  await expect(page.getByText("15-08-2008 · Perempuan")).toBeVisible();
 
   await page.getByLabel("Nomor HP", { exact: true }).fill("081234560002");
   await page.getByLabel("Tempat lahir").fill("Harapan Jaya");
@@ -184,6 +201,7 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
   for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
   await page.getByLabel(/Saya menyatakan/).check();
   await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
+  await confirmOtp(page);
   await page.waitForURL("**/ajukan/sukses?resi=*");
 
   // Layanan lain: tanpa isian & pratinjau KTP.
@@ -202,7 +220,9 @@ test("peta lokasi layanan: hasil mengikuti area peta, filter jenis, urut dari lo
     permissions: ["geolocation"],
   });
   await gotoReady(page, "/ajukan/sukses?resi=RL-HJ26-AKTA");
-  const section = page.getByRole("region", { name: "Lokasi layanan terdekat" });
+  // Di halaman sukses peta masih ringkas (warga belum perlu datang); dibuka lewat tombol.
+  const section = page.getByRole("region", { name: "Lokasi pengambilan dokumen nanti" });
+  await section.getByRole("button", { name: "Tampilkan peta" }).click();
   const count = section.getByText(/^\d+ lokasi$/);
   await expect(section.getByRole("region", { name: "Peta lokasi layanan" })).toBeVisible();
   await expect(section.getByRole("listitem").first()).toBeVisible();
@@ -229,4 +249,20 @@ test("peta lokasi layanan: hasil mengikuti area peta, filter jenis, urut dari lo
   await expect(section.getByRole("listitem").first()).toContainText("Rasuna Said");
   await expect(section.getByText(/Program Jemput Bola/)).toBeVisible();
   expect(await hasHorizontalScroll(page)).toBe(false);
+});
+
+test("lupa resi: NIK + HP → kode OTP → daftar resi", async ({ openPage }) => {
+  const page = await openPage({ viewport: MOBILE });
+  await gotoReady(page, "/lacak");
+  await page.getByRole("link", { name: "Cari dengan NIK & nomor HP" }).click();
+  await page.waitForURL("**/lacak/lupa");
+
+  await page.getByLabel("NIK pemohon").fill("3299012208950009");
+  await page.getByLabel("Nomor HP yang didaftarkan").fill("081299990009");
+  await page.getByRole("button", { name: "Kirim kode verifikasi" }).click();
+  const code = (await page.locator(".font-mono.tracking-widest").textContent())?.trim() ?? "";
+  await page.getByLabel("Kode verifikasi").fill(code);
+  await page.getByRole("button", { name: "Tampilkan resi saya" }).click();
+  // Data tidak cocok: tetap lewat OTP dulu, baru dijawab "tidak ada" (tidak bisa dipakai menebak NIK).
+  await expect(page.getByRole("heading", { name: "Tidak ada permohonan" })).toBeVisible();
 });

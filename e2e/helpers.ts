@@ -25,6 +25,14 @@ export async function login(page: Page, email: string, next?: string) {
   await page.getByRole("button", { name: "Masuk" }).click();
 }
 
+/** Pengajuan online: isi kode OTP (mode demo menampilkan kodenya di layar) lalu ajukan. */
+export async function confirmOtp(page: Page) {
+  const panel = page.getByRole("region", { name: "Verifikasi nomor HP" });
+  const code = (await panel.locator(".font-mono.tracking-widest").textContent())?.trim() ?? "";
+  await panel.getByLabel("Kode verifikasi").fill(code);
+  await panel.getByRole("button", { name: "Verifikasi & ajukan" }).click();
+}
+
 /** Halaman tidak boleh lebih lebar dari layar (cek wajib tampilan HP). */
 export function hasHorizontalScroll(page: Page): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

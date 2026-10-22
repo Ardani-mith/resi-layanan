@@ -66,8 +66,10 @@ export async function getActiveServices() {
     description: s.description,
     output: s.output,
     requirements: s.requirements,
-    steps: s.steps.map(({ key, name, role, slaDays }) => ({ key, name, role, slaDays })),
-    totalSlaDays: s.steps.reduce((sum, step) => sum + (step.slaDays || 0), 0),
+    steps: s.steps.map(({ key, name, role, slaHours }) => ({ key, name, role, slaHours })),
+    totalSlaHours: s.steps.reduce((sum, step) => sum + (step.slaHours || 0), 0),
+    /** Janji terbit setelah berkas lengkap = tahap ber-SLA setelah verifikasi (jam kerja). */
+    issueSlaHours: s.steps.slice(1).reduce((sum, step) => sum + (step.slaHours || 0), 0),
   }));
 }
 
@@ -86,7 +88,8 @@ export async function getServiceCatalog() {
       ...service,
       performance: {
         onTimeRate: perf?.onTimeRate ?? null,
-        avgCompletionDays: perf?.avgCompletionDays ?? null,
+        avgIssueHours: perf?.avgIssueHours ?? null,
+        promiseRate: perf?.promiseRate ?? null,
         ratingAvg: perf?.ratingAvg ?? null,
         ratingCount: perf?.ratingCount ?? 0,
         completed: perf?.completed ?? 0,
@@ -101,8 +104,13 @@ export type CatalogService = Awaited<ReturnType<typeof getServiceCatalog>>[numbe
 export async function getTracking(resi: string) {
   const clock = await ready();
   const app = await loadByResi(resi, clock);
-  return app ? publicView(app, clock) : null;
+  if (!app) return null;
+  // Persyaratan layanan (publik) untuk daftar "yang perlu dibawa" di halaman warga.
+  const service = await Service.findOne({ slug: app.serviceSlug }).select("requirements").lean<ServiceData>();
+  return { ...publicView(app, clock), requirements: service?.requirements ?? [] };
 }
+
+export type Tracking = NonNullable<Awaited<ReturnType<typeof getTracking>>>;
 
 // --- Petugas -------------------------------------------------------------------
 
@@ -173,11 +181,11 @@ export async function getStats({ internal = false } = {}) {
       .lean<ApplicationData[]>(),
     Service.find({ isActive: true })
       .sort({ order: 1, name: 1 })
-      .select("name slug steps.slaDays")
+      .select("name slug steps.slaHours")
       .lean<ServiceData[]>(),
   ]);
 
-  const stats = computeStats(apps, services, clock.now);
+  const stats = computeStats(apps, services, clock.now, { holidays: clock.holidays });
   return {
     ...stats,
     escalations: internal ? openEscalations(apps, clock.now) : ([] as OpenEscalation[]),
@@ -201,7 +209,7 @@ export async function getAdminServices() {
     description: s.description,
     output: s.output,
     requirements: s.requirements,
-    steps: s.steps.map(({ key, name, role, slaDays }) => ({ key, name, role, slaDays })),
+    steps: s.steps.map(({ key, name, role, slaHours }) => ({ key, name, role, slaHours })),
     isActive: s.isActive,
     order: s.order,
   }));

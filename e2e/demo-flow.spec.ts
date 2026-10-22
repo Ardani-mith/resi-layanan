@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures.ts";
-import { gotoReady, hasHorizontalScroll, login, MOBILE } from "./helpers.ts";
+import { confirmOtp, gotoReady, hasHorizontalScroll, login, MOBILE } from "./helpers.ts";
 
 // Skrip demo lomba, berurutan: warga mengajukan → loket verifikasi → jam +2 hari →
 // warga melihat tahap merah → pimpinan melihat eskalasi → rapor → jam dikembalikan.
@@ -10,12 +10,13 @@ let resi: string;
 test("warga mengajukan akta kelahiran dari HP", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE });
   await gotoReady(page, "/ajukan?layanan=akta-kelahiran");
+  await page.getByLabel("NIK", { exact: true }).fill("3299012208950002");
   for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
   await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Dimas Anggara");
-  await page.getByLabel("NIK", { exact: true }).fill("3299000011113333");
   await page.getByLabel("Nomor HP", { exact: true }).fill("081234569999");
   await page.getByLabel(/Saya menyatakan/).check();
   await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
+  await confirmOtp(page);
   await page.waitForURL("**/ajukan/sukses?resi=*");
   resi = new URL(page.url()).searchParams.get("resi") ?? "";
 });
@@ -72,12 +73,12 @@ test("warga melihat catatan publik, catatan internal tidak bocor", async ({ open
   await expect(page.getByText("Cek silang KK OK.")).toHaveCount(0);
 });
 
-test("jam +2 hari kerja: tahap merah di HP warga, eskalasi di dashboard pimpinan", async ({ openPage }) => {
+test("jam +4 jam kerja: tahap merah di HP warga, eskalasi di dashboard pimpinan", async ({ openPage }) => {
   const admin = await openPage();
   await login(admin, "admin@resi.demo");
   await admin.waitForURL("**/admin/demo");
-  await admin.getByRole("button", { name: "Majukan +2 hari kerja" }).click();
-  await expect(admin.getByText(/Jam sistem dimajukan 2 hari kerja/)).toBeVisible();
+  await admin.getByRole("button", { name: "Majukan +4 jam kerja" }).click();
+  await expect(admin.getByText(/Jam sistem dimajukan 4 jam kerja/)).toBeVisible();
 
   const warga = await openPage({ viewport: MOBILE });
   await gotoReady(warga, `/lacak/${resi}`);

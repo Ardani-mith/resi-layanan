@@ -5,7 +5,7 @@
 import type { Types } from "mongoose";
 import { ESCALATION_LEVELS, escalationThreshold, pendingEscalations } from "../src/lib/escalation.ts";
 import type { Role } from "../src/lib/roles.ts";
-import { DAY_MS, type Holidays, isWorkday } from "../src/lib/sla.ts";
+import { addWorkHours, DAY_MS, type Holidays, isWorkday } from "../src/lib/sla.ts";
 import {
   type Action,
   type Applicant,
@@ -42,10 +42,10 @@ export const SERVICES: ServiceSeed[] = [
       "Hadir langsung untuk perekaman biometrik",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaDays: 1 },
-      { key: "perekaman", name: "Perekaman biometrik", role: "petugas_teknis", slaDays: 2 },
-      { key: "pencetakan", name: "Pencetakan KTP-el", role: "petugas_teknis", slaDays: 3 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaDays: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
+      { key: "perekaman", name: "Perekaman biometrik", role: "petugas_teknis", slaHours: 4 },
+      { key: "pencetakan", name: "Pencetakan KTP-el", role: "petugas_teknis", slaHours: 2 },
+      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
     ],
   },
   {
@@ -61,11 +61,11 @@ export const SERVICES: ServiceSeed[] = [
       "KTP-el kepala keluarga",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaDays: 1 },
-      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaDays: 2 },
-      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaDays: 1 },
-      { key: "pencetakan", name: "Pencetakan Kartu Keluarga", role: "petugas_teknis", slaDays: 1 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaDays: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
+      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaHours: 2 },
+      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaHours: 1 },
+      { key: "pencetakan", name: "Pencetakan Kartu Keluarga", role: "petugas_teknis", slaHours: 1 },
+      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
     ],
   },
   {
@@ -82,11 +82,11 @@ export const SERVICES: ServiceSeed[] = [
       "KTP-el dua orang saksi",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaDays: 1 },
-      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaDays: 2 },
-      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaDays: 1 },
-      { key: "pencetakan", name: "Pencetakan akta", role: "petugas_teknis", slaDays: 1 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaDays: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
+      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaHours: 2 },
+      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaHours: 1 },
+      { key: "pencetakan", name: "Pencetakan akta", role: "petugas_teknis", slaHours: 1 },
+      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
     ],
   },
 ];
@@ -202,10 +202,15 @@ function randomPhone(rng: Rng, last4?: string): string {
   return digits + (last4 ?? String(Math.floor(rng() * 10_000)).padStart(4, "0"));
 }
 
+/**
+ * NIK yang lolos `checkNik`: 3299 (Kota Harapan Jaya) + kecamatan + tanggal lahir (perempuan +40)
+ * + nomor urut. Pemohon lahir 1965–2005 (selalu ≥17 tahun).
+ */
 function randomNik(rng: Rng): string {
-  let nik = "3299";
-  while (nik.length < 16) nik += Math.floor(rng() * 10);
-  return nik;
+  const pick = (min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
+  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  const day = pick(1, 28) + (rng() < 0.5 ? 40 : 0);
+  return `3299${pad(pick(1, 12))}${pad(day)}${pad(pick(1, 12))}${pad(pick(65, 105) % 100)}${pad(pick(1, 9999), 4)}`;
 }
 
 /**
@@ -273,8 +278,8 @@ class Sim {
   /** Catat eskalasi yang "terdeteksi" sampai waktu t, dengan createdAt = saat ambang terlewati. */
   escalateUntil(t: Date) {
     for (const esc of pendingEscalations(this.app, t, this.holidays)) {
-      const { afterWorkdays } = ESCALATION_LEVELS.find((l) => l.level === esc.level)!;
-      const threshold = escalationThreshold(this.step.dueAt!, afterWorkdays, this.holidays);
+      const { afterWorkHours } = ESCALATION_LEVELS.find((l) => l.level === esc.level)!;
+      const threshold = escalationThreshold(this.step.dueAt!, afterWorkHours, this.holidays);
       const at = new Date(Math.min(threshold.getTime() + 5 * 60_000, t.getTime()));
       this.app.escalations.push({ ...esc, createdAt: at });
       this.events.push({
@@ -335,13 +340,14 @@ class Sim {
     this.app.updatedAt = at;
   }
 
-  /** Waktu selesai tahap berjalan: factor × durasi SLA (tanpa SLA → 1–4 hari), di jam kerja. */
+  /** Waktu selesai tahap berjalan: factor × SLA dalam jam kerja (tanpa SLA → 1–4 hari), di jam kerja. */
   finishTime(factor: number, rng: Rng): Date {
     const step = this.step;
     let raw: Date;
-    if (step.dueAt && step.startedAt) {
-      const span = step.dueAt.getTime() - step.startedAt.getTime();
-      raw = new Date(step.startedAt.getTime() + (step.pausedMs || 0) + factor * span);
+    if (step.slaHours && step.startedAt) {
+      // Dihitung dari aksi terakhir (mis. warga melengkapi berkas), bukan dari awal tahap.
+      const from = step.pausedMs ? this.time : step.startedAt;
+      raw = addWorkHours(from, Math.max(0.1, factor * step.slaHours), this.holidays);
     } else {
       raw = new Date(this.time.getTime() + (1 + rng() * 3) * DAY_MS);
     }
@@ -418,8 +424,11 @@ export function buildDemoApplications({
    * hari demi hari sampai kondisinya terpenuhi.
    */
   const lateCase = (spec: Spec, stepIndex: number, level: number, notes: Notes = {}) => {
-    for (let d = 1; d <= 40; d += 1) {
-      const sim = makeSim({ ...spec, createdAt: officeTime(now, d, rng, holidays) });
+    // SLA dalam jam kerja: mundur per 30 menit (jam kerja saja) sampai level eskalasinya pas.
+    for (let back = 1; back <= 40 * 48; back += 1) {
+      const createdAt = new Date(now.getTime() - back * 30 * 60_000);
+      if (!isOfficeTime(createdAt, holidays)) continue;
+      const sim = makeSim({ ...spec, createdAt });
       for (let i = 0; i < stepIndex; i += 1) {
         sim.act("complete", sim.finishTime(0.3, rng), i === 0 ? notes : {});
       }
