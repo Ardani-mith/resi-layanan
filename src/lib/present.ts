@@ -226,6 +226,11 @@ export function staffView(app: ApplicationData, ctx: Ctx, events: EventData[] = 
       internalNote: app.steps[i].internalNote,
       handledByName: app.steps[i].handledByName,
       pausedMs: app.steps[i].pausedMs,
+      // Syarat selesai & bukti hanya untuk petugas (nomor blangko dsb. tidak ditampilkan publik).
+      checklist: app.steps[i].checklist ?? [],
+      checked: app.steps[i].checked ?? [],
+      evidenceLabel: app.steps[i].evidenceLabel ?? null,
+      evidence: app.steps[i].evidence ?? null,
     })),
     escalations: app.escalations ?? [],
     events: events.map((e) => ({

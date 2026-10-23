@@ -41,6 +41,8 @@ Tenggat dihitung dalam **jam kerja** (Senin–Jumat 08.00–16.00 WIB). Setelah 
 
 ## Aturan penting
 
+- **Syarat selesai:** tombol "Selesaikan tahap" baru aktif setelah petugas mencentang semua syarat tahap itu (mis. Entri: "Data diinput ke SIAK", "NIK & KK cocok dengan database kependudukan") dan mengisi bukti bila diminta (mis. Pencetakan: nomor seri blangko / nomor akta; Penyerahan: diserahkan kepada). Semua tercatat di audit log dan timeline petugas. Pekerjaan sebenarnya tetap di SIAK/loket; Pantas mencatat dasar keputusannya.
+
 - Tenggat dihitung dalam **jam kerja WIB** (08.00–16.00): malam, Sabtu, Minggu, dan hari libur di `/admin/libur` tidak dihitung.
 - Saat status "Perlu Perbaikan", hitung mundur **dijeda**. Waktu menunggu warga tidak dihitung sebagai keterlambatan instansi.
 - **Pemisahan tugas:** hanya peran pemilik tahap yang bisa menindaknya. Pimpinan hanya menyetujui tahap Persetujuan. Pimpinan dan Admin bisa *melihat* semua permohonan (label "Dipantau"), tapi tidak bisa menyelesaikan tahap peran lain, termasuk yang terlambat.

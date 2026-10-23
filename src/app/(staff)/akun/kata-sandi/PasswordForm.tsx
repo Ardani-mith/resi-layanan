@@ -31,9 +31,10 @@ export default function PasswordForm({ temporary }: { temporary: boolean }) {
       return;
     }
     if (temporary) {
-      // Kata sandi sementara sudah diganti: lanjut ke halaman kerja sesuai peran.
-      router.replace(res.data.home);
-      router.refresh();
+      // Kata sandi sementara sudah diganti: lanjut ke halaman kerja sesuai peran. Navigasi penuh,
+      // bukan router.replace: cache router masih menyimpan pengalihan /kerja → kata sandi dari
+      // sesi lama, dan top bar perlu dirender ulang dengan menu lengkap.
+      window.location.replace(res.data.home);
       return;
     }
     formEl.reset();

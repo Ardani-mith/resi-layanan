@@ -36,6 +36,14 @@ export const EVENT_LABELS: Record<string, string> = {
   rated: "Warga memberi rating",
 };
 
+/** Konfirmasi untuk petugas setelah aksi (antrean & panel detail, dari ?selesai=&aksi=). */
+export const ACTION_DONE: Record<string, string> = {
+  complete: "tahap diselesaikan dan diteruskan ke tahap berikutnya",
+  request_fix: "permintaan perbaikan dikirim ke warga",
+  resume: "berkas lengkap, proses dilanjutkan",
+  reject: "permohonan ditolak; alasan sudah tampil di halaman lacak warga",
+};
+
 /** Status yang tahapnya sedang berjalan (hitung mundur aktif). */
 export const RUNNING_STATUSES: readonly Status[] = [STATUS.DIAJUKAN, STATUS.DIPROSES, STATUS.SIAP_DIAMBIL];
 /** Status yang belum final (termasuk yang dijeda). */
@@ -55,9 +63,20 @@ export interface StepTemplate {
   role: Role;
   /** Jam kerja (1 hari kerja = 8 jam). null = tanpa tenggat (mis. menunggu warga mengambil dokumen). */
   slaHours: number | null;
+  /** Syarat selesai: semua wajib dicentang petugas sebelum tahap bisa diselesaikan. */
+  checklist?: string[];
+  /** Persyaratan layanan ikut dicek di tahap ini (mis. verifikasi berkas asli). */
+  checkRequirements?: boolean;
+  /** Label bukti wajib diisi saat selesai, mis. "Nomor seri blangko"; null = tanpa bukti. */
+  evidenceLabel?: string | null;
 }
 
-export interface Step extends StepTemplate {
+export interface Step extends Omit<StepTemplate, "checklist" | "checkRequirements"> {
+  /** Syarat selesai tahap ini (persyaratan layanan sudah digabung saat permohonan dibuat). */
+  checklist: string[];
+  /** Yang dicentang petugas saat menyelesaikan (= checklist) dan bukti yang diisi. */
+  checked: string[];
+  evidence: string | null;
   startedAt: Date | null;
   dueAt: Date | null;
   completedAt: Date | null;
@@ -205,7 +224,7 @@ export function buildApplication<R extends string | null>({
   holidays,
   requirementsChecked = [],
 }: {
-  service: Pick<ServiceData, "_id" | "name" | "slug" | "steps">;
+  service: Pick<ServiceData, "_id" | "name" | "slug" | "steps"> & { requirements?: string[] };
   applicant: Applicant;
   channel: Channel;
   resi: R;
@@ -218,6 +237,13 @@ export function buildApplication<R extends string | null>({
     name: s.name,
     role: s.role,
     slaHours: s.slaHours ?? null,
+    checklist: [
+      ...(s.checkRequirements ? (service.requirements ?? []).map((r) => `Berkas asli diperiksa: ${r}`) : []),
+      ...(s.checklist ?? []),
+    ],
+    evidenceLabel: s.evidenceLabel || null,
+    checked: [],
+    evidence: null,
     startedAt: null,
     dueAt: null,
     completedAt: null,
@@ -291,11 +317,17 @@ export function applyAction(
     internalNote,
     now,
     holidays,
+    checked = [],
+    evidence,
   }: {
     action: Action;
     actor: Actor;
     publicNote?: string;
     internalNote?: string;
+    /** Syarat selesai yang dicentang (aksi "complete"). */
+    checked?: string[];
+    /** Bukti wajib, mis. nomor seri blangko (aksi "complete"). */
+    evidence?: string;
     now: Date;
     holidays?: Holidays;
   },
@@ -310,6 +342,19 @@ export function applyAction(
       if (!RUNNING_STATUSES.includes(app.status)) {
         throw new WorkflowError("invalid_state", "Permohonan ini tidak sedang berjalan.");
       }
+      // Tahap hanya bisa diselesaikan dengan dasar yang tercatat: semua syarat dicentang + bukti.
+      const missing = (step.checklist ?? []).filter((item) => !checked.includes(item));
+      const cleanEvidence = evidence?.trim() || null;
+      if (missing.length || (step.evidenceLabel && !cleanEvidence)) {
+        throw new AppError(422, "Lengkapi syarat selesai tahap ini.", {
+          ...(missing.length && { checked: `Belum dicentang: ${missing.join("; ")}.` }),
+          ...(step.evidenceLabel && !cleanEvidence && { evidence: `${step.evidenceLabel} wajib diisi.` }),
+        });
+      }
+      step.checked = [...(step.checklist ?? [])];
+      step.evidence = cleanEvidence;
+      if (step.checked.length) payload.checked = step.checked;
+      if (cleanEvidence) payload.evidence = { label: step.evidenceLabel, value: cleanEvidence };
       step.completedAt = now;
       step.handledBy = actor.id ?? null;
       step.handledByName = actor.name ?? null;

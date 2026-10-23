@@ -13,17 +13,54 @@ import { formatWorkHours } from "@/lib/format";
 import { type FormErrors, formErrors, postJson } from "@/lib/http";
 import { type Role, ROLE_LABELS, ROLES } from "@/lib/roles";
 
-type StepDraft = { name: string; role: Role | ""; slaHours: string };
+type StepDraft = {
+  name: string;
+  role: Role | "";
+  slaHours: string;
+  /** Syarat selesai, satu per baris. */
+  checklist: string;
+  checkRequirements: boolean;
+  evidenceLabel: string;
+};
+
+const blankStep: StepDraft = {
+  name: "",
+  role: "",
+  slaHours: "",
+  checklist: "",
+  checkRequirements: false,
+  evidenceLabel: "",
+};
 
 const toDraft = (service?: AdminService): StepDraft[] =>
   service?.steps.map((s) => ({
     name: s.name,
     role: s.role,
     slaHours: s.slaHours ? String(s.slaHours) : "",
+    checklist: s.checklist.join("\n"),
+    checkRequirements: s.checkRequirements,
+    evidenceLabel: s.evidenceLabel ?? "",
   })) ?? [
-    { name: "Verifikasi berkas", role: "petugas_loket", slaHours: "8" },
-    { name: "Siap diambil di loket", role: "petugas_loket", slaHours: "" },
+    {
+      ...blankStep,
+      name: "Verifikasi berkas",
+      role: "petugas_loket",
+      slaHours: "8",
+      checkRequirements: true,
+    },
+    {
+      ...blankStep,
+      name: "Siap diambil di loket",
+      role: "petugas_loket",
+      evidenceLabel: "Diserahkan kepada",
+    },
   ];
+
+const lines = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
 const small = buttonClass("secondary", "min-h-9 px-3");
 const iconButton =
@@ -54,14 +91,14 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
       slug: service?.slug ?? form.get("slug"),
       description: form.get("description"),
       output: form.get("output"),
-      requirements: String(form.get("requirements") ?? "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+      requirements: lines(String(form.get("requirements") ?? "")),
       steps: steps.map((s) => ({
         name: s.name,
         role: s.role,
         slaHours: s.slaHours ? Number(s.slaHours) : null,
+        checklist: lines(s.checklist),
+        checkRequirements: s.checkRequirements,
+        evidenceLabel: s.evidenceLabel.trim() || null,
       })),
       isActive: form.get("isActive") === "on",
       order: Number(form.get("order") || 0),
@@ -199,13 +236,42 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
                   <Trash2 aria-hidden className="size-4" />
                 </button>
               </div>
+              {/* Syarat selesai: dasar petugas menandai tahap ini selesai (tercatat di audit log). */}
+              <div className="grid gap-2 sm:col-span-4 sm:col-start-2 sm:grid-cols-[1fr_14rem]">
+                <Field
+                  as="textarea"
+                  label="Syarat selesai (satu per baris, wajib dicentang petugas)"
+                  value={step.checklist}
+                  onChange={(e) => update(i, { checklist: e.target.value })}
+                  placeholder="mis. Data diinput ke SIAK"
+                  error={errors[`steps.${i}.checklist`]}
+                />
+                <div className="space-y-2">
+                  <Field
+                    label="Bukti wajib (opsional)"
+                    value={step.evidenceLabel}
+                    onChange={(e) => update(i, { evidenceLabel: e.target.value })}
+                    placeholder="mis. Nomor seri blangko"
+                    error={errors[`steps.${i}.evidenceLabel`]}
+                  />
+                  <label className="flex gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={step.checkRequirements}
+                      onChange={(e) => update(i, { checkRequirements: e.target.checked })}
+                      className="mt-0.5 size-4 shrink-0 accent-[var(--brand)]"
+                    />
+                    Petugas mencentang setiap persyaratan layanan
+                  </label>
+                </div>
+              </div>
             </li>
           ))}
         </ol>
         {errors.steps && <p className="mt-2 text-sm text-late">{errors.steps}</p>}
         <button
           type="button"
-          onClick={() => setSteps((list) => [...list, { name: "", role: "", slaHours: "" }])}
+          onClick={() => setSteps((list) => [...list, { ...blankStep }])}
           className={cn(small, "mt-3")}
         >
           <Plus aria-hidden className="size-4" /> Tambah tahap

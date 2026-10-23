@@ -1,7 +1,7 @@
 import ResiSearch from "@/components/application/ResiSearch";
 import { Eyebrow, GuideLines, Hatch, Icon } from "@/components/landing/Decor";
 import TrackingPreview from "@/components/landing/TrackingPreview";
-import type { site } from "@/config/site";
+import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
 /** Jeda animasi (CSS murni) agar elemen hero muncul berurutan. */
@@ -56,6 +56,12 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
 
             <div className="mt-8 max-w-xl motion-safe:animate-fade-up" style={delay(450)}>
               <ResiSearch example={hero.exampleResi} variant="hero" />
+              <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-hero-muted">
+                <span className="rounded-full border border-hero-line-strong px-2 py-0.5 font-semibold">
+                  {site.demo.badge}
+                </span>
+                {site.agency} (fiktif) · peta memakai contoh lokasi di DKI Jakarta
+              </p>
             </div>
 
             <ul

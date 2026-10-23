@@ -11,6 +11,12 @@ export const site = {
   description:
     "Lacak permohonan layanan publik seperti melacak paket: setiap tahap punya tenggat yang terlihat warga, dan keterlambatan otomatis naik ke atasan.",
   demoNotice: "Instansi dan data pada situs ini fiktif, dibuat untuk Web In Action MIA 2026.",
+  /** Penjelasan latar demo: Pantas dipasang per instansi; Kota Harapan Jaya = instansi contoh. */
+  demo: {
+    badge: "Instansi demo",
+    note: "Pantas dipasang per Disdukcapil, dengan tahapan & tenggat yang diatur masing-masing instansi. Demo ini memakai instansi contoh Kota Harapan Jaya (fiktif); peta memakai kantor nyata di DKI Jakarta sebagai contoh lokasi.",
+    mapBadge: "Contoh lokasi · DKI Jakarta",
+  },
 
   hero: {
     eyebrow: "Pelacakan layanan publik",

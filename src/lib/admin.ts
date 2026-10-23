@@ -62,7 +62,15 @@ function stepKeys(steps: ServiceInput["steps"]): StepTemplate[] {
     let key = base;
     for (let i = 2; used.has(key); i += 1) key = `${base}-${i}`;
     used.add(key);
-    return { key, name: step.name, role: step.role, slaHours: step.slaHours };
+    return {
+      key,
+      name: step.name,
+      role: step.role,
+      slaHours: step.slaHours,
+      checklist: step.checklist,
+      checkRequirements: step.checkRequirements,
+      evidenceLabel: step.evidenceLabel || null,
+    };
   });
 }
 

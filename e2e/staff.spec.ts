@@ -69,35 +69,42 @@ test("admin tidak bisa mengubah akunnya sendiri dari daftar petugas", async ({ o
   await expect(self.getByRole("button")).toHaveCount(0);
 });
 
-test("sidebar petugas: menu sesuai peran, breadcrumb, ciutkan, dan laci di HP", async ({ openPage }) => {
+test("top bar petugas: menu sesuai peran, antrean dua panel, cari resi, dan tab bar di HP", async ({
+  openPage,
+}) => {
   const loket = await openPage();
   await login(loket, "loket@resi.demo", "/kerja/RL-HJ26-PRBK");
   await loket.waitForURL("**/kerja/RL-HJ26-PRBK");
 
-  const sidebar = loket.getByRole("complementary", { name: "Sidebar petugas" });
-  await expect(sidebar.getByRole("link", { name: "Antrean" })).toHaveAttribute("aria-current", "page");
-  await expect(sidebar.getByRole("link", { name: "Input loket" })).toBeVisible();
-  await expect(sidebar.getByRole("link", { name: "Petugas" })).toHaveCount(0); // khusus admin
+  const nav = loket.getByRole("navigation", { name: "Menu utama" });
+  await expect(nav.getByRole("link", { name: "Antrean" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Input loket" })).toBeVisible();
+  await expect(nav.getByRole("button", { name: "Admin" })).toHaveCount(0); // khusus admin
 
-  const crumbs = loket.getByRole("navigation", { name: "Breadcrumb" });
-  await expect(crumbs.getByRole("link", { name: "Antrean" })).toBeVisible();
-  await expect(crumbs.getByText("RL-HJ26-PRBK")).toHaveAttribute("aria-current", "page");
+  // Dua panel: daftar antrean & detail tampil bersamaan, baris terpilih ditandai.
+  await expect(loket.getByRole("heading", { name: "Antrean", exact: true })).toBeVisible();
+  await expect(loket.getByRole("link", { name: /RL-HJ26-PRBK/ })).toHaveAttribute("aria-current", "page");
+  await expect(loket.getByRole("heading", { name: "Perubahan Kartu Keluarga" })).toBeVisible();
 
-  await sidebar.getByRole("button", { name: "Ciutkan sidebar" }).click();
-  await expect(sidebar.getByText("Input loket")).toHaveClass(/sr-only/);
-  await sidebar.getByRole("link", { name: "Input loket" }).click();
-  await loket.waitForURL("**/kerja/baru");
-  // Layout tidak di-render ulang saat pindah halaman: sidebar tetap ciut.
-  await expect(sidebar.getByRole("button", { name: "Lebarkan sidebar" })).toBeVisible();
+  // ⌘K → cari resi langsung membuka detailnya.
+  await loket.keyboard.press("ControlOrMeta+k");
+  await expect(loket.getByRole("search").getByRole("textbox")).toBeFocused();
+  await loket.keyboard.type("rl-hj26-akta");
+  await loket.keyboard.press("Enter");
+  await loket.waitForURL("**/kerja/RL-HJ26-AKTA");
+
+  await loket.getByRole("button", { name: /Menu akun/ }).click();
+  await expect(loket.getByRole("link", { name: "Ganti kata sandi" })).toBeVisible();
+  await expect(loket.getByRole("button", { name: "Keluar" })).toBeVisible();
 
   const phone = await openPage({ viewport: MOBILE });
   await login(phone, "admin@resi.demo", "/kerja");
   await phone.waitForURL("**/kerja");
-  await phone.getByRole("button", { name: "Buka menu" }).click();
-  const drawer = phone.getByRole("dialog", { name: "Menu petugas" });
-  await drawer.getByRole("link", { name: "Petugas" }).click();
+  const tabBar = phone.getByRole("navigation", { name: "Menu bawah" });
+  await tabBar.getByRole("button", { name: "Lainnya" }).click();
+  await tabBar.getByRole("link", { name: "Petugas" }).click();
   await phone.waitForURL("**/admin/petugas");
-  await expect(drawer).toBeHidden();
+  await expect(tabBar.getByRole("button", { name: "Lainnya" })).toBeVisible();
 });
 
 test("404 dirender di dalam kerangka masing-masing, tanpa navbar/footer dobel", async ({ openPage }) => {
@@ -115,7 +122,7 @@ test("404 dirender di dalam kerangka masing-masing, tanpa navbar/footer dobel", 
   await staff.waitForURL("**/kerja");
   await gotoReady(staff, "/kerja/RL-ZZZZ-ZZZZ");
   await expect(staff.getByRole("heading", { name: "Data tidak ditemukan" })).toBeVisible();
-  await expect(staff.getByRole("complementary", { name: "Sidebar petugas" })).toBeVisible();
+  await expect(staff.getByRole("navigation", { name: "Menu utama" })).toBeVisible();
   expect(await visible(staff, "header")).toBe(1);
   expect(await visible(staff, "main")).toBe(1);
   expect(await visible(staff, "footer")).toBe(0);

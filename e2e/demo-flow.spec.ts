@@ -45,11 +45,16 @@ test("petugas loket memverifikasi berkas dari antrean", async ({ openPage }) => 
   await page.getByRole("button", { name: "Selesaikan tahap" }).click();
   await page.getByLabel("Catatan untuk warga (opsional)").fill("Berkas lengkap, diteruskan ke entri data.");
   await page.getByLabel("Catatan internal (hanya petugas)").fill("Cek silang KK OK.");
-  await page.getByRole("button", { name: "Tandai tahap selesai" }).click();
+  // Tombol selesai terkunci sampai semua syarat selesai dicentang (dasar keputusan petugas).
+  const confirm = page.getByRole("button", { name: "Tandai tahap selesai" });
+  await expect(confirm).toBeDisabled();
+  const criteria = page.getByRole("group", { name: /Syarat selesai/ }).getByRole("checkbox");
+  for (const box of await criteria.all()) await box.check();
+  await confirm.click();
 
-  // Kembali ke antrean dengan konfirmasi; resi pindah ke petugas teknis.
-  await page.waitForURL(`**/kerja?selesai=${resi}&aksi=complete`);
-  await expect(page.getByText(`${resi}: tahap diselesaikan`)).toBeVisible();
+  // Resi pindah ke petugas teknis; lanjut otomatis ke tugas berikutnya (atau kembali ke antrean) dengan konfirmasi.
+  await page.waitForURL(`**/kerja**selesai=${resi}&aksi=complete`);
+  await expect(page.getByText(`${resi}: tahap diselesaikan`).filter({ visible: true })).toBeVisible();
   await expect(page.getByRole("link", { name: new RegExp(resi) })).toHaveCount(0);
 
   await gotoReady(page, `/kerja/${resi}`);

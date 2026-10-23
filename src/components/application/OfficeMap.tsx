@@ -13,6 +13,7 @@ import {
   OFFICES,
   type OfficeType,
 } from "@/config/offices";
+import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
 // Tile OpenStreetMap standar (gratis tanpa API key, wajib atribusi). Tampilan bersih & mode
@@ -80,6 +81,15 @@ const INITIAL_VIEW: View = {
 /** Kantor kelurahan (ratusan) baru ditampilkan dari zoom ini, agar peta tidak penuh sesak. */
 const KELURAHAN_ZOOM = 14;
 
+/** Peta = kantor nyata di DKI Jakarta, sedangkan instansi demo fiktif: diberi label agar tidak rancu. */
+function MapBadge() {
+  return (
+    <span className="mt-1 inline-block rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+      {site.demo.mapBadge}
+    </span>
+  );
+}
+
 type PanelProps = { offices?: Office[]; title?: string; intro?: string };
 
 /**
@@ -108,6 +118,7 @@ export default function OfficeMap({
         <h2 id="loket-title" className="font-bold">
           {props.title ?? "Lokasi layanan terdekat"}
         </h2>
+        <MapBadge />
         <p className="text-sm text-muted">
           {summary ??
             `${(props.offices ?? OFFICES).length} kantor kelurahan, kecamatan, Dukcapil, dan MPP di DKI Jakarta.`}
@@ -306,6 +317,7 @@ function MapPanel({ offices = OFFICES, title = "Lokasi layanan terdekat", intro 
           <h2 id="loket-title" className="text-lg font-bold">
             {title}
           </h2>
+          <MapBadge />
           {intro && <p className="mt-1 text-sm text-muted">{intro}</p>}
         </div>
         <button

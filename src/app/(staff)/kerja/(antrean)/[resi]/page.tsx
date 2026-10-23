@@ -5,14 +5,15 @@ import { type ReactNode, Suspense } from "react";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
-import { DemoClockBanner, Skeleton } from "@/components/ui";
-import type { ParamsOf } from "@/lib/api";
+import { Alert, Skeleton } from "@/components/ui";
+import { firstParam, type ParamsOf, type SearchParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { getStaffApplication, requireStaffPage } from "@/lib/dal";
+import { getQueue, getStaffApplication, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
 import { receiptFor } from "@/lib/qr";
+import { isValidResi } from "@/lib/resi";
 import { ROLE_LABELS, STAFF_ROLES } from "@/lib/roles";
-import { EVENT_LABELS } from "@/lib/workflow";
+import { ACTION_DONE, EVENT_LABELS } from "@/lib/workflow";
 import ActionPanel from "./ActionPanel";
 
 export const metadata = { title: "Detail permohonan" };
@@ -35,40 +36,62 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
-  const { resi } = await params;
+type Props = ParamsOf<{ resi: string }> & SearchParamsOf;
+
+async function StaffDetail({ params, searchParams }: Props) {
+  const [{ resi }, query] = await Promise.all([params, searchParams]);
+  const doneResi = firstParam(query.selesai) ?? "";
+  const doneAction = ACTION_DONE[firstParam(query.aksi) ?? ""];
   const user = await requireStaffPage(STAFF_ROLES, `/kerja/${resi}`);
-  const [app, receipt] = await Promise.all([getStaffApplication(resi, user), receiptFor(resi)]);
+  const [app, receipt, queue] = await Promise.all([
+    getStaffApplication(resi, user),
+    receiptFor(resi),
+    getQueue(user),
+  ]);
   if (!app) notFound();
 
   const current = app.steps[app.currentStep];
   const next = app.status === "perlu_perbaikan" ? null : app.steps[app.currentStep + 1];
+  // Setelah aksi, panel langsung pindah ke tugas berikutnya (urutan antrean = paling mendesak).
+  const nextTask = queue.items.find((i) => i.mine && i.status !== "perlu_perbaikan" && i.resi !== app.resi);
   return (
     <>
-      <DemoClockBanner offsetMs={app.offsetMs} />
-
+      {/* Di layar lebar konfirmasi tampil di atas antrean; di HP daftar tersembunyi, jadi di sini. */}
+      <Alert tone="success" className="lg:hidden">
+        {isValidResi(doneResi) && doneAction ? `${doneResi}: ${doneAction}.` : null}
+      </Alert>
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <Link
             href="/kerja"
-            className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
+            className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline lg:hidden"
           >
             <ArrowLeft aria-hidden className="size-4" /> Antrean
           </Link>
-          <p className="mt-2 font-mono text-sm tracking-wider text-muted">{app.resi}</p>
-          <h1 className="text-2xl font-bold tracking-tight">{app.serviceName}</h1>
+          <p className="font-mono text-sm tracking-wider text-muted">{app.resi}</p>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{app.serviceName}</h1>
+          <p className="text-sm text-muted">
+            {app.applicant.name} · {app.channel === "loket" ? "Loket" : "Online"} ·{" "}
+            {formatDateTime(app.createdAt)}
+          </p>
         </div>
         <StatusBadge status={app.status} late={app.isLate} size="lg" />
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_22rem] lg:items-start">
-        <div className="space-y-5">
+      {/* Container query: panel detail sempit (di samping antrean) atau lebar (HP/tablet). */}
+      <div className="grid gap-5 @4xl:grid-cols-[1fr_20rem] @4xl:items-start">
+        <div className="min-w-0 space-y-5">
           {app.canAct ? (
             <ActionPanel
+              // Pindah permohonan/tahap = isian (centang, bukti) mulai dari kosong.
+              key={`${app.resi}-${app.currentStep}`}
               resi={app.resi}
               status={app.status}
               stepName={current?.name}
               next={next ? `${next.name} (${ROLE_LABELS[next.role]})` : null}
+              nextResi={nextTask?.resi ?? null}
+              checklist={current?.checklist ?? []}
+              evidenceLabel={current?.evidenceLabel ?? null}
             />
           ) : (
             app.status !== "selesai" &&
@@ -103,7 +126,7 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
           </Card>
         </div>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           <ReceiptCard {...receipt} title="Bukti resi untuk warga" />
           <Card title="Pemohon">
             <dl className="grid gap-3">
@@ -194,11 +217,12 @@ async function StaffDetail({ params }: ParamsOf<{ resi: string }>) {
   );
 }
 
-export default function StaffDetailPage({ params }: ParamsOf<{ resi: string }>) {
+export default function StaffDetailPage({ params, searchParams }: Props) {
   return (
-    <div className="mx-auto max-w-6xl space-y-5 px-4 py-8">
-      <Suspense fallback={<Skeleton />}>
-        <StaffDetail params={params} />
+    // data-detail: penanda untuk layout dua panel (di HP, daftar antrean disembunyikan).
+    <div data-detail className="@container space-y-5 p-4 sm:p-6">
+      <Suspense fallback={<Skeleton className="h-96" />}>
+        <StaffDetail params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );

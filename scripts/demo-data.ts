@@ -16,6 +16,7 @@ import {
   type Channel,
   type ServiceData,
   type Step,
+  type StepTemplate,
 } from "../src/lib/workflow.ts";
 import type { EventData, UserData } from "../src/models.ts";
 
@@ -27,6 +28,39 @@ type Rng = () => number;
 type Notes = { publicNote?: string; internalNote?: string };
 
 export const HOLIDAYS = ["2026-12-25", "2027-01-01"];
+
+// Syarat selesai tiap tahap (dicentang petugas sebelum menyelesaikan) + bukti wajib.
+// Pekerjaan nyatanya di SIAK/loket; Pantas mencatat dasar keputusan "selesai".
+const VERIFY = {
+  checkRequirements: true,
+  checklist: ["Identitas pemohon cocok dengan KTP-el/KK asli"],
+};
+const ENTRY = {
+  key: "entri",
+  name: "Entri & validasi data",
+  role: "petugas_teknis",
+  slaHours: 2,
+  checklist: ["Data diinput ke SIAK", "NIK & KK cocok dengan database kependudukan"],
+} satisfies StepTemplate;
+const APPROVE = {
+  key: "persetujuan",
+  name: "Persetujuan & tanda tangan elektronik",
+  role: "pimpinan",
+  slaHours: 1,
+  checklist: ["Draf dokumen diperiksa sesuai data", "Dokumen ditandatangani dengan TTE"],
+} satisfies StepTemplate;
+const PRINT = {
+  role: "petugas_teknis",
+  checklist: ["Dokumen dicetak dan isinya diperiksa"],
+} satisfies Partial<StepTemplate>;
+const HANDOVER = {
+  key: "penyerahan",
+  name: "Siap diambil di loket",
+  role: "petugas_loket",
+  slaHours: null,
+  checklist: ["Identitas pengambil dicek (KTP-el asli atau surat kuasa)"],
+  evidenceLabel: "Diserahkan kepada",
+} satisfies StepTemplate;
 
 export const SERVICES: ServiceSeed[] = [
   {
@@ -42,10 +76,22 @@ export const SERVICES: ServiceSeed[] = [
       "Hadir langsung untuk perekaman biometrik",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
-      { key: "perekaman", name: "Perekaman biometrik", role: "petugas_teknis", slaHours: 4 },
-      { key: "pencetakan", name: "Pencetakan KTP-el", role: "petugas_teknis", slaHours: 2 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8, ...VERIFY },
+      {
+        key: "perekaman",
+        name: "Perekaman biometrik",
+        role: "petugas_teknis",
+        slaHours: 4,
+        checklist: ["Foto, sidik jari, dan iris terekam di SIAK", "Hasil cek biometrik tidak ganda"],
+      },
+      {
+        ...PRINT,
+        key: "pencetakan",
+        name: "Pencetakan KTP-el",
+        slaHours: 2,
+        evidenceLabel: "Nomor seri blangko",
+      },
+      HANDOVER,
     ],
   },
   {
@@ -61,11 +107,17 @@ export const SERVICES: ServiceSeed[] = [
       "KTP-el kepala keluarga",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
-      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaHours: 2 },
-      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaHours: 1 },
-      { key: "pencetakan", name: "Pencetakan Kartu Keluarga", role: "petugas_teknis", slaHours: 1 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8, ...VERIFY },
+      ENTRY,
+      APPROVE,
+      {
+        ...PRINT,
+        key: "pencetakan",
+        name: "Pencetakan Kartu Keluarga",
+        slaHours: 1,
+        evidenceLabel: "Nomor KK",
+      },
+      HANDOVER,
     ],
   },
   {
@@ -82,11 +134,11 @@ export const SERVICES: ServiceSeed[] = [
       "KTP-el dua orang saksi",
     ],
     steps: [
-      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8 },
-      { key: "entri", name: "Entri & validasi data", role: "petugas_teknis", slaHours: 2 },
-      { key: "persetujuan", name: "Persetujuan & tanda tangan elektronik", role: "pimpinan", slaHours: 1 },
-      { key: "pencetakan", name: "Pencetakan akta", role: "petugas_teknis", slaHours: 1 },
-      { key: "penyerahan", name: "Siap diambil di loket", role: "petugas_loket", slaHours: null },
+      { key: "verifikasi", name: "Verifikasi berkas", role: "petugas_loket", slaHours: 8, ...VERIFY },
+      ENTRY,
+      APPROVE,
+      { ...PRINT, key: "pencetakan", name: "Pencetakan akta", slaHours: 1, evidenceLabel: "Nomor akta" },
+      HANDOVER,
     ],
   },
 ];
@@ -213,6 +265,13 @@ function randomNik(rng: Rng): string {
   return `3299${pad(pick(1, 12))}${pad(day)}${pad(pick(1, 12))}${pad(pick(65, 105) % 100)}${pad(pick(1, 9999), 4)}`;
 }
 
+/** Bukti contoh untuk data demo, mis. nomor seri blangko atau nama penerima dokumen. */
+function sampleEvidence(label: string, app: DemoApp): string {
+  if (label === "Diserahkan kepada") return `${app.applicant.name} (pemohon)`;
+  const digits = String(app.createdAt.getTime()).slice(-8);
+  return label === "Nomor seri blangko" ? `BLK-${digits}` : `3299-${digits}`;
+}
+
 /**
  * Pembangun satu permohonan yang "dijalankan" maju dalam waktu.
  * events[] dikumpulkan dan nanti ditulis dengan applicationId.
@@ -301,6 +360,9 @@ class Sim {
       actor: { id: String(actor._id), name: actor.name, role: actor.role },
       now: at,
       holidays: this.holidays,
+      // Petugas demo selalu mencentang semua syarat selesai dan mengisi bukti contoh.
+      checked: this.step.checklist,
+      evidence: this.step.evidenceLabel ? sampleEvidence(this.step.evidenceLabel, this.app) : undefined,
       ...notes,
     });
     this.events.push({

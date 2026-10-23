@@ -117,9 +117,9 @@ export type Tracking = NonNullable<Awaited<ReturnType<typeof getTracking>>>;
 /**
  * Antrean yang boleh dilihat `user`. Petugas loket/teknis: tahap sesuai perannya
  * (loket juga melihat yang menunggu perbaikan). Pimpinan & admin: semua, dengan
- * flag `mine` untuk tahap yang memang tugas perannya.
+ * flag `mine` untuk tahap yang memang tugas perannya. Di-cache per render (layout antrean & halaman detail).
  */
-export async function getQueue(user: SessionUser) {
+export const getQueue = cache(async (user: SessionUser) => {
   const clock = await ready();
   await syncOverdue(clock.now, clock.holidays);
 
@@ -146,7 +146,7 @@ export async function getQueue(user: SessionUser) {
     total: items.length,
   };
   return { role: user.role, items, counts, now: clock.now.toISOString(), offsetMs: clock.clockOffsetMs };
-}
+});
 
 export type Queue = Awaited<ReturnType<typeof getQueue>>;
 
@@ -209,7 +209,15 @@ export async function getAdminServices() {
     description: s.description,
     output: s.output,
     requirements: s.requirements,
-    steps: s.steps.map(({ key, name, role, slaHours }) => ({ key, name, role, slaHours })),
+    steps: s.steps.map(({ key, name, role, slaHours, checklist, checkRequirements, evidenceLabel }) => ({
+      key,
+      name,
+      role,
+      slaHours,
+      checklist: checklist ?? [],
+      checkRequirements: Boolean(checkRequirements),
+      evidenceLabel: evidenceLabel ?? null,
+    })),
     isActive: s.isActive,
     order: s.order,
   }));

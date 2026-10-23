@@ -10,6 +10,9 @@ import type { PublicView, StepViewState } from "@/lib/present";
 type TimelineStep = PublicView["steps"][number] & {
   handledByName?: string | null;
   internalNote?: string | null;
+  checked?: string[];
+  evidenceLabel?: string | null;
+  evidence?: string | null;
 };
 
 /** Status tahap dihitung ulang di browser supaya "berjalan" berubah jadi "terlambat" tanpa reload. */
@@ -144,9 +147,28 @@ export default function Timeline({
                   {step.publicNote}
                 </blockquote>
               )}
-              {staff && (step.handledByName || step.internalNote) && (
+              {staff && (step.handledByName || step.internalNote || step.checked?.length) && (
                 <div className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">
                   {step.handledByName && <p className="text-muted">Ditangani: {step.handledByName}</p>}
+                  {/* Dasar keputusan "selesai" yang dicentang petugas (terekam di audit log). */}
+                  {step.checked && step.checked.length > 0 && (
+                    <ul className="mt-1 space-y-0.5">
+                      {step.checked.map((item) => (
+                        <li key={item} className="flex gap-1.5">
+                          <span aria-hidden className="text-ok">
+                            ✓
+                          </span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {step.evidence && (
+                    <p className="mt-1">
+                      <span className="font-semibold">{step.evidenceLabel}:</span>{" "}
+                      <span className="font-mono">{step.evidence}</span>
+                    </p>
+                  )}
                   {step.internalNote && (
                     <p>
                       <span className="font-semibold">Internal:</span> {step.internalNote}

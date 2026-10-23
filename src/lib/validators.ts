@@ -96,6 +96,9 @@ export const actionSchema = z.object({
   action: z.enum(ACTIONS),
   publicNote: trimmed(500).optional(),
   internalNote: trimmed(1000).optional(),
+  /** Syarat selesai yang dicentang & bukti wajib (aksi "complete"). */
+  checked: z.array(z.string().max(200)).max(40).default([]),
+  evidence: trimmed(120).optional(),
 });
 
 export const last4Schema = z.string().regex(/^\d{4}$/, "Masukkan 4 digit terakhir nomor HP.");
@@ -161,6 +164,10 @@ const stepInputSchema = z.object({
   role: z.enum(ROLES, { error: "Pilih peran." }),
   // null = tanpa tenggat (mis. menunggu warga mengambil dokumen).
   slaHours: z.number().int("Jam kerja harus bilangan bulat.").min(1).max(480).nullable(),
+  // Syarat selesai (dicentang petugas), cek persyaratan layanan, dan label bukti wajib.
+  checklist: z.array(trimmed(160).min(1)).max(10, "Maksimal 10 syarat per tahap.").default([]),
+  checkRequirements: z.boolean().default(false),
+  evidenceLabel: trimmed(60).nullable().default(null),
 });
 
 export const serviceSchema = z.object({
@@ -186,10 +193,11 @@ export const holidaysSchema = z.object({
 
 export type ApplicationInput = z.infer<typeof applicationSchema>;
 export type RecoverInput = z.infer<typeof recoverSchema>;
-export type ActionInput = z.infer<typeof actionSchema>;
+// Bentuk input (sebelum default Zod): field opsional tetap opsional bagi pemanggil.
+export type ActionInput = z.input<typeof actionSchema>;
 export type TrackActionInput = z.infer<typeof trackActionSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
 export type StaffActionInput = z.infer<typeof staffActionSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
-export type ServiceInput = z.infer<typeof serviceSchema>;
+export type ServiceInput = z.input<typeof serviceSchema>;
 export type HolidaysInput = z.infer<typeof holidaysSchema>;

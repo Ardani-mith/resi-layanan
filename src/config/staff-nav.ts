@@ -1,5 +1,6 @@
-// Menu sidebar area petugas & label breadcrumb. Tambah/ubah menu cukup di sini;
-// komponen di components/layout/ hanya merender. `roles` = peran yang melihat menu itu.
+// Menu area petugas (top bar desktop + tab bar bawah di HP). Tambah/ubah menu cukup di sini;
+// components/layout/StaffShell.tsx hanya merender. `roles` = peran yang melihat menu itu.
+// Bagian "Admin" dirender sebagai satu dropdown agar top bar tetap ringkas.
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarOff,
@@ -52,8 +53,8 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
-/** Menu bawah: untuk semua peran (juga saat masih memakai kata sandi sementara). */
-export const FOOTER_LINKS: NavItem[] = [
+/** Menu akun (dropdown avatar): untuk semua peran, juga saat masih memakai kata sandi sementara. */
+export const ACCOUNT_LINKS: NavItem[] = [
   { href: "/", label: "Halaman warga", icon: Globe },
   { href: PASSWORD_PATH, label: "Ganti kata sandi", icon: KeyRound },
 ];
@@ -66,6 +67,9 @@ export function navFor(role: Role): NavSection[] {
   })).filter((section) => section.items.length > 0);
 }
 
+/** Judul bagian menu yang dirender sebagai dropdown (bukan tab). */
+export const ADMIN_SECTION = "Admin";
+
 /**
  * Menu yang aktif untuk `pathname`: href terpanjang yang cocok, supaya /kerja/baru
  * mengaktifkan "Input loket", sedangkan /kerja/RL-XXXX-XXXX tetap "Antrean".
@@ -74,28 +78,4 @@ export function activeHref(pathname: string, hrefs: string[]): string | undefine
   return hrefs
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
-}
-
-// Label breadcrumb per path. `link: false` = tidak ada halamannya (hanya pengelompokan).
-const CRUMBS: Record<string, { label: string; link?: boolean }> = {
-  "/kerja": { label: "Antrean" },
-  "/kerja/baru": { label: "Input loket" },
-  "/pantau": { label: "Dashboard pimpinan" },
-  "/admin": { label: "Admin", link: false },
-  "/admin/petugas": { label: "Petugas" },
-  "/admin/demo": { label: "Mode demo" },
-  "/admin/layanan": { label: "Layanan & SLA" },
-  "/admin/libur": { label: "Hari libur" },
-  "/akun": { label: "Akun", link: false },
-  [PASSWORD_PATH]: { label: "Ganti kata sandi" },
-};
-
-/** Jejak breadcrumb dari pathname, mis. /kerja/RL-AB3K-7XQ9 → Antrean › RL-AB3K-7XQ9. */
-export function crumbsFor(pathname: string): { href: string; label: string; link: boolean }[] {
-  const segments = pathname.split("/").filter(Boolean);
-  return segments.map((segment, i) => {
-    const href = `/${segments.slice(0, i + 1).join("/")}`;
-    const crumb = CRUMBS[href];
-    return { href, label: crumb?.label ?? decodeURIComponent(segment), link: crumb?.link ?? true };
-  });
 }

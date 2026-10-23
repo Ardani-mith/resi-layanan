@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
-import { DemoClockBanner, Skeleton } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { getClockInfo, getStats, requireStaffPage } from "@/lib/dal";
+import { getStats, requireStaffPage } from "@/lib/dal";
 import { formatDuration, formatPercent, formatWorkHours } from "@/lib/format";
 import type { Stats } from "@/lib/stats";
 
@@ -24,7 +24,7 @@ function bottleneckKey(steps: Stats["services"][number]["steps"]): string | null
 
 async function Dashboard() {
   await requireStaffPage(["pimpinan", "admin"], "/pantau");
-  const [stats, clock] = await Promise.all([getStats({ internal: true }), getClockInfo()]);
+  const stats = await getStats({ internal: true });
   const { overall, services, escalations, trend } = stats;
 
   return (
@@ -33,7 +33,6 @@ async function Dashboard() {
         <h1 className="text-2xl font-bold tracking-tight">Pantau kinerja layanan</h1>
         <p className="text-muted">Keterlambatan dan eskalasi dihitung ulang setiap halaman dibuka.</p>
       </div>
-      <DemoClockBanner offsetMs={clock.offsetMs} />
 
       <section aria-label="Ringkasan" className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { Alert, buttonClass, type ButtonVariant } from "@/components/ui";
+import { Alert, buttonClass, type ButtonVariant, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { Action, Status } from "@/lib/workflow";
@@ -55,17 +55,30 @@ export default function ActionPanel({
   status,
   stepName,
   next,
+  nextResi,
+  checklist,
+  evidenceLabel,
 }: {
   resi: string;
   status: Status;
   stepName: string | null;
   /** Tahap & peran berikutnya, ditampilkan sebelum menyelesaikan agar jelas ke mana berkas pergi. */
   next: string | null;
+  /** Tugas berikutnya di antrean petugas ini; null = kembali ke antrean. */
+  nextResi: string | null;
+  /** Syarat selesai tahap ini; semua wajib dicentang sebelum "Selesaikan". */
+  checklist: string[];
+  /** Label bukti wajib (mis. "Nomor seri blangko"); null = tanpa bukti. */
+  evidenceLabel: string | null;
 }) {
   const router = useRouter();
   const available: Action[] =
     status === "perlu_perbaikan" ? ["resume", "reject"] : ["complete", "request_fix", "reject"];
   const [action, setAction] = useState<Action | null>(null);
+  const [checked, setChecked] = useState<string[]>([]);
+  const [evidence, setEvidence] = useState("");
+  // Tombol selesai baru aktif setelah dasar keputusannya lengkap.
+  const ready = checked.length === checklist.length && (!evidenceLabel || evidence.trim() !== "");
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
 
@@ -90,15 +103,17 @@ export default function ActionPanel({
       action,
       publicNote: publicNote || undefined,
       internalNote: String(form.get("internalNote") ?? "").trim() || undefined,
+      ...(action === "complete" && { checked, evidence: evidence.trim() || undefined }),
     });
     if (!res.ok) {
       setErrors({ ...res.error.fields, form: res.error.message });
       setPending(false);
       return;
     }
-    // Kembali ke antrean dengan konfirmasi: panel ini bisa hilang setelah aksi (tahap
-    // pindah ke peran lain), jadi pesan sukses ditampilkan di halaman antrean.
-    router.push(`/kerja?selesai=${resi}&aksi=${action}`);
+    // Lanjut ke tugas berikutnya (atau kembali ke antrean) dengan konfirmasi di atas daftar:
+    // panel ini bisa hilang setelah aksi karena tahap pindah ke peran lain.
+    router.push(`/kerja${nextResi ? `/${nextResi}` : ""}?selesai=${resi}&aksi=${action}`);
+    router.refresh();
   }
 
   return (
@@ -133,6 +148,50 @@ export default function ActionPanel({
       {spec && (
         <form method="post" onSubmit={submit} noValidate className="mt-5 space-y-4 border-t border-line pt-5">
           {spec.hint && <p className="text-sm text-muted">{spec.hint}</p>}
+          {action === "complete" && checklist.length > 0 && (
+            <fieldset aria-describedby={errors.checked ? "checked-error" : undefined}>
+              <legend className="mb-1.5 text-sm font-medium">
+                Syarat selesai{" "}
+                <span className="font-normal text-muted">
+                  ({checked.length}/{checklist.length}, tercatat di audit log)
+                </span>
+              </legend>
+              <ul className="space-y-1">
+                {checklist.map((item) => (
+                  <li key={item}>
+                    <label className="flex cursor-pointer gap-2.5 rounded-lg p-1.5 text-sm hover:bg-surface-2">
+                      <input
+                        type="checkbox"
+                        checked={checked.includes(item)}
+                        onChange={() =>
+                          setChecked((list) =>
+                            list.includes(item) ? list.filter((x) => x !== item) : [...list, item],
+                          )
+                        }
+                        className="mt-0.5 size-4.5 shrink-0 accent-[var(--brand)]"
+                      />
+                      {item}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              {errors.checked && (
+                <p id="checked-error" className="mt-1 text-sm text-late">
+                  {errors.checked}
+                </p>
+              )}
+            </fieldset>
+          )}
+          {action === "complete" && evidenceLabel && (
+            <Field
+              label={evidenceLabel}
+              value={evidence}
+              onChange={(e) => setEvidence(e.target.value)}
+              maxLength={120}
+              hint="Wajib diisi sebagai bukti tahap ini, tampil di timeline petugas."
+              error={errors.evidence}
+            />
+          )}
           {action === "complete" && (
             <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
               {next ? (
@@ -188,7 +247,11 @@ export default function ActionPanel({
             </div>
           )}
           <Alert>{errors.form}</Alert>
-          <button type="submit" disabled={pending} className={buttonClass(spec.variant)}>
+          <button
+            type="submit"
+            disabled={pending || (action === "complete" && !ready)}
+            className={buttonClass(spec.variant)}
+          >
             {pending ? "Menyimpan…" : spec.confirm}
           </button>
         </form>

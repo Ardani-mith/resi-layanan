@@ -89,11 +89,19 @@ function Navbar() {
 function Footer() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between">
-        <p>
-          <span className="font-semibold text-text">{site.name}</span> · {site.agency}
-        </p>
-        <p>{site.demoNotice}</p>
+      <div className="mx-auto max-w-6xl space-y-2 px-4 py-6 text-sm text-muted">
+        <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
+          <p className="flex flex-wrap items-center gap-2">
+            <span>
+              <span className="font-semibold text-text">{site.name}</span> · {site.agency}
+            </span>
+            <span className="rounded-full border border-line px-2 py-0.5 text-xs font-semibold">
+              {site.demo.badge}
+            </span>
+          </p>
+          <p>{site.demoNotice}</p>
+        </div>
+        <p className="max-w-3xl text-xs">{site.demo.note}</p>
       </div>
     </footer>
   );

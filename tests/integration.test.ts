@@ -19,7 +19,7 @@ import { checkNik, publicView } from "@/lib/present";
 import type { Role } from "@/lib/roles";
 import { DAY_MS } from "@/lib/sla";
 import { computeStats, openEscalations } from "@/lib/stats";
-import type { ApplicationInput } from "@/lib/validators";
+import type { ActionInput, ApplicationInput } from "@/lib/validators";
 import type { Actor, ApplicationData } from "@/lib/workflow";
 import { Application, Event, Service } from "@/models";
 import { seed } from "../scripts/seed.ts";
@@ -60,6 +60,16 @@ const actor = (role: Role): Actor => {
 let nikSeq = 0;
 /** NIK valid & unik (lahir 15-05-1990) agar tidak terkena aturan permohonan ganda. */
 const uniqueNik = () => `3299011505900${String((nikSeq += 1)).padStart(3, "0")}`;
+
+/** Input "Selesaikan tahap" yang sah: semua syarat selesai tahap berjalan dicentang + bukti. */
+async function completeInput(resi: string): Promise<ActionInput> {
+  const step = (await stored(resi)).steps.find((s) => !s.completedAt)!;
+  return {
+    action: "complete",
+    checked: step.checklist,
+    evidence: step.evidenceLabel ? "BUKTI-0001" : undefined,
+  };
+}
 
 /** Permohonan lewat loket (tanpa OTP); jalur online diuji terpisah di "pengaman pengajuan online". */
 async function newApplication(clock = clockAt()) {
@@ -329,7 +339,7 @@ describe("eskalasi saat dibaca", () => {
     const app = await newApplication();
     const updated = await performAction({
       resi: app.resi,
-      input: { action: "complete" },
+      input: await completeInput(app.resi),
       actor: actor("petugas_loket"),
       clock: clockAt(2),
     });
@@ -340,12 +350,57 @@ describe("eskalasi saat dibaca", () => {
 });
 
 describe("aksi petugas", () => {
+  it("tahap hanya bisa diselesaikan dengan syarat selesai lengkap; dasarnya tercatat di audit log", async () => {
+    const app = await newApplication();
+    const loket = actor("petugas_loket");
+    const step = (await stored(app.resi)).steps[0];
+    // Verifikasi: persyaratan layanan ikut menjadi syarat selesai.
+    expect(step.checklist).toContain("Berkas asli diperiksa: Kartu Keluarga orang tua");
+
+    const done = (checked: string[]) =>
+      performAction({
+        resi: app.resi,
+        input: { action: "complete", checked },
+        actor: loket,
+        clock: clockAt(),
+      });
+    await expect(done([])).rejects.toMatchObject({ status: 422, fields: { checked: expect.any(String) } });
+    await expect(done(step.checklist.slice(1))).rejects.toMatchObject({ status: 422 });
+
+    const saved = await done(step.checklist);
+    expect(saved.steps[0].checked).toEqual(step.checklist);
+    const event = await Event.findOne({ applicationId: saved._id, action: "complete" }).lean();
+    expect(event?.payload?.checked).toEqual(step.checklist);
+  });
+
+  it("tahap dengan bukti wajib menolak bukti kosong", async () => {
+    const app = await newApplication();
+    for (const role of ["petugas_loket", "petugas_teknis", "pimpinan"] as const) {
+      await performAction({
+        resi: app.resi,
+        input: await completeInput(app.resi),
+        actor: actor(role),
+        clock: clockAt(),
+      });
+    }
+    const printing = (await stored(app.resi)).steps[3];
+    expect(printing.evidenceLabel).toBe("Nomor akta");
+    await expect(
+      performAction({
+        resi: app.resi,
+        input: { action: "complete", checked: printing.checklist, evidence: "  " },
+        actor: actor("petugas_teknis"),
+        clock: clockAt(),
+      }),
+    ).rejects.toMatchObject({ fields: { evidence: "Nomor akta wajib diisi." } });
+  });
+
   it("menolak peran yang bukan pemilik tahap", async () => {
     const app = await newApplication();
     await expect(
       performAction({
         resi: app.resi,
-        input: { action: "complete" },
+        input: await completeInput(app.resi),
         actor: actor("petugas_teknis"),
         clock: clockAt(),
       }),
@@ -354,9 +409,10 @@ describe("aksi petugas", () => {
 
   it("dua petugas menyelesaikan tahap yang sama bersamaan: hanya satu yang berhasil", async () => {
     const app = await newApplication();
+    const input = await completeInput(app.resi);
     const results = await Promise.allSettled(
       [actor("petugas_loket"), actor("petugas_loket")].map((a) =>
-        performAction({ resi: app.resi, input: { action: "complete" }, actor: a, clock: clockAt() }),
+        performAction({ resi: app.resi, input, actor: a, clock: clockAt() }),
       ),
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
@@ -391,7 +447,7 @@ describe("aksi petugas", () => {
     ] as const) {
       await performAction({
         resi: app.resi,
-        input: { action: "complete" },
+        input: await completeInput(app.resi),
         actor: actor(role),
         clock: clockAt(1),
       });
