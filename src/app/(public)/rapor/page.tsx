@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
+import { PageHeader } from "@/components/landing/Decor";
 import { Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
@@ -20,7 +21,9 @@ async function Report() {
       <section className="grid gap-6 rounded-card border border-line bg-surface p-6 lg:grid-cols-[1fr_2fr] lg:items-center">
         <div>
           <p className="text-sm text-muted">Selesai tepat waktu</p>
-          <p className="text-6xl font-semibold tracking-tight">{formatPercent(overall.onTimeRate)}</p>
+          <p className="mt-1 font-mono text-7xl font-medium tracking-tight tabular-nums">
+            {formatPercent(overall.onTimeRate)}
+          </p>
           <p className="mt-2 text-sm text-muted">
             {overall.completed === 0
               ? "Belum ada permohonan yang selesai."
@@ -35,7 +38,7 @@ async function Report() {
           />
           <StatTile
             label="Kepuasan warga"
-            value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")} / 5`}
+            value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")}/5`}
             note={`${overall.ratingCount} penilaian`}
           />
           <StatTile
@@ -99,7 +102,7 @@ async function Report() {
                 </p>
                 <p className="text-sm tabular-nums">
                   <span className="block text-xs text-muted sm:hidden">Kepuasan</span>
-                  {s.ratingAvg === null ? "—" : `${s.ratingAvg.toLocaleString("id-ID")} / 5`}
+                  {s.ratingAvg === null ? "—" : `${s.ratingAvg.toLocaleString("id-ID")}/5`}
                   <span className="block text-xs text-muted">{s.ratingCount} penilaian</span>
                 </p>
               </div>
@@ -119,13 +122,11 @@ async function Report() {
 
 export default function ReportPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Rapor SLA publik</h1>
-        <p className="mt-1 max-w-2xl text-muted">
-          Seberapa sering {site.agency} menepati janji waktu layanannya. Terbuka untuk siapa pun.
-        </p>
-      </div>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-12">
+      <PageHeader label="Rapor SLA publik" title="Janji waktu, ditepati atau tidak.">
+        Seberapa sering {site.agency} menepati janji waktu layanannya. Terbuka untuk siapa pun, diperbarui
+        langsung dari data permohonan.
+      </PageHeader>
       <Suspense fallback={<Skeleton />}>
         <Report />
       </Suspense>

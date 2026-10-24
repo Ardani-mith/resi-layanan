@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { cn } from "@/lib/cn";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 
@@ -27,6 +27,8 @@ export default function ResiSearch({
   variant?: keyof typeof VARIANTS;
 }) {
   const tone = VARIANTS[variant];
+  // Bisa ada dua kolom cek resi di satu halaman (hero & penutup beranda): ID harus unik.
+  const id = useId();
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
@@ -43,12 +45,12 @@ export default function ResiSearch({
 
   return (
     <form onSubmit={submit} noValidate className="w-full">
-      <label htmlFor="resi" className="sr-only">
+      <label htmlFor={id} className="sr-only">
         Nomor resi
       </label>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
-          id="resi"
+          id={id}
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -60,7 +62,7 @@ export default function ResiSearch({
           spellCheck={false}
           autoFocus={autoFocus}
           aria-invalid={Boolean(error)}
-          aria-describedby="resi-message"
+          aria-describedby={`${id}-message`}
           className={cn(
             "flex-1 rounded-xl border border-line bg-surface px-4 font-mono text-lg tracking-wider uppercase outline-none placeholder:text-muted/60 focus:border-brand aria-invalid:border-late",
             tone.input,
@@ -76,7 +78,7 @@ export default function ResiSearch({
           Lacak
         </button>
       </div>
-      <p id="resi-message" className={cn("mt-2 text-sm", error ? tone.error : tone.helper)}>
+      <p id={`${id}-message`} className={cn("mt-2 text-sm", error ? tone.error : tone.helper)}>
         {error || (
           <>
             Coba resi demo{" "}

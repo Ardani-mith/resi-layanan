@@ -5,14 +5,15 @@ import { formatPercent } from "@/lib/format";
 const number = (value: number | null, digits = 1) =>
   value === null ? "—" : value.toLocaleString("id-ID", { maximumFractionDigits: digits });
 
+/** Angka gaya papan skor: label kecil di atas, angka mono besar, keterangan di bawah. */
 function Stat({ value, label, note }: { value: string; label: string; note: string }) {
   return (
-    <div className="border-line py-1 sm:border-l sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
-      <p className="text-4xl font-semibold tracking-tight">
+    <div className="border-line py-1 sm:border-l sm:pl-6 sm:first:border-l-0 sm:first:pl-0">
+      <p className="text-xs font-semibold tracking-[0.12em] text-muted uppercase">{label}</p>
+      <p className="mt-2 font-mono text-[2.6rem] leading-none font-medium tracking-tight tabular-nums">
         {value === "—" ? value : <CountUp value={value} />}
       </p>
-      <p className="mt-1 font-medium">{label}</p>
-      <p className="text-sm text-muted">{note}</p>
+      <p className="mt-2 text-sm text-muted">{note}</p>
     </div>
   );
 }
@@ -21,12 +22,7 @@ function Stat({ value, label, note }: { value: string; label: string; note: stri
 export default async function SummaryStats() {
   const { overall } = await getStats();
   return (
-    <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
-      <Stat
-        value={formatPercent(overall.onTimeRate)}
-        label="Selesai tepat waktu"
-        note={`dari ${overall.completed} permohonan`}
-      />
+    <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
       <Stat
         value={formatPercent(overall.promiseRate)}
         label="Terbit ≤ 24 jam"
@@ -35,6 +31,11 @@ export default async function SummaryStats() {
             ? "setelah berkas lengkap"
             : `rata-rata ${number(overall.avgIssueHours)} jam kerja setelah berkas lengkap`
         }
+      />
+      <Stat
+        value={formatPercent(overall.onTimeRate)}
+        label="Selesai tepat waktu"
+        note={`dari ${overall.completed} permohonan`}
       />
       <Stat
         value={overall.ratingAvg === null ? "—" : `${number(overall.ratingAvg)}/5`}

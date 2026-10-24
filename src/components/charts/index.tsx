@@ -24,7 +24,7 @@ export function StatTile({
       <p className="text-sm text-muted">{label}</p>
       <p
         className={cn(
-          "mt-1 flex items-center gap-1.5 text-3xl font-semibold tracking-tight",
+          "mt-1 flex items-center gap-1.5 font-mono text-3xl font-medium tracking-tight tabular-nums",
           tone === "late" && "text-late",
         )}
       >

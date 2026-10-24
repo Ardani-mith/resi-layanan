@@ -19,28 +19,25 @@ export const site = {
   },
 
   hero: {
-    eyebrow: "Pelacakan layanan publik",
+    kicker: "Pelacakan permohonan Dukcapil",
     // Satu elemen = satu baris yang dianimasikan muncul bergantian.
     titleLines: ["Tahu pasti permohonan", "Anda sampai di mana,", "dan kapan selesai."],
     body: "Masukkan nomor resi dari loket atau pengajuan online. Tanpa login, tanpa antre bertanya.",
     exampleResi: "RL-HJ26-AKTA",
-    highlights: [
-      { icon: "lock", text: "Nama pemohon disamarkan" },
-      { icon: "timer", text: "Tenggat tiap tahap terlihat" },
-      { icon: "bell", text: "Terlambat? Otomatis naik ke atasan" },
-    ],
-    // Isi cuplikan halaman lacak di hero (ilustrasi, bukan data asli).
+    highlights: ["Nama pemohon disamarkan", "Tenggat tiap tahap terlihat", "Terlambat? Naik ke atasan"],
+    // Isi struk resi di hero (ilustrasi, bukan data asli).
     preview: {
       service: "Akta Kelahiran",
       applicant: "Si*** R***",
+      submitted: "Sen 09.12 WIB",
       officerNote: "Berkas lengkap dan sesuai.",
-      escalationNote: "Lewat tenggat? Otomatis diteruskan ke Kepala Seksi.",
+      promise: "Sel, 10.40 WIB",
     },
   },
 
   summary: {
-    eyebrow: "Rapor SLA hari ini",
-    title: "Janji waktu yang bisa dicek siapa pun.",
+    title: "Rapor SLA hari ini",
+    body: "Janji waktu yang bisa dicek siapa pun, dihitung langsung dari data permohonan.",
     cta: "Lihat rapor lengkap",
   },
 
@@ -61,75 +58,86 @@ export const site = {
         source: "Ombudsman RI Perwakilan Bengkulu",
       },
     ],
-    gap: "Kanal seperti SP4N-LAPOR! berfokus pada pengaduan setelah masalah terjadi. Pantas mencegahnya: status dan tenggat terbuka sejak hari pertama.",
+    // Perbandingan: hari ini vs dengan Pantas (tabel di beranda).
+    compare: [
+      {
+        topic: "Posisi berkas",
+        today: 'Tanya ke loket, dijawab "masih diproses"',
+        pantas: "Terlihat per tahap, di meja peran siapa",
+      },
+      {
+        topic: "Kapan selesai",
+        today: "Tidak ada kepastian",
+        pantas: "Tenggat jam kerja; terbit ≤ 24 jam setelah lengkap",
+      },
+      {
+        topic: "Berkas kurang",
+        today: "Bolak-balik tanpa catatan jelas",
+        pantas: "Catatan tertulis, jam instansi dijeda",
+      },
+      {
+        topic: "Kalau molor",
+        today: "Mengadu setelah terjadi (SP4N-LAPOR!)",
+        pantas: "Naik otomatis ke Kepala Seksi, lalu Kabid",
+      },
+      {
+        topic: "Kinerja dinas",
+        today: "Tidak terlihat publik",
+        pantas: "Rapor SLA terbuka, diperbarui otomatis",
+      },
+    ],
   },
 
   howItWorks: {
     title: "Seperti melacak paket, tapi untuk dokumen kependudukan.",
     steps: [
       {
-        icon: "file",
+        time: "Hari ini",
         title: "Ajukan, dapat resi",
-        body: "Online atau di loket. Nomor resi acak dan unik, misalnya RL-AB3K-7XQ9.",
+        body: "Online atau di loket. NIK dicek di awal, nomor HP diverifikasi, resi acak & unik.",
       },
       {
-        icon: "timer",
-        title: "Setiap tahap punya tenggat",
-        body: "Verifikasi, proses, tanda tangan, cetak. Tenggat dalam jam kerja, dokumen terbit ≤ 24 jam setelah berkas lengkap.",
+        time: "≤ 1 hari kerja",
+        title: "Berkas diverifikasi",
+        body: "Petugas loket mencentang setiap persyaratan. Kurang? Catatan tertulis, jam instansi berhenti.",
       },
       {
-        icon: "bell",
-        title: "Terlambat? Naik otomatis",
-        body: "Tahap yang lewat tenggat ditandai merah dan dieskalasi ke Kepala Seksi, lalu Kepala Bidang.",
+        time: "≤ 24 jam",
+        title: "Dokumen terbit",
+        body: "Entri, tanda tangan, cetak: tiap tahap punya tenggat jam kerja. Lewat? Naik ke atasan otomatis.",
       },
       {
-        icon: "star",
-        title: "Selesai, beri penilaian",
-        body: "Warga memberi rating, dan kinerja tiap layanan terbuka di rapor SLA publik.",
+        time: "Saat diambil",
+        title: "Ambil & beri nilai",
+        body: "Peta lokasi layanan terdekat, berkas yang dibawa, lalu penilaian masuk rapor SLA publik.",
       },
     ],
   },
 
-  features: {
-    title: "Untuk warga, petugas, dan pimpinan",
+  perspectives: {
+    title: "Satu resi, tiga sudut pandang.",
+    body: "Data yang sama tampil sesuai kebutuhan: warga tahu harus apa, petugas tahu dasar keputusannya, pimpinan tahu di mana macetnya.",
     items: [
       {
-        icon: "phone",
         role: "Warga",
-        title: "Lacak seperti paket",
-        body: "Timeline per tahap, hitung mundur tenggat, catatan petugas, dan estimasi selesai. Nama disamarkan; detail terbuka dengan 4 digit HP.",
+        scene: "pagi",
+        title: "Tahu harus apa sekarang",
+        body: "Hitung mundur tiap tahap dan satu langkah berikutnya yang jelas. Data pribadi baru terbuka dengan 4 digit nomor HP.",
       },
       {
-        icon: "fix",
-        role: "Warga",
-        title: "Perbaikan tanpa mulai dari nol",
-        body: "Jika berkas kurang, petugas menulis apa yang perlu diperbaiki. Jam SLA instansi berhenti sampai warga melengkapi.",
-      },
-      {
-        icon: "queue",
         role: "Petugas",
-        title: "Antrean urut paling mendesak",
-        body: "Setiap petugas hanya melihat tahap miliknya, diurutkan dari sisa waktu tersempit.",
+        scene: "siang",
+        title: "Selesai dengan dasar tercatat",
+        body: "Antrean urut paling mendesak. Tahap baru bisa diselesaikan setelah syarat selesai dicentang, lalu lanjut ke tugas berikutnya.",
       },
       {
-        icon: "dashboard",
         role: "Pimpinan",
-        title: "Eskalasi & bottleneck",
-        body: "Daftar tahap yang terlambat, tahap paling sering molor, dan persentase tepat waktu per layanan.",
-      },
-      {
-        icon: "chart",
-        role: "Publik",
-        title: "Rapor SLA terbuka",
-        body: "Siapa pun bisa melihat seberapa sering instansi menepati janjinya.",
-      },
-      {
-        icon: "shield",
-        role: "Auditor",
-        title: "Jejak tak bisa diubah",
-        body: "Setiap aksi tercatat di audit log append-only: siapa, kapan, dan apa.",
+        scene: "senja",
+        title: "Tahu di mana macetnya",
+        body: "Eskalasi Kasi → Kabid berjalan otomatis, tahap yang paling sering molor terlihat, dan persen terbit ≤ 24 jam terukur per layanan.",
       },
     ],
+    more: "Juga untuk publik dan auditor: rapor SLA terbuka dan audit log yang tidak bisa diubah.",
   },
 
   closing: {

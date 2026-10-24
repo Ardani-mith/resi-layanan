@@ -6,8 +6,8 @@ import { confirmOtp, gotoReady, hasHorizontalScroll, MOBILE } from "./helpers.ts
 test("cek resi dari beranda, lalu buka detail dengan 4 digit HP", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE });
   await gotoReady(page, "/");
-  await page.locator("#resi").fill("rlhj26akta"); // huruf kecil & tanpa tanda hubung tetap diterima
-  await page.getByRole("button", { name: "Lacak", exact: true }).click();
+  await page.getByRole("textbox", { name: /resi/i }).first().fill("rlhj26akta"); // huruf kecil & tanpa tanda hubung tetap diterima
+  await page.getByRole("button", { name: "Lacak", exact: true }).first().click(); // kolom cek resi di hero
   await page.waitForURL("**/lacak/RL-HJ26-AKTA");
 
   await expect(page.getByText(/melewati tenggat/).first()).toBeVisible();

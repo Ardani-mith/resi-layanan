@@ -58,7 +58,7 @@ async function Dashboard() {
         />
         <StatTile
           label="Kepuasan warga"
-          value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")} / 5`}
+          value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")}/5`}
           note={`${overall.ratingCount} penilaian`}
         />
       </section>

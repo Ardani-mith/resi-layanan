@@ -67,6 +67,11 @@
   --tint-3-accent: #e2875f;
   --tint-glow: rgb(255 255 255 / 0.5);
 
+  /* Kertas struk (beranda): putih gading, tinta navy, cap biru. */
+  --paper: #fffdf7;
+  --paper-line: #d9d3c4;
+  --ink-soft: #6b6557;
+
   --radius: 14px;
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
 
@@ -126,6 +131,10 @@
   --tint-3-accent: #f0a07c;
   --tint-glow: rgb(255 255 255 / 0.06);
 
+  --paper: #162236;
+  --paper-line: #2e3d57;
+  --ink-soft: #9aa8bd;
+
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
 
   color-scheme: dark;
@@ -164,9 +173,13 @@
   --color-hero-accent-end: var(--hero-accent-end);
   --color-hero-alert: var(--hero-alert);
   --color-hero-chip: var(--hero-chip);
+  --color-paper: var(--paper);
+  --color-paper-line: var(--paper-line);
+  --color-ink-soft: var(--ink-soft);
   --radius-card: var(--radius);
   --shadow-card: var(--shadow);
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 body {
@@ -190,6 +203,45 @@ body {
     radial-gradient(ellipse 620px 320px at 74% 36%, var(--hero-glow) 0%, transparent 70%),
     radial-gradient(ellipse 1100px 520px at 18% 115%, var(--hero-glow-2) 0%, transparent 70%),
     linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
+}
+
+/* Tepi struk bergerigi (atas & bawah) lewat mask, jadi warna kertas tetap dari token.
+   Bayangan pakai filter drop-shadow di pembungkus (box-shadow ikut terpotong mask). */
+@utility receipt-edges {
+  --tooth: 14px;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / var(--tooth) 51%
+      repeat-x,
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / var(--tooth) 51% repeat-x;
+}
+
+/* Hanya tepi atas bergerigi (sobekan struk di bagian penutup). */
+@utility receipt-edge-top {
+  --tooth: 14px;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / var(--tooth) 51% repeat-x,
+    linear-gradient(#000, #000) 0 100% / 100% 51% no-repeat;
+}
+
+/* Garis potong putus-putus di struk. */
+@utility rule-dashed {
+  background: repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 11px) 0 50% / 100% 1px
+    no-repeat;
+}
+
+/* Barcode hiasan di kaki struk (dekoratif, aria-hidden). */
+@utility barcode {
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0 2px,
+    transparent 2px 4px,
+    currentColor 4px 5px,
+    transparent 5px 8px,
+    currentColor 8px 11px,
+    transparent 11px 12px,
+    currentColor 12px 13px,
+    transparent 13px 16px
+  );
 }
 
 /* Pita garis miring pemisah baris (gaya blueprint). */

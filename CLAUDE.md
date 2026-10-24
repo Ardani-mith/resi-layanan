@@ -30,7 +30,7 @@ src/
 │   ├── SectionError.tsx  # batas error per bagian halaman (client, catchError)
 │   ├── application/      # domain permohonan: ApplyForm, ResiSearch, StatusBadge, Timeline, ReceiptCard (QR + unduh/cetak)
 │   ├── charts/           # index.tsx (StatTile, Meter, weeklyOnTime; server) + ColumnChart.tsx (client)
-│   ├── landing/          # HeroSection, TrackingPreview, SummaryStats, CountUp, Decor (hiasan + ikon)
+│   ├── landing/          # HeroSection, ReceiptSlip (struk resi), SummaryStats, CountUp, Decor (SectionLabel, PageHeader)
 │   └── layout/           # PublicShell (Navbar+Footer), StaffShell (StaffTopBar + StaffTabBar), ThemeToggle
 ├── config/               # site.ts (semua teks landing), staff-nav.ts (menu petugas per peran: tab, dropdown Admin, menu akun)
 ├── lib/                  # logika & akses data (lihat Arsitektur); hooks.ts = hook client (useNow, useAutoRefresh, ...)
@@ -86,6 +86,7 @@ Konvensi: TypeScript `strict`; komponen PascalCase, hook `useXxx`, modul lib hur
 - `getClock()` dan `getCurrentUser()` dibungkus `React.cache`: satu pembacaan per render.
 - Grafik: `components/charts/` (ColumnChart, Meter, StatTile) mengikuti skill dataviz: satu hue `--chart` (divalidasi untuk terang & gelap), tooltip hover + fokus, tabel alternatif. Prop ke Client Component harus bisa diserialisasi (`format="percent"`, bukan fungsi).
 - Mode demo: `resetClock()` juga menghapus eskalasi bertanggal masa depan (hasil simulasi); audit log tidak disentuh.
+- **Identitas visual warga = struk resi**: font mono IBM Plex Mono (`font-mono`, angka & resi), token `paper`/`paper-line`/`ink-soft`, utilitas `receipt-edges`/`receipt-edge-top` (tepi bergerigi lewat mask, bayangan pakai `drop-shadow`), `rule-dashed`, `barcode`. Label bagian = `SectionLabel` (nomor mono + garis rambut), kepala halaman = `PageHeader`. Hindari pola template: label "pil", grid kartu ikon seragam, latar gradien/kisi.
 - Design tokens ada di `src/app/globals.css` (bg-surface, text-muted, bg-late-soft, dst.); semua teks landing ada di `src/config/site.ts` (`as const`; nama ikon diketik sebagai `IconName`).
 - **Sesi dicek ulang ke DB** di `getSession()`: JWT menyimpan `ver` (= `User.sessionVersion`), yang dinaikkan saat peran, status aktif, atau kata sandi berubah. Nama & peran untuk otorisasi diambil dari DB. proxy.ts hanya membaca token (tanpa DB), karena itu proxy tidak mengalihkan `/masuk` (bisa memantul untuk akun nonaktif).
 - Kata sandi sementara (`mustChangePassword`): proxy (klaim `pwd`), `requireStaffPage`, dan `requireUser` mengarahkan/menolak semua kecuali `PASSWORD_PATH`; route ganti kata sandi memakai `requireUser(null, { allowTempPassword: true })`. Admin tidak bisa mengubah/menonaktifkan/me-reset akunnya sendiri dari `/admin/petugas` (selalu tersisa satu admin aktif).
