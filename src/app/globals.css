@@ -41,12 +41,6 @@
   --grid: #e7ecf3;
 
   /* Hero & penutup landing: biru muda bercahaya di mode terang, navy di mode gelap. */
-  --hero-top: #f4f8fe;
-  --hero-bottom: #e2edfa;
-  --hero-glow: rgb(52 132 226 / 0.2);
-  --hero-glow-2: rgb(11 92 173 / 0.12);
-  --hero-pattern: rgb(11 92 173 / 0.07);
-  --hero-hatch: rgb(11 92 173 / 0.12);
   --hero-fg: #0f1b2d;
   --hero-muted: #42536b;
   --hero-soft: rgb(11 92 173 / 0.08);
@@ -56,7 +50,6 @@
   --hero-accent-end: #2b7fd4;
   --hero-alert: #c0362c;
   --hero-chip: rgb(255 255 255 / 0.92);
-  --hero-shadow: rgb(15 27 45 / 0.22);
 
   /* Panel ilustrasi kartu layanan (bergiliran per layanan): latar pastel + aksen. */
   --tint-1: #e4f29e;
@@ -106,12 +99,6 @@
   --chart-track: #1b2a42;
   --grid: #1f2b40;
 
-  --hero-top: #06101e;
-  --hero-bottom: #0a1a33;
-  --hero-glow: rgb(52 132 226 / 0.5);
-  --hero-glow-2: rgb(11 92 173 / 0.5);
-  --hero-pattern: rgb(255 255 255 / 0.035);
-  --hero-hatch: rgb(255 255 255 / 0.09);
   --hero-fg: #ffffff;
   --hero-muted: rgb(255 255 255 / 0.78);
   --hero-soft: rgb(255 255 255 / 0.1);
@@ -121,7 +108,6 @@
   --hero-accent-end: #ffffff;
   --hero-alert: #ffa49a;
   --hero-chip: rgb(13 31 58 / 0.9);
-  --hero-shadow: rgb(0 0 0 / 0.6);
 
   --tint-1: #2c3714;
   --tint-1-accent: #a9cd3c;
@@ -194,26 +180,7 @@ body {
 }
 
 /* --- Landing page --------------------------------------------------------------
-   Hero & penutup: latar bercahaya biru brand (terang: biru muda, gelap: navy).
-   Teks & hiasan di atasnya memakai token hero-* (text-hero-fg, bg-hero-soft, dst.). */
-
-@utility surface-hero {
-  color: var(--hero-fg);
-  background:
-    radial-gradient(ellipse 620px 320px at 74% 36%, var(--hero-glow) 0%, transparent 70%),
-    radial-gradient(ellipse 1100px 520px at 18% 115%, var(--hero-glow-2) 0%, transparent 70%),
-    linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
-}
-
-/* Tepi struk bergerigi (atas & bawah) lewat mask, jadi warna kertas tetap dari token.
-   Bayangan pakai filter drop-shadow di pembungkus (box-shadow ikut terpotong mask). */
-@utility receipt-edges {
-  --tooth: 14px;
-  mask:
-    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / var(--tooth) 51%
-      repeat-x,
-    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / var(--tooth) 51% repeat-x;
-}
+   Teks & hiasan bagian hero/penutup memakai token hero-* (text-hero-fg, bg-hero-soft, dst.). */
 
 /* Hanya tepi atas bergerigi (sobekan struk di bagian penutup). */
 @utility receipt-edge-top {
@@ -227,34 +194,6 @@ body {
 @utility rule-dashed {
   background: repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 11px) 0 50% / 100% 1px
     no-repeat;
-}
-
-/* Barcode hiasan di kaki struk (dekoratif, aria-hidden). */
-@utility barcode {
-  background: repeating-linear-gradient(
-    90deg,
-    currentColor 0 2px,
-    transparent 2px 4px,
-    currentColor 4px 5px,
-    transparent 5px 8px,
-    currentColor 8px 11px,
-    transparent 11px 12px,
-    currentColor 12px 13px,
-    transparent 13px 16px
-  );
-}
-
-/* Pita garis miring pemisah baris (gaya blueprint). */
-@utility pattern-hatch {
-  background: repeating-linear-gradient(45deg, transparent 0 6px, var(--hero-hatch) 6px 7.2px);
-}
-
-/* Kisi halus di latar hero. */
-@utility pattern-grid {
-  background-image:
-    linear-gradient(var(--hero-pattern) 1px, transparent 1px),
-    linear-gradient(90deg, var(--hero-pattern) 1px, transparent 1px);
-  background-size: 56px 56px;
 }
 
 @keyframes rise {
@@ -293,6 +232,17 @@ body {
       animation-range: entry 0% entry 45%;
     }
   }
+}
+
+/* Kantor transparan: ruangan terlambat berdenyut. Mati untuk "kurangi gerakan". */
+@keyframes iso-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+/* Hanya bergerak saat panggung diputar (data-playing, default dari pengaturan "kurangi gerakan"). */
+[data-playing="true"] .iso-pulse {
+  animation: iso-pulse 1.6s ease-in-out infinite;
 }
 
 /* Cetak: jika halaman punya .print-area (mis. bukti resi), hanya bagian itu yang dicetak. */

@@ -137,6 +137,41 @@ export function checkNik(nik: string, serviceSlug: string, now: Date = new Date(
   return { ok: true, ...info, age, needsMarried: age < APPLICANT_MIN_AGE };
 }
 
+// --- Kantor transparan (denah isometrik) ----------------------------------------------
+
+/**
+ * Ruangan di denah "kantor transparan", urut alur berkas. Tahap layanan dipetakan ke ruangan
+ * lewat key tahap; berkas yang menunggu perbaikan warga ada di ruang tunggu (lobi).
+ */
+export const OFFICE_ROOMS = [
+  { key: "lobi", name: "Ruang tunggu", who: "Warga", note: "menunggu perbaikan berkas" },
+  { key: "verifikasi", name: "Loket verifikasi", who: "Petugas Loket", note: "memeriksa berkas asli" },
+  { key: "entri", name: "Entri & perekaman", who: "Petugas Teknis", note: "input SIAK & biometrik" },
+  { key: "kepala", name: "Ruang kepala", who: "Pimpinan", note: "persetujuan & TTE" },
+  { key: "cetak", name: "Ruang cetak", who: "Petugas Teknis", note: "mencetak dokumen" },
+  { key: "ambil", name: "Loket pengambilan", who: "Petugas Loket", note: "dokumen siap diambil" },
+] as const;
+export type OfficeRoomKey = (typeof OFFICE_ROOMS)[number]["key"];
+export type OfficeSnapshot = Record<OfficeRoomKey, { count: number; late: number }>;
+
+const ROOM_BY_STEP: Record<string, OfficeRoomKey> = {
+  verifikasi: "verifikasi",
+  entri: "entri",
+  perekaman: "entri",
+  persetujuan: "kepala",
+  pencetakan: "cetak",
+  penyerahan: "ambil",
+};
+
+/** Ruangan untuk tahap `stepKey` (tahap buatan admin yang tak dikenal → ruang entri). */
+export function roomForStep(stepKey: string | undefined, waitingFix: boolean): OfficeRoomKey {
+  if (waitingFix) return "lobi";
+  return ROOM_BY_STEP[stepKey ?? ""] ?? "entri";
+}
+
+export const emptyOffice = (): OfficeSnapshot =>
+  Object.fromEntries(OFFICE_ROOMS.map((r) => [r.key, { count: 0, late: 0 }])) as OfficeSnapshot;
+
 // --- Tampilan permohonan ------------------------------------------------------------
 
 export type StepViewState = StepState | "ditolak" | "dibatalkan";

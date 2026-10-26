@@ -14,9 +14,18 @@ import { eventsFor, loadByResi } from "./applications.ts";
 import { getClock } from "./clock.ts";
 import { dbConnect } from "./db.ts";
 import { syncOverdue } from "./escalation.ts";
-import { publicView, type QueueItem, queueItem, staffView } from "./present.ts";
+import {
+  emptyOffice,
+  type OfficeSnapshot,
+  publicView,
+  type QueueItem,
+  queueItem,
+  roomForStep,
+  staffView,
+} from "./present.ts";
 import { homeFor, PASSWORD_PATH, type Role } from "./roles.ts";
 import { getSession } from "./session.ts";
+import { stepState } from "./sla.ts";
 import { computeStats, type OpenEscalation, openEscalations } from "./stats.ts";
 import { listStaff, type SessionUser } from "./users.ts";
 import { type ApplicationData, canActOn, OPEN_STATUSES, type ServiceData, STATUS } from "./workflow.ts";
@@ -100,6 +109,22 @@ export async function getServiceCatalog() {
 }
 
 export type CatalogService = Awaited<ReturnType<typeof getServiceCatalog>>[number];
+
+/** Isi denah "kantor transparan": jumlah berkas berjalan & terlambat per ruangan (publik, agregat). */
+export async function getOfficeSnapshot(): Promise<OfficeSnapshot> {
+  const clock = await ready();
+  const apps = await Application.find({ status: { $in: OPEN_STATUSES } })
+    .select("status currentStep steps")
+    .lean<ApplicationData[]>();
+  const office = emptyOffice();
+  for (const app of apps) {
+    const step = app.steps[app.currentStep];
+    const room = office[roomForStep(step?.key, app.status === STATUS.PERLU_PERBAIKAN)];
+    room.count += 1;
+    if (step && stepState(step, clock.now) === "terlambat") room.late += 1;
+  }
+  return office;
+}
 
 export async function getTracking(resi: string) {
   const clock = await ready();

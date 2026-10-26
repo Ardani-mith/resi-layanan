@@ -18,7 +18,8 @@
     "seed": "node --env-file-if-exists=.env.local scripts/seed.ts",
     "seed:master": "node --env-file-if-exists=.env.local scripts/seed.ts --master",
     "user:create": "node --env-file-if-exists=.env.local scripts/create-user.ts",
-    "data:offices": "node scripts/fetch-offices.ts"
+    "data:offices": "node scripts/fetch-offices.ts",
+    "sprite:sheet": "node scripts/pixel-sheet.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

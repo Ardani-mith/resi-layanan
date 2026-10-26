@@ -25,13 +25,11 @@ export const site = {
     body: "Masukkan nomor resi dari loket atau pengajuan online. Tanpa login, tanpa antre bertanya.",
     exampleResi: "RL-HJ26-AKTA",
     highlights: ["Nama pemohon disamarkan", "Tenggat tiap tahap terlihat", "Terlambat? Naik ke atasan"],
-    // Isi struk resi di hero (ilustrasi, bukan data asli).
-    preview: {
-      service: "Akta Kelahiran",
-      applicant: "Si*** R***",
-      submitted: "Sen 09.12 WIB",
-      officerNote: "Berkas lengkap dan sesuai.",
-      promise: "Sel, 10.40 WIB",
+    // Denah "kantor transparan" di hero: isi ruangan dari data permohonan asli.
+    office: {
+      label: "Kantor transparan",
+      caption: "berkas yang sedang berjalan, per ruangan",
+      live: "data langsung",
     },
   },
 
