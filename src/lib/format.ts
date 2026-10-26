@@ -18,12 +18,6 @@ const dateFmt = new Intl.DateTimeFormat("id-ID", {
   month: "long",
   year: "numeric",
 });
-const shortDateFmt = new Intl.DateTimeFormat("id-ID", {
-  timeZone: TZ,
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
 const dayMonthFmt = new Intl.DateTimeFormat("id-ID", { timeZone: TZ, day: "numeric", month: "short" });
 
 type DateInput = Date | string | number | null | undefined;
@@ -39,11 +33,6 @@ export function formatDateTime(value: DateInput): string {
 /** "Senin, 12 Oktober 2026" */
 export function formatDate(value: DateInput): string {
   return valid(value) ? dateFmt.format(new Date(value)) : "—";
-}
-
-/** "12 Okt 2026" */
-export function formatShortDate(value: DateInput): string {
-  return valid(value) ? shortDateFmt.format(new Date(value)) : "—";
 }
 
 /** "12 Okt" */

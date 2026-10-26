@@ -15,7 +15,7 @@ export const P_GLYPH = {
 };
 
 /** Glyph P; warna = currentColor, bulatan status = var(--logo-dot) (bawaan: currentColor). */
-export function PGlyph({ className }: { className?: string }) {
+function PGlyph({ className }: { className?: string }) {
   const { viewBox, stem, bowl, stroke, dot } = P_GLYPH;
   return (
     <svg viewBox={viewBox} fill="currentColor" aria-hidden className={className}>
@@ -44,7 +44,7 @@ export function Wordmark({ className }: { className?: string }) {
   );
 }
 
-/** Ikon persegi (navy tetap di kedua tema) untuk ruang sempit, mis. sidebar yang diciutkan. */
+/** Ikon persegi (navy tetap di kedua tema) untuk ruang sempit, mis. navbar di HP. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <span

@@ -16,13 +16,32 @@ export async function createSession(
     mustChangePassword: user.mustChangePassword,
   });
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+  store.set(SESSION_COOKIE, token, cookieOptions());
+}
+
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: SESSION_MAX_AGE,
+});
+
+/**
+ * Perpanjang batas diam sesi (dipanggil saat petugas berinteraksi). Waktu login tetap, jadi
+ * batas mutlak 12 jam tidak ikut bergeser. null = sesi sudah tidak berlaku (diam terlalu lama,
+ * lewat batas mutlak, atau akun berubah).
+ */
+export async function renewSession(): Promise<SessionUser | null> {
+  const store = await cookies();
+  const claims = await verifySession(store.get(SESSION_COOKIE)?.value);
+  if (!claims) return null;
+  await dbConnect();
+  const user = await loadSessionUser(claims);
+  if (!user) return null;
+  const token = await signSession({ ...claims, name: user.name, role: user.role });
+  store.set(SESSION_COOKIE, token, cookieOptions());
+  return user;
 }
 
 /**

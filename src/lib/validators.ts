@@ -18,7 +18,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Kata sandi wajib diisi."),
 });
 
-export const phoneSchema = z
+const phoneSchema = z
   .string()
   .transform(normalizePhone)
   .pipe(z.string().regex(/^08\d{8,11}$/, "Nomor HP tidak valid, contoh: 081234567890."));
@@ -35,7 +35,7 @@ const ktpText = (max: number, message: string) =>
     .transform((s) => s.toUpperCase());
 
 /** Isi KTP-el. Tanggal lahir & jenis kelamin tidak diminta: dibaca dari NIK di server. */
-export const ktpSchema = z.object({
+const ktpSchema = z.object({
   birthPlace: ktpText(60, "Isi tempat lahir."),
   bloodType: z.enum(BLOOD_TYPES, { error: "Pilih golongan darah." }),
   address: ktpText(120, "Isi alamat."),
@@ -101,7 +101,7 @@ export const actionSchema = z.object({
   evidence: trimmed(120).optional(),
 });
 
-export const last4Schema = z.string().regex(/^\d{4}$/, "Masukkan 4 digit terakhir nomor HP.");
+const last4Schema = z.string().regex(/^\d{4}$/, "Masukkan 4 digit terakhir nomor HP.");
 
 export const trackActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("verify"), phoneLast4: last4Schema }),
@@ -181,6 +181,7 @@ export const serviceSchema = z.object({
   output: trimmed(120).default(""),
   requirements: z.array(trimmed(200).min(1)).max(20, "Maksimal 20 persyaratan."),
   steps: z.array(stepInputSchema).min(2, "Layanan minimal punya 2 tahap.").max(12, "Maksimal 12 tahap."),
+  requiresVisit: z.boolean().default(false),
   isActive: z.boolean().default(true),
   order: z.number().int().min(0).max(999).default(0),
 });
@@ -195,9 +196,7 @@ export type ApplicationInput = z.infer<typeof applicationSchema>;
 export type RecoverInput = z.infer<typeof recoverSchema>;
 // Bentuk input (sebelum default Zod): field opsional tetap opsional bagi pemanggil.
 export type ActionInput = z.input<typeof actionSchema>;
-export type TrackActionInput = z.infer<typeof trackActionSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
-export type StaffActionInput = z.infer<typeof staffActionSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
 export type ServiceInput = z.input<typeof serviceSchema>;
 export type HolidaysInput = z.infer<typeof holidaysSchema>;

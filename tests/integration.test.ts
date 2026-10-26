@@ -15,6 +15,7 @@ import {
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
 import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
+import { decryptNik, hashNik } from "@/lib/pii";
 import { checkNik, publicView } from "@/lib/present";
 import type { Role } from "@/lib/roles";
 import { DAY_MS } from "@/lib/sla";
@@ -41,6 +42,8 @@ async function stored(resi: string): Promise<ApplicationData> {
 }
 
 beforeAll(async () => {
+  // Kunci NIK (lib/pii.ts) diturunkan dari rahasia ini.
+  process.env.SESSION_SECRET ??= "rahasia-tes-integrasi-minimal-32-karakter";
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongod.getUri("resi-test");
   await dbConnect();
@@ -88,9 +91,9 @@ async function newApplication(clock = clockAt()) {
 
 describe("seed", () => {
   it("NIK data demo lolos aturan pengajuan (tanggal lahir valid, pemohon ≥17 tahun)", async () => {
-    const apps = await Application.find().select("+applicant.nik serviceSlug").lean<ApplicationData[]>();
-    const bad = apps.filter((a) => !checkNik(a.applicant.nik ?? "", a.serviceSlug, NOW).ok);
-    expect(bad.map((a) => a.applicant.nik)).toEqual([]);
+    const apps = await Application.find().select("+applicant.nikEnc serviceSlug").lean<ApplicationData[]>();
+    const bad = apps.filter((a) => !checkNik(decryptNik(a.applicant.nikEnc ?? ""), a.serviceSlug, NOW).ok);
+    expect(bad.map((a) => a.resi)).toEqual([]);
   });
 
   it("membuat data dengan status beragam dan tanggal mundur yang dipertahankan", async () => {
@@ -123,15 +126,27 @@ describe("seed", () => {
     expect(byResi["RL-HJ26-SLSE"].rating).toBeNull();
     expect(byResi["RL-HJ26-TLAK"].status).toBe("ditolak");
     expect(byResi["RL-HJ26-TLAK"].rejectionReason).toBeTruthy();
+    expect(byResi["RL-HJ26-DTNG"].status).toBe("menunggu_kedatangan");
+    expect(byResi["RL-HJ26-DTNG"].currentDueAt).toBeNull();
+    expect(byResi["RL-HJ26-DTNG"].escalations).toEqual([]);
   });
 
-  it("NIK tersimpan tapi tidak ikut terbaca secara default", async () => {
+  it("NIK tidak disimpan apa adanya: hash & sandi tersembunyi, tampilan hanya tersamar", async () => {
     const app = await stored("RL-HJ26-AKTA");
-    expect(app.applicant.nik).toBeUndefined();
-    const withNik = await Application.findOne({ resi: "RL-HJ26-AKTA" })
-      .select("+applicant.nik")
+    expect(app.applicant.nikHash).toBeUndefined();
+    expect(app.applicant.nikEnc).toBeUndefined();
+    expect(app.applicant.nikMasked).toMatch(/^\d{4} \d{2}•• •••• \d{4}$/);
+
+    const full = await Application.findOne({ resi: "RL-HJ26-AKTA" })
+      .select("+applicant.nikHash +applicant.nikEnc")
       .lean<ApplicationData>();
-    expect(withNik?.applicant.nik).toMatch(/^\d{16}$/);
+    const nik = decryptNik(full!.applicant.nikEnc!);
+    expect(nik).toMatch(/^\d{16}$/);
+    expect(full!.applicant.nikHash).toBe(hashNik(nik));
+    // Tidak ada NIK 16 digit di dokumen mana pun.
+    expect(
+      JSON.stringify(await Application.find().select("+applicant.nikHash +applicant.nikEnc").lean()),
+    ).not.toMatch(/"\d{16}"/);
   });
 
   it("setiap permohonan punya event 'created' di audit log", async () => {
@@ -297,8 +312,10 @@ describe("pengaman pengajuan online", () => {
 describe("lupa resi", () => {
   it("daftar resi hanya keluar setelah OTP ke nomor yang didaftarkan; data tak cocok tetap dapat kode", async () => {
     const app = await newApplication();
-    const nik = (await Application.findById(app._id).select("+applicant.nik").lean<ApplicationData>())!
-      .applicant.nik!;
+    const nik = decryptNik(
+      (await Application.findById(app._id).select("+applicant.nikEnc").lean<ApplicationData>())!.applicant
+        .nikEnc!,
+    );
     const phone = app.applicant.phone;
 
     // NIK benar, HP salah: kode tetap dikirim (tidak membocorkan), tapi hasilnya kosong.
@@ -531,5 +548,17 @@ describe("statistik", () => {
     const keys = open.map((e) => `${e.resi}|${e.stepName}`);
     expect(new Set(keys).size).toBe(keys.length);
     expect(open.some((e) => e.level === 2)).toBe(true);
+  });
+});
+
+describe("batas kedatangan (layanan wajib hadir)", () => {
+  it("pendaftaran yang tidak didatangi dibatalkan otomatis, sekali saja, dan NIK-nya bisa mendaftar lagi", async () => {
+    const later = new Date(NOW.getTime() + 20 * DAY_MS);
+    await syncOverdue(later);
+    await syncOverdue(later); // idempoten
+    const app = await stored("RL-HJ26-DTNG");
+    expect(app.status).toBe("ditolak");
+    expect(app.rejectionReason).toMatch(/kedaluwarsa/);
+    expect(await Event.countDocuments({ applicationId: app._id, action: "expired" })).toBe(1);
   });
 });

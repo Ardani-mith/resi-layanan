@@ -71,7 +71,10 @@ const applicationSchema = new Schema<ApplicationData>(
       name: { type: String, required: true, trim: true },
       phone: { type: String, required: true },
       email: { type: String, lowercase: true, trim: true, default: null },
-      nik: { type: String, select: false, default: null },
+      // NIK tidak disimpan apa adanya (lib/pii.ts): hash untuk pencarian, sandi untuk kebutuhan resmi.
+      nikHash: { type: String, select: false, default: null },
+      nikEnc: { type: String, select: false, default: null },
+      nikMasked: { type: String, default: null },
       // Isi KTP-el (layanan perekaman KTP-el). Data pribadi: hanya untuk petugas.
       ktp: {
         type: new Schema<KtpDetails>(
@@ -125,7 +128,7 @@ applicationSchema.index({ "steps.dueAt": 1 });
 applicationSchema.index({ status: 1, currentDueAt: 1 });
 applicationSchema.index({ serviceId: 1, createdAt: -1 });
 // Cek permohonan ganda (NIK + layanan yang masih berjalan) & batas pengajuan harian.
-applicationSchema.index({ "applicant.nik": 1, serviceSlug: 1, status: 1 });
+applicationSchema.index({ "applicant.nikHash": 1, serviceSlug: 1, status: 1 });
 applicationSchema.index({ "applicant.phone": 1, createdAt: -1 });
 
 export const Application = defineModel("Application", applicationSchema);
@@ -135,7 +138,8 @@ export const Application = defineModel("Application", applicationSchema);
 export interface VerificationData {
   _id: Types.ObjectId;
   phone: string;
-  nik: string;
+  /** HMAC NIK (lib/pii.ts), bukan NIK asli. */
+  nikHash: string;
   /** Hanya hash kode yang disimpan. */
   codeHash: string;
   attempts: number;
@@ -147,7 +151,7 @@ export interface VerificationData {
 const verificationSchema = new Schema<VerificationData>(
   {
     phone: { type: String, required: true },
-    nik: { type: String, required: true },
+    nikHash: { type: String, required: true },
     codeHash: { type: String, required: true },
     attempts: { type: Number, default: 0 },
     usedAt: { type: Date, default: null },
@@ -187,6 +191,8 @@ const serviceSchema = new Schema<ServiceData>(
       type: [stepTemplateSchema],
       validate: [(v: StepTemplate[]) => v.length >= 2, "Layanan minimal punya 2 tahap."],
     },
+    // Wajib hadir di loket (mis. biometrik KTP-el): pengajuan online = pendaftaran awal.
+    requiresVisit: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
   },
@@ -307,6 +313,9 @@ export interface UserData {
    * saat login; versi berbeda = sesi lama otomatis tidak berlaku lagi.
    */
   sessionVersion: number;
+  /** Login gagal beruntun; mencapai batas → akun dikunci sementara (`lockedUntil`). */
+  failedLogins?: number;
+  lockedUntil?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -321,6 +330,8 @@ const userSchema = new Schema<UserData>(
     isActive: { type: Boolean, default: true },
     mustChangePassword: { type: Boolean, default: false },
     sessionVersion: { type: Number, default: 0 },
+    failedLogins: { type: Number, default: 0, select: false },
+    lockedUntil: { type: Date, default: null, select: false },
   },
   { timestamps: true },
 );

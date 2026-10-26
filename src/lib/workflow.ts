@@ -4,9 +4,19 @@
 
 import type { Types } from "mongoose";
 import type { ActorRole, Role } from "./roles.ts";
-import { computeDueAt, type Holidays, pauseStep, resumeStep } from "./sla.ts";
+import {
+  addWorkHours,
+  computeDueAt,
+  type DateLike,
+  type Holidays,
+  pauseStep,
+  resumeStep,
+  WORKDAY_HOURS,
+} from "./sla.ts";
 
 export const STATUS = {
+  /** Daftar online untuk layanan wajib hadir (mis. KTP-el): tenggat belum berjalan sampai warga datang. */
+  MENUNGGU_KEDATANGAN: "menunggu_kedatangan",
   DIAJUKAN: "diajukan",
   DIPROSES: "diproses",
   SIAP_DIAMBIL: "siap_diambil",
@@ -17,6 +27,7 @@ export const STATUS = {
 export type Status = (typeof STATUS)[keyof typeof STATUS];
 
 export const STATUS_LABELS: Record<Status, string> = {
+  menunggu_kedatangan: "Menunggu Kedatangan",
   diajukan: "Diajukan",
   diproses: "Diproses",
   siap_diambil: "Siap Diambil",
@@ -28,16 +39,19 @@ export const STATUS_LABELS: Record<Status, string> = {
 /** Label aksi di audit log. */
 export const EVENT_LABELS: Record<string, string> = {
   created: "Permohonan dibuat",
+  arrive: "Warga hadir di loket, verifikasi dimulai",
   complete: "Tahap diselesaikan",
   request_fix: "Diminta perbaikan",
   resume: "Berkas dilengkapi, proses dilanjutkan",
   reject: "Permohonan ditolak",
   escalated: "Eskalasi otomatis",
+  expired: "Pendaftaran kedaluwarsa (warga tidak datang)",
   rated: "Warga memberi rating",
 };
 
 /** Konfirmasi untuk petugas setelah aksi (antrean & panel detail, dari ?selesai=&aksi=). */
 export const ACTION_DONE: Record<string, string> = {
+  arrive: "kedatangan warga dicatat, hitung mundur verifikasi dimulai",
   complete: "tahap diselesaikan dan diteruskan ke tahap berikutnya",
   request_fix: "permintaan perbaikan dikirim ke warga",
   resume: "berkas lengkap, proses dilanjutkan",
@@ -46,10 +60,15 @@ export const ACTION_DONE: Record<string, string> = {
 
 /** Status yang tahapnya sedang berjalan (hitung mundur aktif). */
 export const RUNNING_STATUSES: readonly Status[] = [STATUS.DIAJUKAN, STATUS.DIPROSES, STATUS.SIAP_DIAMBIL];
-/** Status yang belum final (termasuk yang dijeda). */
-export const OPEN_STATUSES: readonly Status[] = [...RUNNING_STATUSES, STATUS.PERLU_PERBAIKAN];
+/** Menunggu warga (datang pertama kali atau melengkapi berkas): tanpa hitung mundur instansi. */
+export const WAITING_CITIZEN_STATUSES: readonly Status[] = [
+  STATUS.MENUNGGU_KEDATANGAN,
+  STATUS.PERLU_PERBAIKAN,
+];
+/** Status yang belum final (termasuk yang dijeda / belum dimulai). */
+export const OPEN_STATUSES: readonly Status[] = [...RUNNING_STATUSES, ...WAITING_CITIZEN_STATUSES];
 
-export const ACTIONS = ["complete", "request_fix", "resume", "reject"] as const;
+export const ACTIONS = ["arrive", "complete", "request_fix", "resume", "reject"] as const;
 export type Action = (typeof ACTIONS)[number];
 
 // --- Bentuk data (sama dengan skema di models.ts) ----------------------------------
@@ -120,7 +139,12 @@ export interface Applicant {
   name: string;
   phone: string;
   email: string | null;
-  nik?: string | null;
+  /** HMAC NIK untuk pencarian (lib/pii.ts). NIK asli tidak disimpan. */
+  nikHash?: string | null;
+  /** NIK terenkripsi AES-256-GCM, untuk kebutuhan resmi (decryptNik). */
+  nikEnc?: string | null;
+  /** Kode wilayah + 4 digit terakhir, untuk tampilan petugas. */
+  nikMasked?: string | null;
   ktp?: KtpDetails | null;
 }
 
@@ -138,6 +162,11 @@ export interface ServiceData {
   output: string;
   requirements: string[];
   steps: StepTemplate[];
+  /**
+   * Wajib hadir di loket (mis. KTP-el: perekaman biometrik). Pengajuan online menjadi pendaftaran
+   * awal berstatus "menunggu_kedatangan"; tenggat tahap pertama baru berjalan saat warga datang.
+   */
+  requiresVisit?: boolean;
   isActive: boolean;
   order: number;
 }
@@ -214,7 +243,10 @@ function startStep(step: Step, now: Date, holidays?: Holidays) {
   step.pausedAt = null;
 }
 
-/** Objek permohonan baru; tahapan disalin dari template layanan (snapshot). */
+/**
+ * Objek permohonan baru; tahapan disalin dari template layanan (snapshot).
+ * `awaitVisit`: tahap pertama belum dimulai (status menunggu_kedatangan, tanpa tenggat).
+ */
 export function buildApplication<R extends string | null>({
   service,
   applicant,
@@ -223,6 +255,7 @@ export function buildApplication<R extends string | null>({
   now,
   holidays,
   requirementsChecked = [],
+  awaitVisit = false,
 }: {
   service: Pick<ServiceData, "_id" | "name" | "slug" | "steps"> & { requirements?: string[] };
   applicant: Applicant;
@@ -231,6 +264,7 @@ export function buildApplication<R extends string | null>({
   now: Date;
   holidays?: Holidays;
   requirementsChecked?: string[];
+  awaitVisit?: boolean;
 }): Omit<ApplicationData, "resi"> & { resi: R } {
   const steps: Step[] = service.steps.map((s) => ({
     key: s.key,
@@ -255,7 +289,7 @@ export function buildApplication<R extends string | null>({
     publicNote: null,
     internalNote: null,
   }));
-  startStep(steps[0], now, holidays);
+  if (!awaitVisit) startStep(steps[0], now, holidays);
   return {
     resi,
     serviceId: service._id,
@@ -263,7 +297,7 @@ export function buildApplication<R extends string | null>({
     serviceSlug: service.slug,
     applicant,
     channel,
-    status: STATUS.DIAJUKAN,
+    status: awaitVisit ? STATUS.MENUNGGU_KEDATANGAN : STATUS.DIAJUKAN,
     currentStep: 0,
     currentDueAt: steps[0].dueAt,
     steps,
@@ -285,12 +319,12 @@ type WorkflowApp = Pick<
  * Peran yang boleh menindak tahap saat ini: HANYA peran pemilik tahap (pemisahan tugas).
  * Pimpinan & admin tidak bisa menyelesaikan tahap peran lain, termasuk yang terlambat: mereka
  * memantau lewat eskalasi, supaya jelas siapa yang mengerjakan apa di timeline & audit log.
- * Pengecualian: berkas yang menunggu perbaikan ditangani petugas loket.
+ * Pengecualian: berkas yang menunggu warga (datang / perbaikan) ditangani petugas loket.
  */
 export function canActOn(app: Pick<ApplicationData, "status" | "currentStep" | "steps">, role: ActorRole) {
   const step = app.steps[app.currentStep];
   if (!step) return false;
-  if (app.status === STATUS.PERLU_PERBAIKAN && role === "petugas_loket") return true;
+  if (WAITING_CITIZEN_STATUSES.includes(app.status) && role === "petugas_loket") return true;
   return step.role === role;
 }
 
@@ -338,6 +372,18 @@ export function applyAction(
   const cleanInternal = internalNote?.trim() || null;
 
   switch (action) {
+    case "arrive": {
+      // Warga datang membawa dokumen asli: tahap pertama (verifikasi) mulai dan tenggatnya berjalan.
+      if (app.status !== STATUS.MENUNGGU_KEDATANGAN) {
+        throw new WorkflowError("invalid_state", "Permohonan ini tidak sedang menunggu kedatangan warga.");
+      }
+      startStep(step, now, holidays);
+      if (cleanInternal) step.internalNote = cleanInternal;
+      app.status = statusForStep(app.currentStep, app.steps.length);
+      app.currentDueAt = step.dueAt;
+      break;
+    }
+
     case "complete": {
       if (!RUNNING_STATUSES.includes(app.status)) {
         throw new WorkflowError("invalid_state", "Permohonan ini tidak sedang berjalan.");
@@ -424,6 +470,43 @@ export function applyAction(
   payload.to = app.status;
   if (cleanPublic) payload.publicNote = cleanPublic;
   return { action, payload };
+}
+
+// --- Batas kedatangan (layanan wajib hadir) ----------------------------------------
+
+/** Pendaftaran online layanan wajib hadir berlaku 10 hari kerja; lewat itu dibatalkan otomatis. */
+const ARRIVAL_WINDOW_WORK_HOURS = 10 * WORKDAY_HOURS;
+
+/** Batas warga datang ke loket untuk pendaftaran yang dibuat pada `createdAt`. */
+export function arrivalDeadline(createdAt: DateLike, holidays?: Holidays): Date {
+  return addWorkHours(createdAt, ARRIVAL_WINDOW_WORK_HOURS, holidays);
+}
+
+export const EXPIRED_REASON =
+  "Pendaftaran kedaluwarsa karena tidak datang ke loket dalam 10 hari kerja. Silakan daftar ulang bila masih memerlukan layanan ini.";
+
+/**
+ * Batalkan pendaftaran yang lewat batas kedatangan (status final "ditolak" dengan alasan yang
+ * terlihat warga), supaya NIK-nya tidak terkunci oleh cek permohonan ganda selamanya.
+ * null = belum waktunya / bukan pendaftaran yang menunggu.
+ */
+export function expireArrival(
+  app: Pick<
+    ApplicationData,
+    "status" | "createdAt" | "currentStep" | "steps" | "currentDueAt" | "rejectionReason" | "completedAt"
+  >,
+  now: DateLike,
+  holidays?: Holidays,
+): AuditEntry | null {
+  if (app.status !== STATUS.MENUNGGU_KEDATANGAN) return null;
+  const deadline = arrivalDeadline(app.createdAt, holidays);
+  if (new Date(now) < deadline) return null;
+  app.status = STATUS.DITOLAK;
+  app.rejectionReason = EXPIRED_REASON;
+  app.steps[app.currentStep].publicNote = EXPIRED_REASON;
+  app.currentDueAt = null;
+  app.completedAt = deadline;
+  return { action: "expired", payload: { from: STATUS.MENUNGGU_KEDATANGAN, to: STATUS.DITOLAK, deadline } };
 }
 
 /** Rating hanya untuk permohonan selesai, sekali saja. */

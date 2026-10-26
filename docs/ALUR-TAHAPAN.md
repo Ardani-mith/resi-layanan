@@ -2,7 +2,7 @@
 
 ## Ringkasnya
 
-Setiap permohonan berjalan berurutan dari satu tahap ke tahap berikutnya. Setiap tahap dipegang oleh **satu peran petugas** dan punya **tenggat dalam hari kerja**. Tahap berikutnya baru dimulai setelah petugas tahap sebelumnya menekan "selesai".
+Setiap permohonan berjalan berurutan dari satu tahap ke tahap berikutnya. Setiap tahap dipegang oleh **satu peran petugas** dan punya **tenggat dalam jam kerja**. Tahap berikutnya baru dimulai setelah petugas tahap sebelumnya menekan "selesai".
 
 Tenggat dihitung dalam **jam kerja** (Senin–Jumat 08.00–16.00 WIB). Setelah berkas dinyatakan lengkap, dokumen terbit paling lama **24 jam / 1 hari kerja** (Permendagri 19/2018).
 
@@ -14,30 +14,23 @@ Tenggat dihitung dalam **jam kerja** (Senin–Jumat 08.00–16.00 WIB). Setelah 
 | 4 | Pencetakan akta | Petugas Teknis | 1 jam kerja | Mencetak kutipan akta. |
 | 5 | Siap diambil di loket | Petugas Loket | tanpa tenggat | Menyerahkan dokumen saat warga datang. Selesai setelah diserahkan. |
 
-## Posisi di screenshot saat ini
-
-> Screenshot ini diambil sebelum SLA diubah ke jam kerja. Dengan aturan sekarang, tahap Persetujuan bertenggat 1 jam kerja, bukan 1 hari kerja.
-
-```
-✔ Verifikasi berkas           selesai 14 Okt, tepat waktu
-✔ Entri & validasi data       selesai 22 Okt, MELEWATI tenggat (tercatat di rapor)
-▶ Persetujuan & TTE           ← SEKARANG di tangan PIMPINAN
-                                sisa ±24 jam, tenggat Jum 23 Okt 16.07 WIB
-○ Pencetakan akta             menunggu (Petugas Teknis)
-○ Siap diambil di loket       menunggu (Petugas Loket)
-```
-
-- **Sekarang dipegang oleh: Pimpinan.** Di data demo, akunnya Drs. Hendra Gunawan (`pimpinan@resi.demo`). Permohonan ini muncul di antrean `/kerja` miliknya.
-- Petugas Teknis sudah menyelesaikan tahap 2. Karena terlambat, keterlambatan itu tercatat permanen di timeline dan rapor SLA, tapi **tidak** menahan proses.
-- Hitung mundur tahap 3 dimulai saat tahap 2 selesai: 1 hari kerja, berakhir Jumat 23 Okt pukul 16.07.
-- Warga **tidak perlu melakukan apa pun**. Halaman lacak menampilkan "Tidak ada yang perlu Anda lakukan sekarang".
-
-## Yang terjadi berikutnya
+## Setelah tahap berjalan
 
 - **Pimpinan menyetujui tepat waktu** → tahap 4 (Pencetakan) otomatis pindah ke antrean Petugas Teknis.
 - **Lewat tenggat** → tahap ditandai "Terlambat" dan otomatis dieskalasi: level 1 saat melewati tenggat, level 2 setelah +1 hari kerja (8 jam kerja). Eskalasi tampil di `/pantau`. Warga melihat "sudah diteruskan ke atasan petugas".
 - **Setelah tahap 4** → status "Siap Diambil". Warga melihat peta lokasi dan daftar berkas yang dibawa.
 - **Setelah diserahkan di loket** → status "Selesai" dan warga bisa memberi penilaian.
+
+## Layanan wajib hadir (KTP-el)
+
+Perekaman biometrik (foto, sidik jari, iris) tidak bisa dilakukan online. Karena itu, untuk layanan yang ditandai **wajib hadir** (`requiresVisit`, diatur di `/admin/layanan`):
+
+| Kanal | Status awal | Tenggat tahap 1 |
+|---|---|---|
+| Online | **Menunggu Kedatangan**: pendaftaran awal, data sudah tersimpan | Belum berjalan. Tidak ada keterlambatan atau eskalasi selama warga belum datang. |
+| Loket | Diajukan (warga sudah hadir) | Langsung berjalan |
+
+Saat warga datang, petugas loket mencari resinya di tab **"Menunggu datang"** lalu menekan **"Warga sudah hadir"**. Kedatangan tercatat di audit log, dan hitung mundur verifikasi dimulai saat itu. Setelahnya alurnya sama: petugas memeriksa dokumen asli lalu menyelesaikan tahap. Contoh di data demo: `RL-HJ26-DTNG` (4 digit HP 2468).
 
 ## Aturan penting
 

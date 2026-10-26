@@ -2,11 +2,12 @@
 
 import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { Alert, buttonClass, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ActiveService } from "@/lib/dal";
 import { formatDate, formatWorkHours } from "@/lib/format";
+import { useResetOnHide } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
 import {
   APPLICANT_MIN_AGE,
@@ -270,19 +271,41 @@ function MinorKtpQuestion({
 /** Kode OTP yang sedang menunggu diisi (pengajuan online). */
 type OtpChallenge = { id: string; phoneMasked: string; demoCode?: string };
 
+type ApplyFormProps = { services: ActiveService[]; initialSlug?: string; channel?: Channel };
+
 /**
  * Form pengajuan permohonan. channel="online" untuk warga, "loket" untuk petugas
  * yang menginput warga walk-in (server memeriksa perannya).
+ *
+ * Setelah berhasil, halaman form hanya disembunyikan (Activity), jadi isiannya dibuang saat itu:
+ * di loket komputer dipakai bergantian, warga berikutnya tidak boleh melihat NIK/HP warga
+ * sebelumnya. Draf yang belum dikirim tetap tersimpan bila warga berpindah halaman sebentar.
  */
-export default function ApplyForm({
+export default function ApplyForm(props: ApplyFormProps) {
+  const [generation, setGeneration] = useState(0);
+  const submitted = useRef(false);
+  useResetOnHide(() => {
+    if (!submitted.current) return;
+    submitted.current = false;
+    setGeneration((g) => g + 1);
+  });
+  return (
+    <ApplyFormBody
+      key={generation}
+      {...props}
+      onSubmitted={() => {
+        submitted.current = true;
+      }}
+    />
+  );
+}
+
+function ApplyFormBody({
   services,
   initialSlug,
   channel = "online",
-}: {
-  services: ActiveService[];
-  initialSlug?: string;
-  channel?: Channel;
-}) {
+  onSubmitted,
+}: ApplyFormProps & { onSubmitted: () => void }) {
   const router = useRouter();
   const [slug, setSlug] = useState(
     services.some((s) => s.slug === initialSlug) ? initialSlug : services[0]?.slug,
@@ -402,6 +425,7 @@ export default function ApplyForm({
       return;
     }
     // pending tetap true sampai halaman sukses terbuka, mencegah pengajuan ganda.
+    onSubmitted();
     router.push(`/ajukan/sukses?resi=${res.data.resi}${isLoket ? "&loket=1" : ""}`);
   }
 
@@ -516,7 +540,9 @@ export default function ApplyForm({
             <p className="clear-both pt-1 text-sm text-muted">
               {isLoket
                 ? "Centang dokumen yang sudah diperiksa di loket."
-                : "Versi ini belum menerima unggahan berkas. Centang dokumen yang sudah Anda siapkan; petugas akan memverifikasinya."}
+                : service.requiresVisit
+                  ? "Layanan ini wajib datang ke loket (perekaman biometrik). Centang dokumen yang sudah Anda siapkan dan bawa aslinya saat datang."
+                  : "Versi ini belum menerima unggahan berkas. Centang dokumen yang sudah Anda siapkan; petugas akan memverifikasinya."}
             </p>
             <ul className="mt-3 space-y-2">
               {service.requirements.map((r) => (
@@ -627,6 +653,12 @@ export default function ApplyForm({
             19/2018: maks. 24 jam). Jam kerja Senin–Jumat 08.00–16.00 WIB; setiap tahap punya tenggat yang
             bisa Anda pantau.
           </p>
+          {service.requiresVisit && !isLoket && (
+            <p className="mt-3 rounded-xl border-l-4 border-warn bg-warn-soft/60 px-3 py-2 text-sm">
+              <span className="font-semibold">Wajib datang ke loket.</span> Pengajuan online ini mendaftarkan
+              data Anda lebih dulu; hitung mundur dimulai saat Anda hadir dengan dokumen asli.
+            </p>
+          )}
         </div>
         <Alert>{errors.form}</Alert>
         {otp ? (

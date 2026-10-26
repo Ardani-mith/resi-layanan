@@ -4,6 +4,7 @@
 
 import type { Types } from "mongoose";
 import { ESCALATION_LEVELS, escalationThreshold, pendingEscalations } from "../src/lib/escalation.ts";
+import { protectNik } from "../src/lib/pii.ts";
 import type { Role } from "../src/lib/roles.ts";
 import { addWorkHours, DAY_MS, type Holidays, isWorkday } from "../src/lib/sla.ts";
 import {
@@ -67,6 +68,8 @@ export const SERVICES: ServiceSeed[] = [
     name: "Perekaman KTP-el",
     slug: "perekaman-ktp-el",
     order: 1,
+    // Biometrik wajib hadir: pengajuan online = pendaftaran awal, tenggat mulai saat warga datang.
+    requiresVisit: true,
     description:
       "Perekaman data biometrik (foto, sidik jari, iris) dan penerbitan KTP elektronik untuk warga yang baru berusia 17 tahun atau belum pernah merekam.",
     output: "KTP elektronik",
@@ -317,6 +320,7 @@ class Sim {
       now: createdAt,
       holidays,
       requirementsChecked: service.requirements,
+      awaitVisit: channel === "online" && Boolean(service.requiresVisit),
     });
     this.app.updatedAt = createdAt;
     this.time = createdAt;
@@ -459,13 +463,23 @@ export function buildDemoApplications({
     last4?: string;
     createdAt?: Date | number;
     channel?: Channel;
+    /** false = biarkan "menunggu kedatangan" (layanan wajib hadir, pengajuan online). */
+    arrive?: boolean;
   };
 
   // --- Resi demo tetap: mudah diketik saat presentasi --------------------------
-  const makeSim = ({ resi = null, slug, name, last4, createdAt = 0, channel = "online" }: Spec) =>
-    new Sim({
+  const makeSim = ({
+    resi = null,
+    slug,
+    name,
+    last4,
+    createdAt = 0,
+    channel = "online",
+    arrive = true,
+  }: Spec) => {
+    const sim = new Sim({
       service: bySlug[slug],
-      applicant: { name, phone: randomPhone(rng, last4), email: null, nik: randomNik(rng) },
+      applicant: { name, phone: randomPhone(rng, last4), email: null, ...protectNik(randomNik(rng)) },
       channel,
       resi,
       createdAt: createdAt instanceof Date ? createdAt : officeTime(now, createdAt, rng, holidays),
@@ -474,6 +488,10 @@ export function buildDemoApplications({
       creator: channel === "loket" ? loket[0] : null,
       limit: now,
     });
+    // Daftar online layanan wajib hadir: warga datang beberapa jam kemudian, baru tenggat berjalan.
+    if (arrive && sim.app.status === "menunggu_kedatangan") sim.act("arrive", sim.later(3, rng));
+    return sim;
+  };
   const fixed = (spec: Spec & { createdAt: number }) => {
     const sim = makeSim(spec);
     sims.push(sim);
@@ -542,6 +560,15 @@ export function buildDemoApplications({
     });
     sim.act("reject", sim.later(4, rng), { publicNote: REJECT_NOTES[1] });
   }
+  // 4b) KTP-el daftar online, warga belum datang: untuk demo "Warga sudah hadir" di loket.
+  fixed({
+    resi: "RL-HJ26-DTNG",
+    slug: "perekaman-ktp-el",
+    name: "Nadia Safitri",
+    last4: "2468",
+    createdAt: 1,
+    arrive: false,
+  });
   // 5) Kasus terlambat tambahan supaya dashboard pimpinan selalu berisi, termasuk
   //    bottleneck di tahap tanda tangan pimpinan sendiri (level 2 → Kabid).
   lateCase({ slug: "perubahan-kk", name: "Agus Kurniawan" }, 2, 2);
@@ -570,7 +597,7 @@ export function buildDemoApplications({
         name: `${pick(FIRST)} ${pick(LAST)}`,
         phone: randomPhone(rng),
         email: rng() < 0.5 ? `warga${i}@contoh.id` : null,
-        nik: randomNik(rng),
+        ...protectNik(randomNik(rng)),
       },
       channel,
       resi: null,
@@ -582,6 +609,11 @@ export function buildDemoApplications({
     });
     sims.push(sim);
     if (fresh) continue;
+    if (sim.app.status === "menunggu_kedatangan") {
+      const at = sim.later(2 + rng() * 30, rng);
+      if (at > now) continue;
+      sim.act("arrive", at);
+    }
 
     // Profil kecepatan: sebagian besar tepat waktu, sebagian molor di satu tahap.
     // Permohonan lama lebih sering molor → tren tepat waktu di rapor membaik dari minggu ke minggu.

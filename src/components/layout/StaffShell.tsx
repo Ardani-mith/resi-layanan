@@ -10,13 +10,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { Wordmark } from "@/components/Logo";
+import { buttonClass } from "@/components/ui";
 import { site } from "@/config/site";
 import { ACCOUNT_LINKS, activeHref, ADMIN_SECTION, navFor, type NavItem } from "@/config/staff-nav";
 import { cn } from "@/lib/cn";
 import { formatDuration } from "@/lib/format";
+import { useResetOnHide } from "@/lib/hooks";
 import { postJson } from "@/lib/http";
 import { isValidResi, normalizeResi } from "@/lib/resi";
-import { homeFor, ROLE_LABELS } from "@/lib/roles";
+import { homeFor, ROLE_LABELS, SESSION_IDLE_SECONDS, SESSION_WARN_SECONDS } from "@/lib/roles";
 import type { SessionUser } from "@/lib/users";
 
 export type StaffUser = Pick<SessionUser, "name" | "role" | "mustChangePassword">;
@@ -31,6 +33,8 @@ function menuFor(user: StaffUser) {
 
 /** Tutup popover saat klik di luar `ref` atau menekan Escape. */
 function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, close: () => void) {
+  // Menu tidak boleh tetap terbuka saat area petugas disembunyikan (mis. setelah klik Keluar).
+  useResetOnHide(close);
   useEffect(() => {
     if (!open) return;
     const onPointer = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && close();
@@ -189,6 +193,8 @@ const initials = (name: string) =>
 function LogoutButton({ className, children }: { className: string; children: ReactNode }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  // Area petugas disembunyikan (bukan dibuang) setelah keluar: tombol harus aktif lagi saat login berikutnya.
+  useResetOnHide(() => setPending(false));
   async function logout() {
     setPending(true);
     await postJson("/api/auth/logout");
@@ -349,5 +355,91 @@ export function StaffTabBar({ user }: { user: StaffUser }) {
         )}
       </div>
     </nav>
+  );
+}
+
+// --- Batas diam sesi ------------------------------------------------------------------
+
+const LAST_ACTIVE_KEY = "staff-last-active";
+const IDLE_MS = SESSION_IDLE_SECONDS * 1000;
+const WARN_MS = SESSION_WARN_SECONDS * 1000;
+const RENEW_EVERY_MS = 60_000;
+
+/** Aktivitas terakhir di tab mana pun (localStorage), supaya tab yang diam tidak mengeluarkan tab yang aktif. */
+function readLastActive(fallback: number) {
+  try {
+    return Math.max(fallback, Number(localStorage.getItem(LAST_ACTIVE_KEY)) || 0);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Keluar otomatis setelah 30 menit tanpa interaksi (komputer loket dipakai bergantian).
+ * Interaksi nyata memperpanjang sesi di server (maks. ~1x/menit); refresh otomatis antrean
+ * tidak, jadi tab yang ditinggalkan tetap kedaluwarsa walau terus memuat data.
+ */
+export function IdleGuard() {
+  const lastActive = useRef(0);
+  const lastRenew = useRef(0);
+  const [warnLeft, setWarnLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    let ended = false;
+    const end = async (reason: "diam" | "habis") => {
+      if (ended) return;
+      ended = true;
+      await postJson("/api/auth/logout");
+      // Muat ulang penuh: semua state halaman petugas (Activity) ikut dibuang.
+      window.location.replace(`/masuk?alasan=${reason}`);
+    };
+    const renew = async () => {
+      lastRenew.current = Date.now();
+      const res = await postJson("/api/auth/activity");
+      if (!res.ok && res.status === 401) void end("habis");
+    };
+    const onActivity = () => {
+      const now = Date.now();
+      lastActive.current = now;
+      try {
+        localStorage.setItem(LAST_ACTIVE_KEY, String(now));
+      } catch {}
+      setWarnLeft(null);
+      if (now - lastRenew.current > RENEW_EVERY_MS) void renew();
+    };
+    const tick = () => {
+      const idle = Date.now() - readLastActive(lastActive.current);
+      if (idle >= IDLE_MS) void end("diam");
+      else setWarnLeft(idle >= IDLE_MS - WARN_MS ? IDLE_MS - idle : null);
+    };
+    const events = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+    for (const name of events) window.addEventListener(name, onActivity, { passive: true });
+    onActivity();
+    const timer = window.setInterval(tick, 1000);
+    return () => {
+      for (const name of events) window.removeEventListener(name, onActivity);
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  if (warnLeft === null) return null;
+  const seconds = Math.ceil(warnLeft / 1000);
+  return (
+    <div
+      role="alert"
+      className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-md flex-wrap items-center gap-3 rounded-card border-2 border-warn bg-surface p-4 shadow-card md:bottom-6"
+    >
+      <Clock aria-hidden className="size-5 shrink-0 text-warn" />
+      <p className="min-w-0 flex-1 text-sm">
+        <span className="font-semibold">
+          Sesi berakhir dalam {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+        </span>{" "}
+        karena tidak ada aktivitas.
+      </p>
+      {/* Klik apa pun sudah dihitung aktivitas; tombol ini hanya memperjelas. */}
+      <button type="button" className={buttonClass("primary", "min-h-9 px-3")}>
+        Tetap masuk
+      </button>
+    </div>
   );
 }

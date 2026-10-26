@@ -8,6 +8,7 @@ import {
   Copy,
   FileWarning,
   type LucideIcon,
+  MapPin,
   PackageCheck,
   ShieldCheck,
   Star,
@@ -15,9 +16,9 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
+import { StatusBadge } from "@/components/application/Badges";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
-import StatusBadge from "@/components/application/StatusBadge";
 import Timeline from "@/components/application/Timeline";
 import { Alert, Button, buttonClass, DemoClockBanner } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -287,6 +288,27 @@ export default function TrackView({
 
   function nextStep() {
     switch (data.status) {
+      case "menunggu_kedatangan":
+        return (
+          <NextStep tone="brand" icon={MapPin} title="Datang ke loket untuk memulai proses">
+            {data.arrivalDeadline && (
+              <p className="rounded-xl bg-brand-soft px-3 py-2 font-medium">
+                Datang paling lambat {formatDateTime(data.arrivalDeadline)}. Lewat dari itu pendaftaran
+                dibatalkan otomatis dan Anda perlu mendaftar ulang.
+              </p>
+            )}
+            <p>
+              Pendaftaran Anda tersimpan. {data.serviceName} wajib datang langsung karena ada perekaman
+              biometrik (foto, sidik jari, iris) dan pemeriksaan dokumen asli. Datang pada jam kerja dan bawa:
+            </p>
+            <Checklist items={bring} />
+            <p className="text-muted">
+              Hitung mundur layanan dimulai saat Anda hadir dan berkas diperiksa, jadi waktu sebelum Anda
+              datang tidak dihitung sebagai keterlambatan siapa pun. Setelah berkas lengkap, dokumen terbit
+              paling lambat 1 hari kerja.
+            </p>
+          </NextStep>
+        );
       case "perlu_perbaikan":
         return (
           <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
@@ -437,8 +459,9 @@ export default function TrackView({
   }
 
   // Peta terbuka saat warga memang perlu datang; selain itu ringkas (bisa dibuka bila perlu).
-  const mustVisit = data.status === "perlu_perbaikan" || data.status === "siap_diambil";
+  const mustVisit = ["menunggu_kedatangan", "perlu_perbaikan", "siap_diambil"].includes(data.status);
   const mapTitle = {
+    menunggu_kedatangan: "Datang ke lokasi layanan",
     perlu_perbaikan: "Lengkapi berkas di lokasi layanan",
     siap_diambil: "Ambil dokumen di lokasi layanan",
     ditolak: "Tanyakan ke lokasi layanan",

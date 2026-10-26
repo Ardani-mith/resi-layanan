@@ -1,7 +1,7 @@
 // Hook React untuk Client Component. Tanpa "use client": modul ini tidak dirender
 // sendiri, hanya diimpor oleh komponen yang sudah client.
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 // --- useNow: satu jam bersama untuk semua hitung mundur di halaman -------------------
 // Saat render server & hidrasi, snapshot = null, sehingga komponen memakai waktu
@@ -34,6 +34,20 @@ function subscribeNow(listener: () => void) {
  * Waktu "sekarang" sistem dalam ms. `serverNow` = waktu saat server merender,
  * `offsetMs` = geseran mode demo, supaya hitung mundur di browser ikut maju.
  */
+/**
+ * Next 16 (cacheComponents) tidak meng-unmount halaman yang ditinggalkan, tapi menyembunyikannya
+ * dengan React <Activity> (maks. 3 rute): state & isian DOM tetap tersimpan dan muncul lagi saat
+ * halaman dibuka kembali. Untuk state sementara (tombol "Memeriksa…", kata sandi, data warga yang
+ * sudah terkirim) itu keliru, jadi `reset` dipanggil saat komponen disembunyikan atau di-unmount.
+ */
+export function useResetOnHide(reset: () => void) {
+  const latest = useRef(reset);
+  useLayoutEffect(() => {
+    latest.current = reset;
+  });
+  useLayoutEffect(() => () => latest.current(), []);
+}
+
 export function useNow(serverNow: string | Date, offsetMs = 0): number {
   const clientNow = useSyncExternalStore(
     subscribeNow,

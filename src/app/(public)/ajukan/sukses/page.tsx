@@ -64,6 +64,9 @@ async function Success({ searchParams }: SearchParamsOf) {
 
   const [data, receipt] = await Promise.all([getTracking(resi), receiptFor(resi)]);
   const current = data?.steps[data.currentStep];
+  // Layanan wajib hadir (mis. KTP-el): pendaftaran online, tenggat mulai saat warga datang.
+  const awaiting = data?.status === "menunggu_kedatangan";
+  const n = (step: number) => (awaiting ? step + 1 : step);
   const bring = [
     "Bukti resi (QR di halaman ini)",
     "KTP-el atau KK asli pemohon",
@@ -105,24 +108,48 @@ async function Success({ searchParams }: SearchParamsOf) {
               Apa yang terjadi selanjutnya?
             </h2>
             <p className="mt-1 text-sm text-muted">
-              {isLoket ? "Warga" : "Anda"} tidak perlu datang ke kantor sampai dokumen siap diambil, kecuali
-              diminta melengkapi berkas.
+              {awaiting
+                ? "Layanan ini wajib datang langsung ke loket untuk perekaman biometrik dan pemeriksaan dokumen asli. Hitung mundur layanan dimulai saat Anda hadir."
+                : `${isLoket ? "Warga" : "Anda"} tidak perlu datang ke kantor sampai dokumen siap diambil, kecuali diminta melengkapi berkas.`}
             </p>
             <ol className="mt-5">
-              <Step n={1} done title="Permohonan diterima">
+              <Step n={1} done title={awaiting ? "Pendaftaran diterima" : "Permohonan diterima"}>
                 Nomor resi {resi} sudah aktif dan bisa dilacak kapan saja.
               </Step>
-              <Step n={2} title={current ? `${current.name}` : "Pemeriksaan berkas"}>
+              {awaiting && (
+                <Step n={2} title="Datang ke loket dengan dokumen asli">
+                  <p>
+                    Pada jam kerja (Senin–Jumat 08.00–16.00 WIB)
+                    {data?.arrivalDeadline && (
+                      <>
+                        , paling lambat{" "}
+                        <span className="font-medium text-text">{formatDateTime(data.arrivalDeadline)}</span>
+                      </>
+                    )}
+                    . Bawa:
+                  </p>
+                  <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-text sm:grid-cols-2">
+                    {bring.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </Step>
+              )}
+              <Step n={n(2)} title={current ? `${current.name}` : "Pemeriksaan berkas"}>
                 {current?.dueAt ? (
                   <>
                     Paling lambat{" "}
                     <span className="font-medium text-text">{formatDateTime(current.dueAt)}</span>.{" "}
                   </>
                 ) : null}
+                {awaiting && "Dimulai saat Anda hadir; tenggatnya baru berjalan sejak itu. "}
                 Jika ada yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi dihentikan
                 sampai berkas dilengkapi.
               </Step>
-              <Step n={3} title="Dokumen terbit ≤ 24 jam setelah berkas lengkap">
+              <Step n={n(3)} title="Dokumen terbit ≤ 24 jam setelah berkas lengkap">
                 Sesuai Permendagri 19/2018, dihitung dalam jam kerja (Senin–Jumat 08.00–16.00 WIB).
                 {data?.estimatedCompletion && (
                   <>
@@ -133,10 +160,10 @@ async function Success({ searchParams }: SearchParamsOf) {
                 )}{" "}
                 Tahap yang terlambat diteruskan otomatis ke atasan petugas.
               </Step>
-              <Step n={4} title="Ambil dokumen di lokasi layanan">
+              <Step n={n(4)} title="Ambil dokumen di lokasi layanan">
                 <p>Status berubah menjadi &ldquo;Siap Diambil&rdquo;. Bawa berkas berikut:</p>
                 <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-text sm:grid-cols-2">
-                  {bring.map((item) => (
+                  {(awaiting ? bring.slice(0, 2) : bring).map((item) => (
                     <li key={item} className="flex gap-2">
                       <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
                       {item}

@@ -8,8 +8,11 @@ import {
   type ApplicationData,
   applyAction,
   applyRating,
+  arrivalDeadline,
   buildApplication,
   canActOn,
+  expireArrival,
+  EXPIRED_REASON,
   type ServiceData,
   statusForStep,
   WorkflowError,
@@ -40,7 +43,14 @@ const T0 = wib("2026-10-12T09:00:00"); // Senin
 function newApp() {
   return buildApplication({
     service,
-    applicant: { name: "Siti Rahmawati", phone: "081234561234", email: null, nik: "3299123456789012" },
+    applicant: {
+      name: "Siti Rahmawati",
+      phone: "081234561234",
+      email: null,
+      nikHash: "hash-rahasia",
+      nikEnc: "v1.sandi.rahasia",
+      nikMasked: "3299 12•• •••• 9012",
+    },
     channel: "online",
     resi: "RL-HJ26-AKTA",
     now: T0,
@@ -64,6 +74,70 @@ describe("statusForStep", () => {
       "siap_diambil",
       "selesai",
     ]);
+  });
+});
+
+describe("layanan wajib hadir (pendaftaran online)", () => {
+  const awaiting = () =>
+    buildApplication({
+      service,
+      applicant: { name: "Nadia", phone: "081200002468", email: null, nikMasked: "3299 12•• •••• 9012" },
+      channel: "online",
+      resi: "RL-HJ26-DTNG",
+      now: T0,
+      awaitVisit: true,
+    });
+
+  it("belum ada tenggat & eskalasi sebelum warga datang, berapa lama pun", () => {
+    const app = awaiting();
+    expect(app.status).toBe("menunggu_kedatangan");
+    expect(app.steps[0].startedAt).toBeNull();
+    expect(app.currentDueAt).toBeNull();
+    expect(pendingEscalations(app, new Date(T0.getTime() + 30 * DAY_MS))).toEqual([]);
+    expect(publicView(app, { now: new Date(T0.getTime() + 30 * DAY_MS) }).isLate).toBe(false);
+  });
+
+  it("hanya petugas loket yang mencatat kedatangan; tahap lain belum bisa diproses", () => {
+    const app = awaiting();
+    expect(canActOn(app, "petugas_loket")).toBe(true);
+    expect(canActOn(app, "petugas_teknis")).toBe(false);
+    expect(() => act(app, "complete", loket, T0)).toThrow(WorkflowError);
+  });
+
+  it("warga hadir → tahap verifikasi mulai dengan tenggat sejak kedatangan", () => {
+    const app = awaiting();
+    const arrived = wib("2026-10-14T10:00:00"); // Rabu, dua hari setelah daftar
+    const { payload } = act(app, "arrive", loket, arrived);
+    expect(payload).toMatchObject({ from: "menunggu_kedatangan", to: "diajukan" });
+    expect(app.steps[0].startedAt).toEqual(arrived);
+    expect(app.steps[0].dueAt).toEqual(wib("2026-10-15T10:00:00"));
+    expect(app.currentDueAt).toEqual(app.steps[0].dueAt);
+    expect(() => act(app, "arrive", loket, arrived)).toThrow(WorkflowError);
+  });
+
+  it("batas kedatangan 10 hari kerja; lewat itu dibatalkan otomatis dengan alasan untuk warga", () => {
+    const app = awaiting();
+    const deadline = arrivalDeadline(T0);
+    expect(deadline).toEqual(wib("2026-10-26T09:00:00")); // Senin 2 minggu kemudian, jam yang sama
+    expect(expireArrival(app, new Date(deadline.getTime() - 1))).toBeNull();
+    const entry = expireArrival(app, deadline);
+    expect(entry?.action).toBe("expired");
+    expect(app.status).toBe("ditolak");
+    expect(app.rejectionReason).toBe(EXPIRED_REASON);
+    expect(app.completedAt).toEqual(deadline);
+    expect(expireArrival(app, deadline)).toBeNull(); // sudah final
+  });
+
+  it("yang sudah datang tidak ikut dibatalkan", () => {
+    const app = awaiting();
+    act(app, "arrive", loket, T0);
+    expect(expireArrival(app, new Date(T0.getTime() + 30 * DAY_MS))).toBeNull();
+  });
+
+  it("pendaftaran bisa ditolak sebelum warga datang", () => {
+    const app = awaiting();
+    act(app, "reject", loket, T0, { publicNote: "Data tidak sesuai KK." });
+    expect(app.status).toBe("ditolak");
   });
 });
 
@@ -272,7 +346,8 @@ describe("tampilan publik vs petugas", () => {
     expect(view.applicantMasked).toBe("Si*** R***");
     expect(json).not.toContain("Siti Rahmawati");
     expect(json).not.toContain("081234561234");
-    expect(json).not.toContain("3299123456789012");
+    expect(json).not.toContain("hash-rahasia");
+    expect(json).not.toContain("v1.sandi.rahasia");
     expect(json).not.toContain("RAHASIA");
     expect(json).not.toContain("Rina");
     expect(view.steps[0].publicNote).toBe("Lengkap");
@@ -285,6 +360,8 @@ describe("tampilan publik vs petugas", () => {
     expect(json).toContain("RAHASIA");
     expect(json).toContain("081234561234");
     expect(json).not.toContain("3299123456789012");
+    // Yang tampil hanya NIK tersamar (kode wilayah + 4 digit terakhir).
+    expect(json).toContain("3299 12•• •••• 9012");
   });
 
   it("isLate & estimasi mengikuti waktu sekarang", () => {

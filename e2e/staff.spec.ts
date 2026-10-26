@@ -107,6 +107,28 @@ test("top bar petugas: menu sesuai peran, antrean dua panel, cari resi, dan tab 
   await expect(tabBar.getByRole("button", { name: "Lainnya" })).toBeVisible();
 });
 
+test("loket mencatat kedatangan warga yang daftar online (KTP-el), lalu tenggat verifikasi berjalan", async ({
+  openPage,
+}) => {
+  const page = await openPage();
+  await login(page, "loket@resi.demo", "/kerja");
+  await page.waitForURL("**/kerja");
+  await page.getByRole("button", { name: /^Menunggu datang/ }).click();
+  await page.getByRole("link", { name: /RL-HJ26-DTNG/ }).click();
+  await page.waitForURL("**/kerja/RL-HJ26-DTNG");
+
+  await page.getByRole("button", { name: "Warga sudah hadir" }).click();
+  await page.getByRole("button", { name: "Catat kedatangan & mulai verifikasi" }).click();
+  await page.waitForURL("**selesai=RL-HJ26-DTNG&aksi=arrive");
+  await expect(
+    page.getByText("RL-HJ26-DTNG: kedatangan warga dicatat").filter({ visible: true }),
+  ).toBeVisible();
+
+  await gotoReady(page, "/kerja/RL-HJ26-DTNG");
+  await expect(page.getByRole("button", { name: "Selesaikan tahap" })).toBeVisible();
+  await expect(page.getByText("Warga hadir di loket, verifikasi dimulai")).toBeVisible();
+});
+
 test("404 dirender di dalam kerangka masing-masing, tanpa navbar/footer dobel", async ({ openPage }) => {
   const visible = (page: Page, selector: string) => page.locator(selector).filter({ visible: true }).count();
 

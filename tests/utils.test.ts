@@ -1,11 +1,18 @@
-// Utilitas murni: resi & privasi, penggabung class (cn), dan animasi angka.
-import { describe, expect, it, vi } from "vitest";
+// Logika murni (tanpa database): resi & privasi, cn, animasi angka, sesi petugas, perlindungan NIK,
+// dan mesin kantor pixel-art.
+import { decodeJwt } from "jose";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { countUpFrame } from "@/components/landing/CountUp";
+import { blockedTiles, createActors, findPath, spriteFrame, updateActor } from "@/components/office/engine";
+import { WAITING_SEATS, WALKERS } from "@/components/office/layout";
 import { distanceKm, OFFICE_TYPES, OFFICES } from "@/config/offices";
 import { cn } from "@/lib/cn";
+import { signSession, verifySession } from "@/lib/jwt";
 import { applicantEmail, notificationFor, sendEmail } from "@/lib/notify";
-import { maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
+import { decryptNik, encryptNik, hashNik, protectNik } from "@/lib/pii";
+import { emptyOffice, maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
 import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
+import { SESSION_IDLE_SECONDS, SESSION_MAX_AGE_SECONDS } from "@/lib/roles";
 import { applicationSchema, resiSchema } from "@/lib/validators";
 
 describe("resi", () => {
@@ -192,5 +199,91 @@ describe("lokasi layanan & jarak", () => {
     // DKI Jakarta termasuk Kepulauan Seribu (±70 km ke utara).
     for (const o of OFFICES) expect(distanceKm(o, { lat: -6.18, lng: 106.83 })).toBeLessThan(80);
     expect(OFFICES.length).toBeGreaterThan(250);
+  });
+});
+
+beforeAll(() => {
+  process.env.SESSION_SECRET ??= "rahasia-tes-keamanan-minimal-32-karakter";
+});
+
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+describe("sesi petugas", () => {
+  it("token berlaku 30 menit sejak aktivitas terakhir dan membawa waktu login", async () => {
+    const token = await signSession({ id: "u1", name: "Rina", role: "petugas_loket" });
+    const { exp, auth } = decodeJwt(token);
+    expect(exp! - nowSec()).toBeGreaterThan(SESSION_IDLE_SECONDS - 5);
+    expect(exp! - nowSec()).toBeLessThanOrEqual(SESSION_IDLE_SECONDS);
+    expect((await verifySession(token))?.authAt).toBe(auth);
+  });
+
+  it("perpanjangan tidak melewati 12 jam sejak login", async () => {
+    const authAt = nowSec() - SESSION_MAX_AGE_SECONDS + 60; // login hampir 12 jam lalu
+    const token = await signSession({ id: "u1", name: "Rina", role: "petugas_loket", authAt });
+    expect(decodeJwt(token).exp).toBe(authAt + SESSION_MAX_AGE_SECONDS);
+  });
+
+  it("lewat 12 jam sejak login: sesi tidak berlaku lagi", async () => {
+    const authAt = nowSec() - SESSION_MAX_AGE_SECONDS - 60;
+    const token = await signSession({ id: "u1", name: "Rina", role: "petugas_loket", authAt });
+    expect(await verifySession(token)).toBeNull();
+  });
+});
+
+describe("perlindungan NIK", () => {
+  const nik = "3374070206060002";
+
+  it("hash stabil untuk pencarian, sandi acak tapi bisa dibuka", () => {
+    expect(hashNik(nik)).toBe(hashNik(nik));
+    expect(hashNik(nik)).not.toContain(nik);
+    const a = encryptNik(nik);
+    expect(a).not.toBe(encryptNik(nik)); // IV acak per enkripsi
+    expect(a).not.toContain(nik);
+    expect(decryptNik(a)).toBe(nik);
+  });
+
+  it("sandi yang diubah ditolak (AES-GCM)", () => {
+    const [v, iv, tag, data] = encryptNik(nik).split(".");
+    const tampered = [v, iv, tag, `${data.slice(0, -2)}AA`].join(".");
+    expect(() => decryptNik(tampered)).toThrow();
+  });
+
+  it("bentuk tersimpan tidak memuat NIK asli", () => {
+    const stored = protectNik(nik);
+    expect(stored.nikMasked).toBe("3374 07•• •••• 0002");
+    expect(JSON.stringify(stored)).not.toContain(nik);
+  });
+});
+
+describe("kantor pixel-art", () => {
+  const blocked = blockedTiles();
+
+  it("setiap langkah pejalan terjangkau dari langkah sebelumnya", () => {
+    for (const w of WALKERS) {
+      let from = w.start;
+      for (const step of [...w.steps, w.steps[0]]) {
+        const sameTile = from[0] === step.to[0] && from[1] === step.to[1];
+        expect(sameTile || findPath(from, step.to, blocked).length > 0, `${w.id} → ${step.to}`).toBe(true);
+        from = step.to;
+      }
+    }
+  });
+
+  it("jumlah warga menunggu mengikuti berkas di ruang tunggu (maks. kursi)", () => {
+    const office = emptyOffice();
+    const count = (o: typeof office) => createActors(o).filter((a) => a.id.startsWith("tunggu-")).length;
+    expect(count(office)).toBe(0);
+    office.lobi.count = 99;
+    expect(count(office)).toBe(WAITING_SEATS.length);
+  });
+
+  it("pejalan bergerak dengan frame langkah lalu berhenti di tujuan", () => {
+    const kurir = createActors(emptyOffice()).find((a) => a.id === "kurir")!;
+    for (let i = 0; i < 40; i++) updateActor(kurir, 0.1, blocked); // tunggu di loket pertama selesai
+    expect(kurir.pose).toBe("walk");
+    expect(spriteFrame(kurir).col).toBeLessThanOrEqual(2);
+    for (let i = 0; i < 400 && kurir.pose === "walk"; i++) updateActor(kurir, 0.05, blocked);
+    expect(kurir.tile).toEqual(WALKERS[0].steps[1].to);
+    expect(kurir.say).toBe(WALKERS[0].steps[1].say);
   });
 });

@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useDeferredValue, useState } from "react";
+import { ChannelBadge } from "@/components/application/Badges";
 import { Alert, buttonClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Queue } from "@/lib/dal";
@@ -20,6 +21,7 @@ const REFRESH_MS = 30_000;
 /** Status hitung mundur sebuah baris pada waktu `now` (dihitung ulang di browser). */
 function urgency(item: Item, now: number): { tone: keyof typeof TONE; text: string } {
   if (item.status === "perlu_perbaikan") return { tone: "pause", text: "Menunggu warga" };
+  if (item.status === "menunggu_kedatangan") return { tone: "muted", text: "Belum datang" };
   if (!item.dueAt) return { tone: "muted", text: "Tanpa tenggat" };
   const left = new Date(item.dueAt).getTime() - now;
   if (left < 0) return { tone: "late", text: `Lewat ${formatDuration(left)}` };
@@ -54,7 +56,10 @@ function Row({ item, now, selected }: { item: Item; now: number; selected: boole
             {u.text}
           </span>
         </span>
-        <span className="mt-1 block truncate font-semibold">{item.applicantName}</span>
+        <span className="mt-1 flex items-center gap-2">
+          <span className="min-w-0 truncate font-semibold">{item.applicantName}</span>
+          <ChannelBadge channel={item.channel} className="shrink-0" />
+        </span>
         <span className="block truncate text-sm text-muted">
           {item.serviceName} · {item.stepName}
         </span>
@@ -99,9 +104,16 @@ function Board({ queue, initialQuery, done }: { queue: Queue; initialQuery: stri
       key: "mine",
       label: "Tugas saya",
       count: counts.mine,
-      match: (i) => i.mine && i.status !== "perlu_perbaikan",
+      match: (i) => i.mine && i.status !== "perlu_perbaikan" && i.status !== "menunggu_kedatangan",
     },
     { key: "late", label: "Terlambat", count: counts.overdue, match: (i) => i.stepState === "terlambat" },
+    // Daftar online layanan wajib hadir: dicari saat warga datang ke loket (tenggat belum berjalan).
+    {
+      key: "arrival",
+      label: "Menunggu datang",
+      count: counts.waitingArrival,
+      match: (i) => i.status === "menunggu_kedatangan",
+    },
     {
       key: "fix",
       label: "Perbaikan",

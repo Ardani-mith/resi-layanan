@@ -22,7 +22,7 @@ export async function siteOrigin(): Promise<string> {
 export const trackUrl = (origin: string, resi: string) => `${origin}/lacak/${resi}`;
 
 /** Markup <svg> QR untuk ditanam langsung di halaman. */
-export function qrSvg(url: string): Promise<string> {
+function qrSvg(url: string): Promise<string> {
   return QRCode.toString(url, { ...QR_OPTIONS, type: "svg" });
 }
 

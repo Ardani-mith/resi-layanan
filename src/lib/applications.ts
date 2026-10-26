@@ -12,7 +12,8 @@ import {
   type VerificationData,
 } from "../models.ts";
 import type { Clock } from "./clock.ts";
-import { syncEscalations } from "./escalation.ts";
+import { syncArrivalExpiry, syncEscalations } from "./escalation.ts";
+import { hashNik, protectNik } from "./pii.ts";
 import { checkNik, KTP_MIN_AGE, ktpAgeAllowed, needsKtpData } from "./present.ts";
 import { generateResi } from "./resi.ts";
 import { DAY_MS } from "./sla.ts";
@@ -36,10 +37,13 @@ import {
 const DUPLICATE_KEY = 11000;
 type Ctx = Pick<Clock, "now" | "holidays">;
 
-/** Permohonan lean berdasarkan resi, dengan eskalasi yang sudah disinkronkan. */
+/** Permohonan lean berdasarkan resi, dengan pembatalan & eskalasi yang sudah disinkronkan. */
 export async function loadByResi(resi: string, clock: Ctx): Promise<ApplicationData | null> {
   const app = await Application.findOne({ resi }).lean<ApplicationData>();
-  if (app) await syncEscalations(app, clock.now, clock.holidays);
+  if (app) {
+    await syncArrivalExpiry(app, clock.now, clock.holidays);
+    await syncEscalations(app, clock.now, clock.holidays);
+  }
   return app;
 }
 
@@ -93,7 +97,7 @@ async function prepare(input: ApplicationInput, clock: Ctx) {
     const recent = await Application.countDocuments({
       channel: "online",
       createdAt: { $gte: new Date(clock.now.getTime() - DAY_MS) },
-      $or: [{ "applicant.nik": nik }, { "applicant.phone": phone }],
+      $or: [{ "applicant.nikHash": hashNik(nik) }, { "applicant.phone": phone }],
     });
     if (recent >= DAILY_ONLINE_LIMIT) {
       throw new AppError(
@@ -107,10 +111,10 @@ async function prepare(input: ApplicationInput, clock: Ctx) {
     name: input.applicant.name,
     phone,
     email: input.applicant.email || null,
-    nik,
+    ...protectNik(nik),
     ktp: needsKtpData(service.slug) ? ktpDetails(input, check.birthDate, check.gender, clock.now) : null,
   };
-  return { service, applicant };
+  return { service, applicant, nik };
 }
 
 /**
@@ -118,8 +122,8 @@ async function prepare(input: ApplicationInput, clock: Ctx) {
  * Mengembalikan kode juga, untuk dikirim pemanggil (atau ditampilkan di mode demo).
  */
 export async function startVerification({ input, clock }: { input: ApplicationInput; clock: Ctx }) {
-  const { applicant } = await prepare(input, clock);
-  return issueOtp(applicant.phone, applicant.nik);
+  const { applicant, nik } = await prepare(input, clock);
+  return issueOtp(applicant.phone, nik);
 }
 
 /** Buat kode 6 digit untuk pasangan HP + NIK (maksimal 5 kode per nomor per jam). */
@@ -135,7 +139,7 @@ async function issueOtp(phone: string, nik: string) {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const doc = await Verification.create({
     phone,
-    nik,
+    nikHash: hashNik(nik),
     codeHash: otpHash(code, phone, nik),
     expiresAt: new Date(now.getTime() + OTP_TTL_MS),
   });
@@ -150,7 +154,7 @@ async function issueOtp(phone: string, nik: string) {
 export async function recoverResi({ nik, phone, otp }: RecoverInput) {
   if (!otp) return { otp: await issueOtp(phone, nik) };
   await consumeOtp(otp, phone, nik);
-  const apps = await Application.find({ "applicant.nik": nik, "applicant.phone": phone })
+  const apps = await Application.find({ "applicant.nikHash": hashNik(nik), "applicant.phone": phone })
     .sort({ createdAt: -1 })
     .limit(10)
     .select("resi serviceName status createdAt")
@@ -177,7 +181,7 @@ async function consumeOtp(otp: ApplicationInput["otp"], phone: string, nik: stri
     {
       _id: otp.id,
       phone,
-      nik,
+      nikHash: hashNik(nik),
       usedAt: null,
       expiresAt: { $gt: new Date() },
       attempts: { $lt: OTP_MAX_ATTEMPTS },
@@ -204,13 +208,13 @@ export async function createApplication({
   actor: Actor | null;
   clock: Ctx;
 }): Promise<ApplicationData> {
-  const { service, applicant } = await prepare(input, clock);
+  const { service, applicant, nik } = await prepare(input, clock);
   // Loket: warga hadir & identitas dicek petugas langsung, jadi tanpa OTP.
-  if (input.channel === "online") await consumeOtp(input.otp, applicant.phone, applicant.nik);
+  if (input.channel === "online") await consumeOtp(input.otp, applicant.phone, nik);
 
   // Dicek setelah OTP: info "ada permohonan aktif" hanya untuk pemegang nomor HP, tanpa detail apa pun.
   const active = await Application.exists({
-    "applicant.nik": applicant.nik,
+    "applicant.nikHash": applicant.nikHash,
     serviceSlug: service.slug,
     status: { $in: OPEN_STATUSES },
   });
@@ -233,6 +237,8 @@ export async function createApplication({
       now: clock.now,
       holidays: clock.holidays,
       requirementsChecked: input.requirementsChecked.filter((r) => allowed.has(r)),
+      // Online + layanan wajib hadir = pendaftaran awal; tenggat mulai saat warga datang ke loket.
+      awaitVisit: input.channel === "online" && Boolean(service.requiresVisit),
     });
     try {
       const app = await Application.create({ ...draft, resi });
@@ -267,9 +273,11 @@ async function mutate(
   ) => AuditEntry & Partial<Pick<EventData, "actorId" | "actorName" | "actorRole">>,
 ): Promise<ApplicationData> {
   const snapshot = await Application.findOne({ resi })
-    .select("status currentStep steps escalations")
-    .lean<Pick<ApplicationData, "_id" | "status" | "currentStep" | "steps" | "escalations">>();
+    .select("status createdAt currentStep steps currentDueAt rejectionReason completedAt escalations")
+    .lean<ApplicationData>();
   if (!snapshot) throw new WorkflowError("not_found", "Permohonan tidak ditemukan.");
+  // Lewat batas kedatangan = sudah final; aksi "Warga sudah hadir" sesudahnya ditolak.
+  await syncArrivalExpiry(snapshot, clock.now, clock.holidays);
   await syncEscalations(snapshot, clock.now, clock.holidays);
 
   const app = await Application.findOne({ resi });

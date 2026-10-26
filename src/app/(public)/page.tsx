@@ -3,12 +3,11 @@ import Link from "next/link";
 import { Fragment, type ReactNode, Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
 import CountUp from "@/components/landing/CountUp";
-import { SectionLabel } from "@/components/landing/Decor";
 import HeroSection from "@/components/landing/HeroSection";
 import Scene, { GlassCard } from "@/components/landing/Scene";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
 import SectionError from "@/components/SectionError";
-import { Button } from "@/components/ui";
+import { Button, SectionLabel } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 

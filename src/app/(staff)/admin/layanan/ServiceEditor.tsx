@@ -100,6 +100,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
         checkRequirements: s.checkRequirements,
         evidenceLabel: s.evidenceLabel.trim() || null,
       })),
+      requiresVisit: form.get("requiresVisit") === "on",
       isActive: form.get("isActive") === "on",
       order: Number(form.get("order") || 0),
     });
@@ -277,6 +278,22 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
           <Plus aria-hidden className="size-4" /> Tambah tahap
         </button>
       </fieldset>
+
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="requiresVisit"
+          defaultChecked={service?.requiresVisit ?? false}
+          className="mt-0.5 size-4"
+        />
+        <span>
+          Wajib hadir di loket (mis. perekaman biometrik KTP-el)
+          <span className="block text-muted">
+            Pengajuan online menjadi pendaftaran awal &ldquo;Menunggu Kedatangan&rdquo;; tenggat tahap pertama
+            baru berjalan saat petugas loket mencatat warga hadir.
+          </span>
+        </span>
+      </label>
 
       <label className="flex items-center gap-2 text-sm">
         <input

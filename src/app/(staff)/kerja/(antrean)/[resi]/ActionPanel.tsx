@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Alert, buttonClass, type ButtonVariant, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { useResetOnHide } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { Action, Status } from "@/lib/workflow";
 
@@ -18,6 +19,13 @@ interface ActionSpec {
 }
 
 const ACTIONS: Record<Action, ActionSpec> = {
+  arrive: {
+    label: "Warga sudah hadir",
+    variant: "primary",
+    publicLabel: null,
+    confirm: "Catat kedatangan & mulai verifikasi",
+    hint: "Hitung mundur tahap verifikasi dimulai sekarang. Pastikan warga membawa dokumen asli; pemeriksaannya dicentang saat menyelesaikan tahap.",
+  },
   complete: {
     label: "Selesaikan tahap",
     variant: "primary",
@@ -73,7 +81,11 @@ export default function ActionPanel({
 }) {
   const router = useRouter();
   const available: Action[] =
-    status === "perlu_perbaikan" ? ["resume", "reject"] : ["complete", "request_fix", "reject"];
+    status === "menunggu_kedatangan"
+      ? ["arrive", "reject"]
+      : status === "perlu_perbaikan"
+        ? ["resume", "reject"]
+        : ["complete", "request_fix", "reject"];
   const [action, setAction] = useState<Action | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const [evidence, setEvidence] = useState("");
@@ -81,6 +93,8 @@ export default function ActionPanel({
   const ready = checked.length === checklist.length && (!evidenceLabel || evidence.trim() !== "");
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
+  // Setelah aksi, halaman pindah tapi panel ini hanya disembunyikan: jangan kembali dalam keadaan "Menyimpan…".
+  useResetOnHide(() => setPending(false));
 
   const spec = action ? ACTIONS[action] : null;
 

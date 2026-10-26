@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      {/* Kerangka halaman ada di route group: (public) navbar atas, (staff) sidebar. */}
+      {/* Kerangka halaman ada di route group: (public) navbar atas, (staff) top bar. */}
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

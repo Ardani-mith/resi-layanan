@@ -20,7 +20,7 @@ export function fail(status: number, message: string, fields?: Record<string, st
 }
 
 /** Ubah ZodError menjadi { "path.ke.field": "pesan pertama" }. */
-export function zodErrors(error: z.ZodError): Record<string, string> {
+function zodErrors(error: z.ZodError): Record<string, string> {
   const fields: Record<string, string> = {};
   for (const issue of error.issues) {
     const key = issue.path.join(".") || "_";

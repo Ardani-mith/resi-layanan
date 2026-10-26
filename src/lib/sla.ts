@@ -10,8 +10,8 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 export const HOUR_MS = 60 * 60 * 1000;
 const WIB_OFFSET_MS = 7 * HOUR_MS;
 /** Jam layanan kantor (WIB). */
-export const WORK_START_HOUR = 8;
-export const WORK_END_HOUR = 16;
+const WORK_START_HOUR = 8;
+const WORK_END_HOUR = 16;
 /** 1 hari kerja = 8 jam kerja. */
 export const WORKDAY_HOURS = WORK_END_HOUR - WORK_START_HOUR;
 /**
@@ -78,7 +78,7 @@ function workWindow(time: number): [number, number] {
  * Tambah `ms` waktu kerja. Waktu di luar jam kerja tidak dihitung: Senin 15.00 + 2 jam kerja
  * = Selasa 09.00; Jumat 17.00 + 1 jam = Senin 09.00; Sabtu + 1 jam = Senin 09.00.
  */
-export function addWorkMs(start: DateLike, ms: number, holidays?: Holidays): Date {
+function addWorkMs(start: DateLike, ms: number, holidays?: Holidays): Date {
   const set = toHolidaySet(holidays);
   let time = toDate(start).getTime();
   let left = ms;

@@ -1,6 +1,5 @@
 // SEMUA teks landing page ada di sini. Urutan bagian mengikuti pitch deck:
 // hero (cek resi) → rapor ringkas → masalah → cara kerja → fitur → penutup.
-// Ikon ditulis sebagai nama (lihat ICONS di components/landing/Decor.tsx) agar config tetap data polos.
 
 export const site = {
   name: "Pantas",

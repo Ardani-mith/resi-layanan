@@ -1,4 +1,4 @@
-// Peran, hak akses halaman, dan aturan akun. Dipakai juga oleh proxy.ts dan form di
+// Peran, hak akses halaman, aturan akun, dan kebijakan sesi. Dipakai juga oleh proxy.ts dan form di
 // browser, jadi jangan impor apa pun yang khusus Node/database.
 
 export const ROLES = ["petugas_loket", "petugas_teknis", "pimpinan", "admin"] as const;
@@ -21,8 +21,17 @@ export const PASSWORD_PATH = "/akun/kata-sandi";
 
 export const PASSWORD_MIN = 10;
 
+// Sesi petugas: komputer loket dipakai bergantian, jadi sesi berakhir bila tidak ada aktivitas
+// dan tetap dibatasi satu hari kerja walau aktif terus.
+/** Tanpa interaksi (klik/ketik) selama ini → keluar otomatis. Refresh otomatis antrean tidak dihitung. */
+export const SESSION_IDLE_SECONDS = 30 * 60;
+/** Batas mutlak sejak login, berapa pun aktivitasnya. */
+export const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
+/** Peringatan sebelum keluar otomatis karena diam. */
+export const SESSION_WARN_SECONDS = 2 * 60;
+
 /** Prefix halaman → peran yang boleh membuka. Urutan: paling spesifik dulu. */
-export const ROUTE_ROLES: [prefix: string, roles: readonly Role[]][] = [
+const ROUTE_ROLES: [prefix: string, roles: readonly Role[]][] = [
   ["/akun", STAFF_ROLES],
   ["/admin", ["admin"]],
   ["/pantau", ["pimpinan", "admin"]],

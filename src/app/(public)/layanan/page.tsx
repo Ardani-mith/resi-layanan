@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import ServiceCard from "@/components/application/ServiceCard";
-import { PageHeader } from "@/components/landing/Decor";
-import { Skeleton } from "@/components/ui";
+import { PageHeader, Skeleton } from "@/components/ui";
 import { site } from "@/config/site";
 import { getServiceCatalog } from "@/lib/dal";
 

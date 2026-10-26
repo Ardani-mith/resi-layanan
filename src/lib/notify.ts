@@ -30,7 +30,7 @@ export function applicantEmail(
   kind: NotifyKind,
   app: Pick<
     ApplicationData,
-    "resi" | "serviceName" | "applicant" | "steps" | "currentStep" | "rejectionReason"
+    "resi" | "serviceName" | "applicant" | "steps" | "currentStep" | "rejectionReason" | "status"
   >,
   origin: string,
 ): EmailMessage | null {
@@ -42,10 +42,15 @@ export function applicantEmail(
   const bodies: Record<NotifyKind, [subject: string, lines: string[]]> = {
     created: [
       `Resi ${app.resi}: permohonan ${app.serviceName} diterima`,
-      [
-        "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
-        "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
-      ],
+      app.status === STATUS.MENUNGGU_KEDATANGAN
+        ? [
+            "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
+            "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
+          ]
+        : [
+            "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
+            "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
+          ],
     ],
     request_fix: [
       `Resi ${app.resi}: berkas perlu dilengkapi`,

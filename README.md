@@ -1,101 +1,80 @@
 # Pantas: Pantau Tahapan Sipil
 
-Lacak permohonan layanan publik seperti melacak paket. Setiap tahap punya tenggat (SLA) dalam hari kerja yang terlihat oleh warga, dan tahap yang terlambat otomatis dieskalasi ke atasan.
+Lacak permohonan layanan publik seperti melacak paket. Setiap tahap punya tenggat (SLA) dalam jam kerja yang terlihat oleh warga, dan tahap yang terlambat otomatis dieskalasi ke atasan.
 
-Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Skenario demo: **Disdukcapil Kota Harapan Jaya** (instansi fiktif) dengan 3 layanan, yaitu perekaman KTP-el, perubahan Kartu Keluarga, dan akta kelahiran.
+Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Skenario demo: **Disdukcapil Kota Harapan Jaya** (instansi fiktif) dengan 3 layanan: perekaman KTP-el, perubahan Kartu Keluarga, dan akta kelahiran.
+
+## Fitur
+
+- **Warga:** pengajuan online (NIK lebih dulu, verifikasi OTP), lacak `/lacak/[resi]` dengan timeline & hitung mundur, bukti resi ber-QR, lupa resi, rating, peta lokasi layanan, katalog `/layanan`, rapor SLA publik `/rapor`.
+- **Petugas:** antrean dua panel per peran, syarat selesai & bukti per tahap, input warga di loket, pembeda kanal online/loket, audit log.
+- **Pimpinan:** dashboard `/pantau` (KPI, eskalasi, tren, bottleneck per tahap).
+- **Admin:** petugas, layanan & SLA, hari libur, mode demo (simulasi waktu). Semua tindakan tercatat.
+- **Aturan layanan:** SLA jam kerja WIB (Senin–Jumat 08.00–16.00, di luar libur), janji terbit ≤ 24 jam setelah berkas lengkap (Permendagri 19/2018), jeda saat perlu perbaikan, layanan wajib hadir (KTP-el) yang tenggatnya baru berjalan saat warga datang. Alurnya dijelaskan di [docs/ALUR-TAHAPAN.md](docs/ALUR-TAHAPAN.md).
+- **Keamanan & privasi (UU PDP):** NIK tidak disimpan apa adanya (hash + enkripsi + tersamar), nama & HP disamarkan di halaman publik, login dikunci setelah 5x salah, sesi petugas berakhir setelah 30 menit diam (maks. 12 jam), pemisahan tugas per peran.
+- **Kantor transparan** di beranda: denah pixel-art yang isinya mengikuti data antrean asli.
 
 ## Tech stack
 
-- **Next.js 16** (App Router, Cache Components) + **React 19** + **TypeScript** (`strict`)
-- **Tailwind CSS 4**
-- **MongoDB Atlas** + **Mongoose 9**
-- **jose** (JWT sesi di cookie httpOnly), **bcryptjs**, **Zod 4**
-- **Vitest** + **mongodb-memory-server** untuk pengujian
-- Deploy di **Vercel**
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript `strict` · Tailwind CSS 4 · MongoDB + Mongoose 9 · jose · bcryptjs · Zod 4 · Vitest + mongodb-memory-server · Playwright · Vercel.
 
-## Cara menjalankan
+## Menjalankan di lokal
 
-Prasyarat: Node.js 22.18+ (skrip `.ts` dijalankan langsung oleh Node) dan database MongoDB (Atlas M0 gratis sudah cukup).
+Prasyarat: Node.js 22.18+ (skrip `.ts` dijalankan langsung oleh Node) dan database MongoDB (Atlas M0 gratis cukup).
 
 ```bash
-# Sudah punya foldernya? Lewati 2 baris ini, cukup cd ke folder proyek.
-git clone https://github.com/Ardani-mith/resi-layanan.git
-cd resi-layanan
+git clone https://github.com/Ardani-mith/resi-layanan.git && cd resi-layanan
 npm install
-cp .env.example .env.local   # isi MONGODB_URI, SESSION_SECRET, DEMO_PASSWORD
-npm run seed                 # isi data demo (MENGHAPUS data lama)
-npm run dev                  # buka http://localhost:3000
+cp .env.example .env.local   # isi MONGODB_URI, SESSION_SECRET (openssl rand -base64 48), DEMO_PASSWORD
+npm run seed                 # data demo (MENGHAPUS data lama)
+npm run dev                  # http://localhost:3000
 ```
-
-Perintah lain:
 
 | Perintah | Fungsi |
 |---|---|
 | `npm run check` | lint + cek tipe + cek format + tes unit/integrasi |
-| `npm test` | tes unit & integrasi (MongoDB in-memory, tidak butuh Atlas) |
-| `npm run test:e2e` | tes end-to-end di Google Chrome (database sementara, tidak menyentuh Atlas) |
-| `npm run lint:fix` / `npm run format` | rapikan kode otomatis (ESLint + Prettier) |
-| `npm run build` | build produksi |
-| `npm run seed:master` | isi 3 layanan saja, tanpa menghapus data apa pun |
-| `npm run user:create -- --email … --name "…"` | buat akun (bawaan: admin) dengan kata sandi sementara; `--reset` untuk pemulihan |
+| `npm test` / `npm run test:e2e` | tes unit & integrasi / end-to-end di Chrome (database sementara, tidak menyentuh Atlas) |
+| `npm run lint:fix` / `npm run format` | rapikan kode otomatis |
+| `npm run seed:master` | isi 3 layanan saja, tanpa menghapus data |
+| `npm run user:create -- --email … --name "…"` | akun (bawaan: admin) dengan kata sandi sementara; `--reset` untuk pemulihan |
+| `npm run data:offices` | perbarui daftar kantor layanan dari OpenStreetMap |
+| `npm run sprite:sheet -- <sumber> <hasil.png>` | ubah lembar karakter AI (latar hijau) jadi sprite kantor pixel-art |
 
-### Akun petugas (database tanpa data demo)
+## Akun & resi demo
 
-Tidak ada pendaftaran lewat web. Alurnya:
+Kata sandi semua akun = `DEMO_PASSWORD`.
 
-1. Admin pertama dibuat dari terminal: `npm run user:create -- --email admin@instansi.go.id --name "Nama Admin"`.
-   Kata sandi sementara tampil sekali di terminal.
-2. Admin login → wajib ganti kata sandi → buka **Petugas** (`/admin/petugas`) untuk menambah petugas loket,
-   teknis, pimpinan, atau admin lain. Setiap akun baru mendapat kata sandi sementara untuk diserahkan langsung.
-3. Petugas login pertama kali → wajib ganti kata sandi sebelum bisa membuka antrean.
-4. Admin bisa mengubah nama/peran/unit, me-reset kata sandi, dan menonaktifkan akun (bukan menghapus, agar
-   audit log tetap utuh). Ganti peran, reset, atau nonaktif membuat sesi petugas itu langsung berakhir.
+| Peran | Email |
+|---|---|
+| Petugas loket | `loket@resi.demo` |
+| Petugas teknis | `teknis@resi.demo` |
+| Pimpinan | `pimpinan@resi.demo` |
+| Admin | `admin@resi.demo` |
 
-Lupa kata sandi admin: `npm run user:create -- --email <email-admin> --reset`.
+| Resi | Kondisi | 4 digit HP |
+|---|---|---|
+| `RL-HJ26-AKTA` | Terlambat & dieskalasi | 1234 |
+| `RL-HJ26-PRBK` | Perlu perbaikan | 5678 |
+| `RL-HJ26-SLSE` | Selesai, belum diberi rating | 4321 |
+| `RL-HJ26-TLAK` | Ditolak | 8765 |
+| `RL-HJ26-DTNG` | KTP-el daftar online, menunggu kedatangan | 2468 |
 
-### Akun & resi demo
+Tanpa data demo, tidak ada pendaftaran lewat web: admin pertama dibuat dengan `npm run user:create`, lalu admin menambah petugas di `/admin/petugas`. Setiap akun baru wajib mengganti kata sandi sementara saat login pertama.
 
-Kata sandi semua akun = nilai `DEMO_PASSWORD` di `.env.local`.
+## Deploy ke Vercel
 
-| Peran          | Email                  |
-| -------------- | ---------------------- |
-| Petugas loket  | `loket@resi.demo`    |
-| Petugas teknis | `teknis@resi.demo`   |
-| Pimpinan       | `pimpinan@resi.demo` |
-| Admin          | `admin@resi.demo`    |
+1. **MongoDB Atlas:** buat cluster M0, user database, dan izinkan Network Access `0.0.0.0/0` (IP Vercel berubah-ubah). Salin URI dan tambahkan nama database (`…mongodb.net/resi-layanan?retryWrites=true&w=majority`).
+2. **Vercel:** Import Project dari GitHub, lalu isi Environment Variables (Production + Preview):
+   - Wajib: `MONGODB_URI`, `SESSION_SECRET`, `DEMO_PASSWORD`.
+   - Opsional: `SITE_URL` (alamat publik untuk QR & email), `PII_SECRET`, `RESEND_API_KEY` + `EMAIL_FROM`.
+   - `SESSION_SECRET` (atau `PII_SECRET`) juga kunci perlindungan NIK: **pakai nilai yang sama** dengan `.env.local` yang dipakai untuk seed, dan jangan diganti setelah ada data.
+3. **Seed** dari laptop: `npm run seed` dengan `.env.local` yang menunjuk ke Atlas.
+4. **Cek:** buka `https://<app>.vercel.app/api/health` → `{"status":"ok","db":"connected"}`.
 
-| Resi             | Kondisi                      | 4 digit HP |
-| ---------------- | ---------------------------- | ---------- |
-| `RL-HJ26-AKTA` | Terlambat & dieskalasi       | 1234       |
-| `RL-HJ26-PRBK` | Perlu perbaikan              | 5678       |
-| `RL-HJ26-SLSE` | Selesai, belum diberi rating | 4321       |
-| `RL-HJ26-TLAK` | Ditolak                      | 8765       |
+## Data terbuka
 
-## Progress
+`GET /api/stats`: rapor SLA dalam JSON (agregat, tanpa data pribadi), sama dengan halaman `/rapor`.
 
-**Sudah selesai (fondasi, 18 Okt 2026)**
+## Kredit
 
-- Model data: layanan, permohonan (tahapan disalin ke dokumen permohonan sebagai snapshot), audit log *append-only*, pengaturan sistem.
-- Mesin alur kerja: `diajukan → diproses → siap_diambil → selesai`, ditambah `perlu_perbaikan` (SLA dijeda) dan `ditolak` (alasan wajib diisi).
-- SLA dalam hari kerja WIB (melewati akhir pekan & tanggal libur), estimasi tanggal selesai.
-- Eskalasi dihitung saat data dibaca dan ditulis secara idempoten (Kasi → Kabid), tanpa cron.
-- Resi acak `RL-XXXX-XXXX` tanpa karakter ambigu.
-- Privasi: nama disamarkan di tampilan publik, detail terbuka setelah verifikasi 4 digit HP (dengan batas percobaan), NIK tidak pernah ditampilkan.
-- API: pengajuan online & loket, lacak publik, antrean per peran, aksi petugas, KPI/rapor, simulasi waktu demo.
-- Login petugas & proteksi halaman per peran.
-- Seed: 3 layanan, 6 akun, 60 permohonan hasil simulasi alur kerja nyata.
-- 98 tes unit/integrasi (SLA, alur kerja, eskalasi, privasi, akun, admin, notifikasi, database) dan 22 tes end-to-end di browser yang memerankan skrip demo.
-- Landing page & halaman masuk petugas.
-- **Warga:** lacak `/lacak/[resi]` (timeline, hitung mundur langsung, verifikasi HP, perbaikan berkas, rating, pembaruan otomatis), pengajuan online `/ajukan` + halaman sukses.
-- **Petugas:** antrean `/kerja` (urut sisa SLA, filter, pencarian), detail & aksi `/kerja/[resi]` (selesaikan, minta perbaikan, lanjutkan, tolak, audit log), input loket `/kerja/baru`.
-- **Pimpinan:** dashboard `/pantau` (KPI, eskalasi terbuka, tren mingguan, analisis bottleneck per tahap).
-- **Publik:** rapor SLA `/rapor`, katalog layanan `/layanan` + detail `/layanan/[slug]` (persyaratan, tahapan & SLA, kinerja nyata).
-- **Bukti resi:** QR menuju halaman lacak, unduh gambar PNG, dan cetak (di halaman sukses, lacak, dan detail petugas).
-- **Notifikasi email** ke warga saat permohonan diterima, perlu perbaikan, siap diambil, selesai, atau ditolak (Resend; tanpa API key hanya dicatat di log).
-- **Admin:** kelola petugas `/admin/petugas`, layanan & SLA `/admin/layanan`, hari libur `/admin/libur`, mode demo `/admin/demo`; semua perubahan tercatat di audit log admin.
-- Responsif (HP & desktop), mode gelap, diuji end-to-end di browser.
-
-**Berikutnya (Fix It, 8–10 Nov)**
-
-- Penyempurnaan desain antarmuka (tampilan aplikasi yang lebih bersih & profesional)
-- Deploy ke Vercel dan uji di Chrome, Edge, Firefox
+Aset & teknik kantor pixel-art dari [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) (MIT); lihat `public/office/pixel/LICENSE.txt`. Karakter petugas dibuat khusus untuk Pantas (sumber di `design/sprites/`).

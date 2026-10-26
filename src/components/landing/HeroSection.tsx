@@ -1,12 +1,41 @@
 import { Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
-import OfficeLive, { OfficeSkeleton } from "@/components/landing/OfficeLive";
+import PixelOffice from "@/components/office/PixelOffice";
 import SectionError from "@/components/SectionError";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { getOfficeSnapshot, getTracking } from "@/lib/dal";
+import { emptyOffice, roomForStep } from "@/lib/present";
+import { WAITING_CITIZEN_STATUSES } from "@/lib/workflow";
 
 /** Jeda animasi (CSS murni) agar elemen hero muncul berurutan. */
 const delay = (ms: number) => ({ animationDelay: `${ms}ms` });
+
+/** Kantor transparan di beranda: isi ruangan dari data asli; resi contoh disorot di ruangannya. */
+async function OfficeLive() {
+  const [office, demo] = await Promise.all([getOfficeSnapshot(), getTracking(site.hero.exampleResi)]);
+  const step = demo?.steps[demo.currentStep];
+  const open = demo && demo.status !== "selesai" && demo.status !== "ditolak";
+  return (
+    <PixelOffice
+      office={office}
+      highlight={
+        open
+          ? {
+              room: roomForStep(step?.key, WAITING_CITIZEN_STATUSES.includes(demo.status)),
+              label: `Berkas ${demo.resi}`,
+              late: demo.isLate,
+            }
+          : undefined
+      }
+    />
+  );
+}
+
+/** Kerangka saat data dimuat: denah kosong (tetap terlihat utuh). */
+function OfficeSkeleton() {
+  return <PixelOffice office={emptyOffice()} />;
+}
 
 export default function HeroSection({ hero }: { hero: typeof site.hero }) {
   const lastLine = hero.titleLines.length - 1;
@@ -51,7 +80,7 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
           </div>
         </div>
 
-        {/* Kantor transparan: denah isometrik dengan berkas asli per ruangan. */}
+        {/* Kantor transparan: denah pixel-art dengan berkas asli per ruangan. */}
         <div className="mt-14 motion-safe:animate-fade-up" style={delay(500)}>
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-4">
             <p className="font-mono text-xs tracking-[0.14em] text-muted uppercase">

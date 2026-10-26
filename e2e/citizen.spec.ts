@@ -203,6 +203,8 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
   await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
   await confirmOtp(page);
   await page.waitForURL("**/ajukan/sukses?resi=*");
+  // KTP-el wajib hadir (biometrik): pendaftaran online, tenggat mulai saat warga datang.
+  await expect(page.getByText("Datang ke loket dengan dokumen asli")).toBeVisible();
 
   // Layanan lain: tanpa isian & pratinjau KTP.
   await gotoReady(page, "/ajukan?layanan=akta-kelahiran");

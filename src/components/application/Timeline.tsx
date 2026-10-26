@@ -1,6 +1,6 @@
 "use client";
 
-import { STEP_STATE } from "@/components/application/StatusBadge";
+import { STEP_STATE } from "@/components/application/Badges";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatWorkHours } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
@@ -147,7 +147,7 @@ export default function Timeline({
                   {step.publicNote}
                 </blockquote>
               )}
-              {staff && (step.handledByName || step.internalNote || step.checked?.length) && (
+              {staff && Boolean(step.handledByName || step.internalNote || step.checked?.length) && (
                 <div className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">
                   {step.handledByName && <p className="text-muted">Ditangani: {step.handledByName}</p>}
                   {/* Dasar keputusan "selesai" yang dicentang petugas (terekam di audit log). */}

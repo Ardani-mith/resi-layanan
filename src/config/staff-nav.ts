@@ -27,7 +27,7 @@ interface NavSection {
   items: (NavItem & { roles: readonly Role[] })[];
 }
 
-export const NAV_SECTIONS: NavSection[] = [
+const NAV_SECTIONS: NavSection[] = [
   {
     title: "Pelayanan",
     items: [

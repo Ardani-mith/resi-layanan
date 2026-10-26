@@ -3,7 +3,7 @@
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import StatusBadge from "@/components/application/StatusBadge";
+import { StatusBadge } from "@/components/application/Badges";
 import { Alert, buttonClass, Field } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { type FormErrors, postJson } from "@/lib/http";

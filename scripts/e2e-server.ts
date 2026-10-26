@@ -20,6 +20,9 @@ const env = {
 };
 
 process.env.MONGODB_URI = env.MONGODB_URI;
+// Seed & server wajib memakai rahasia yang sama: hash NIK (lib/pii.ts) dibuat saat seed
+// dan dicocokkan server (mis. lupa resi).
+process.env.SESSION_SECRET = env.SESSION_SECRET;
 await dbConnect();
 await seed({ password: E2E_PASSWORD, log: () => {} });
 await mongoose.disconnect();

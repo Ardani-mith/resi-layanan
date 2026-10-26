@@ -21,7 +21,7 @@ export function hashPassword(password: string): Promise<string> {
 }
 
 /** Selalu menjalankan bcrypt (juga saat `hash` kosong) supaya waktunya tidak membocorkan apa pun. */
-export function verifyPassword(password: string, hash: string | undefined): Promise<boolean> {
+function verifyPassword(password: string, hash: string | undefined): Promise<boolean> {
   return bcrypt.compare(password, hash ?? DUMMY_HASH);
 }
 
@@ -61,11 +61,52 @@ const toAccount = (user: UserData) => ({
   createdAt: user.createdAt,
 });
 
-/** Akun aktif dengan email & kata sandi cocok (lengkap dengan sessionVersion), atau null. */
-export async function authenticate(email: string, password: string): Promise<UserData | null> {
-  const user = await User.findOne({ email, isActive: true }).select("+passwordHash").lean<UserData>();
+/** Menahan tebak kata sandi: 5 kali salah beruntun → akun dikunci 15 menit. */
+export const LOGIN_MAX_FAILS = 5;
+export const LOGIN_LOCK_MS = 15 * 60_000;
+
+const lockedError = (until: Date, now: Date) =>
+  new AppError(
+    429,
+    `Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam ${Math.ceil((until.getTime() - now.getTime()) / 60_000)} menit, atau minta admin me-reset kata sandi.`,
+  );
+
+/**
+ * Akun aktif dengan email & kata sandi cocok (lengkap dengan sessionVersion), atau null.
+ * Gagal ke-5 beruntun mengunci akun sementara (AppError 429); berhasil = hitungan kembali 0.
+ */
+export async function authenticate(
+  email: string,
+  password: string,
+  now = new Date(),
+): Promise<UserData | null> {
+  const user = await User.findOne({ email, isActive: true })
+    .select("+passwordHash +failedLogins +lockedUntil")
+    .lean<UserData>();
+  if (user?.lockedUntil && user.lockedUntil > now) throw lockedError(user.lockedUntil, now);
+  // Tetap membandingkan hash walau email tidak terdaftar: waktu respons tidak membocorkan akun.
   const valid = await verifyPassword(password, user?.passwordHash);
-  return user && valid ? user : null;
+  if (!user) return null;
+  if (valid) {
+    if (user.failedLogins || user.lockedUntil) {
+      await User.updateOne({ _id: user._id }, { $set: { failedLogins: 0, lockedUntil: null } });
+    }
+    return user;
+  }
+  // $inc atomik: percobaan paralel tetap terhitung semua.
+  const after = await User.findOneAndUpdate(
+    { _id: user._id },
+    { $inc: { failedLogins: 1 } },
+    { returnDocument: "after" },
+  )
+    .select("+failedLogins")
+    .lean<UserData>();
+  if ((after?.failedLogins ?? 0) >= LOGIN_MAX_FAILS) {
+    const until = new Date(now.getTime() + LOGIN_LOCK_MS);
+    await User.updateOne({ _id: user._id }, { $set: { failedLogins: 0, lockedUntil: until } });
+    throw lockedError(until, now);
+  }
+  return null;
 }
 
 /**
@@ -193,7 +234,13 @@ export async function resetStaffPassword(id: string, actor: AdminActor) {
   await loadOther(id, actor, "Untuk akun Anda sendiri, gunakan halaman ganti kata sandi.");
   const tempPassword = generateTempPassword();
   const user = await save(id, {
-    $set: { passwordHash: await hashPassword(tempPassword), mustChangePassword: true },
+    // Reset oleh admin juga membuka kunci login (jalur pemulihan bila akun terkunci).
+    $set: {
+      passwordHash: await hashPassword(tempPassword),
+      mustChangePassword: true,
+      failedLogins: 0,
+      lockedUntil: null,
+    },
     $inc: { sessionVersion: 1 },
   });
   await logAdminEvent(actor, "account_password_reset", label(user));

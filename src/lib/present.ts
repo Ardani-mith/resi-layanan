@@ -13,7 +13,7 @@ import {
   type StepState,
   stepState,
 } from "./sla.ts";
-import { type ApplicationData, STATUS, STATUS_LABELS, type Step } from "./workflow.ts";
+import { type ApplicationData, arrivalDeadline, STATUS, STATUS_LABELS, type Step } from "./workflow.ts";
 
 // --- Penyamaran data pribadi --------------------------------------------------------
 
@@ -32,6 +32,16 @@ export function maskPhone(phone: unknown): string {
   const digits = String(phone ?? "");
   if (digits.length < 8) return "****";
   return `${digits.slice(0, 4)}${"*".repeat(digits.length - 8)}${digits.slice(-4)}`;
+}
+
+/**
+ * NIK tersamar untuk petugas (minimisasi data, UU PDP): kode wilayah (6 digit) & 4 digit
+ * terakhir cukup untuk mencocokkan dengan KTP-el/KK asli; NIK lengkap tidak dikirim ke browser.
+ */
+export function maskNik(nik: unknown): string | null {
+  const digits = String(nik ?? "");
+  if (!/^\d{16}$/.test(digits)) return null;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 6)}•• •••• ${digits.slice(-4)}`;
 }
 
 /** Nomor HP dinormalisasi ke format 08xxxxxxxxxx. */
@@ -83,7 +93,7 @@ export const BLOOD_TYPES = ["A", "B", "AB", "O", "-"] as const;
 export const KTP_MIN_AGE = 17;
 
 /** Umur dalam tahun penuh pada `now`, dari tanggal "DD-MM-YYYY". */
-export function ageOn(birthDate: string, now: Date = new Date()): number {
+function ageOn(birthDate: string, now: Date = new Date()): number {
   const [day, month, year] = birthDate.split("-").map(Number);
   const age = now.getUTCFullYear() - year;
   const beforeBirthday =
@@ -137,7 +147,7 @@ export function checkNik(nik: string, serviceSlug: string, now: Date = new Date(
   return { ok: true, ...info, age, needsMarried: age < APPLICANT_MIN_AGE };
 }
 
-// --- Kantor transparan (denah isometrik) ----------------------------------------------
+// --- Kantor transparan (denah pixel-art) ----------------------------------------------
 
 /**
  * Ruangan di denah "kantor transparan", urut alur berkas. Tahap layanan dipetakan ke ruangan
@@ -223,11 +233,17 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     isLate: current?.state === "terlambat",
     isEscalated: (app.escalations ?? []).some((e) => !e.resolvedAt),
     estimatedCompletion:
-      app.status === STATUS.SELESAI || app.status === STATUS.DITOLAK
+      // Belum datang: tenggat belum berjalan, jadi perkiraan baru ada setelah warga hadir.
+      app.status === STATUS.SELESAI ||
+      app.status === STATUS.DITOLAK ||
+      app.status === STATUS.MENUNGGU_KEDATANGAN
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
     /** Janji terbit ≤ 24 jam (1 hari kerja) setelah berkas lengkap, Permendagri 19/2018. */
     issuePromise: app.status === STATUS.DITOLAK ? null : issuePromise(app.steps, now, holidays),
+    /** Pendaftaran wajib hadir: datang paling lambat ini, lewat itu dibatalkan otomatis. */
+    arrivalDeadline:
+      app.status === STATUS.MENUNGGU_KEDATANGAN ? arrivalDeadline(app.createdAt, holidays) : null,
     fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
     rejectionReason: app.rejectionReason,
     rated: Boolean(app.rating?.score),
@@ -255,7 +271,12 @@ export function staffView(app: ApplicationData, ctx: Ctx, events: EventData[] = 
   return {
     ...base,
     id: String(app._id),
-    applicant: { ...base.applicant, phone: app.applicant.phone, ktp: app.applicant.ktp ?? null },
+    applicant: {
+      ...base.applicant,
+      phone: app.applicant.phone,
+      nikMasked: app.applicant.nikMasked ?? null,
+      ktp: app.applicant.ktp ?? null,
+    },
     steps: base.steps.map((s, i) => ({
       ...s,
       internalNote: app.steps[i].internalNote,
@@ -300,5 +321,4 @@ export function queueItem(app: ApplicationData, now: DateLike) {
 
 export type PublicView = ReturnType<typeof publicView>;
 export type VerifiedView = ReturnType<typeof verifiedView>;
-export type StaffView = ReturnType<typeof staffView>;
 export type QueueItem = ReturnType<typeof queueItem>;

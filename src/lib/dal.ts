@@ -28,7 +28,14 @@ import { getSession } from "./session.ts";
 import { stepState } from "./sla.ts";
 import { computeStats, type OpenEscalation, openEscalations } from "./stats.ts";
 import { listStaff, type SessionUser } from "./users.ts";
-import { type ApplicationData, canActOn, OPEN_STATUSES, type ServiceData, STATUS } from "./workflow.ts";
+import {
+  type ApplicationData,
+  canActOn,
+  OPEN_STATUSES,
+  type ServiceData,
+  STATUS,
+  WAITING_CITIZEN_STATUSES,
+} from "./workflow.ts";
 
 /** Sesi pengguna, dibaca sekali per render. */
 export const getCurrentUser = cache(getSession);
@@ -66,7 +73,7 @@ export async function getActiveServices() {
   await ready();
   const services = await Service.find({ isActive: true })
     .sort({ order: 1, name: 1 })
-    .select("name slug description output requirements steps")
+    .select("name slug description output requirements steps requiresVisit")
     .lean<ServiceData[]>();
   return services.map(({ _id, ...s }) => ({
     id: String(_id),
@@ -75,6 +82,7 @@ export async function getActiveServices() {
     description: s.description,
     output: s.output,
     requirements: s.requirements,
+    requiresVisit: Boolean(s.requiresVisit),
     steps: s.steps.map(({ key, name, role, slaHours }) => ({ key, name, role, slaHours })),
     totalSlaHours: s.steps.reduce((sum, step) => sum + (step.slaHours || 0), 0),
     /** Janji terbit setelah berkas lengkap = tahap ber-SLA setelah verifikasi (jam kerja). */
@@ -119,7 +127,7 @@ export async function getOfficeSnapshot(): Promise<OfficeSnapshot> {
   const office = emptyOffice();
   for (const app of apps) {
     const step = app.steps[app.currentStep];
-    const room = office[roomForStep(step?.key, app.status === STATUS.PERLU_PERBAIKAN)];
+    const room = office[roomForStep(step?.key, WAITING_CITIZEN_STATUSES.includes(app.status))];
     room.count += 1;
     if (step && stepState(step, clock.now) === "terlambat") room.late += 1;
   }
@@ -155,18 +163,19 @@ export const getQueue = cache(async (user: SessionUser) => {
   const seesAll = user.role === "pimpinan" || user.role === "admin";
   const items: (QueueItem & { mine: boolean })[] = [];
   for (const app of apps) {
-    const mine =
-      app.status === STATUS.PERLU_PERBAIKAN
-        ? user.role === "petugas_loket"
-        : app.steps[app.currentStep]?.role === user.role;
+    const mine = WAITING_CITIZEN_STATUSES.includes(app.status)
+      ? user.role === "petugas_loket"
+      : app.steps[app.currentStep]?.role === user.role;
     if (mine || seesAll) items.push({ ...queueItem(app, clock.now), mine });
   }
 
   // Paling mendesak di atas: sisa SLA terkecil (terlambat = negatif); tanpa tenggat di bawah.
   items.sort((a, b) => (a.remainingMs ?? Infinity) - (b.remainingMs ?? Infinity));
   const counts = {
-    mine: items.filter((i) => i.mine && i.status !== STATUS.PERLU_PERBAIKAN).length,
+    // Tugas saya = yang tenggatnya berjalan; yang menunggu warga punya tab sendiri.
+    mine: items.filter((i) => i.mine && !WAITING_CITIZEN_STATUSES.includes(i.status)).length,
     overdue: items.filter((i) => i.stepState === "terlambat").length,
+    waitingArrival: items.filter((i) => i.status === STATUS.MENUNGGU_KEDATANGAN).length,
     waitingFix: items.filter((i) => i.status === STATUS.PERLU_PERBAIKAN).length,
     total: items.length,
   };
@@ -187,6 +196,8 @@ export async function getStaffApplication(resi: string, user: SessionUser) {
     offsetMs: clock.clockOffsetMs,
   };
 }
+
+export type StaffApplication = NonNullable<Awaited<ReturnType<typeof getStaffApplication>>>;
 
 // --- Statistik -----------------------------------------------------------------
 
@@ -243,6 +254,7 @@ export async function getAdminServices() {
       checkRequirements: Boolean(checkRequirements),
       evidenceLabel: evidenceLabel ?? null,
     })),
+    requiresVisit: Boolean(s.requiresVisit),
     isActive: s.isActive,
     order: s.order,
   }));

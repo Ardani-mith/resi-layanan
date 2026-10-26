@@ -1,5 +1,5 @@
 import { type ReactNode, Suspense } from "react";
-import { StaffTabBar, StaffTopBar } from "@/components/layout/StaffShell";
+import { IdleGuard, StaffTabBar, StaffTopBar } from "@/components/layout/StaffShell";
 import { getClockInfo, getCurrentUser } from "@/lib/dal";
 
 // Tinggi sama dengan top bar supaya konten tidak bergeser saat sesi selesai dibaca.
@@ -16,6 +16,7 @@ async function StaffChrome() {
     <>
       <StaffTopBar user={staff} offsetMs={offsetMs} />
       <StaffTabBar user={staff} />
+      <IdleGuard />
     </>
   );
 }

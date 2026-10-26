@@ -12,6 +12,8 @@ import {
   generateTempPassword,
   hashPassword,
   loadSessionUser,
+  LOGIN_LOCK_MS,
+  LOGIN_MAX_FAILS,
   resetStaffPassword,
   setStaffActive,
   updateStaff,
@@ -288,5 +290,38 @@ describe("kelola layanan & hari libur", () => {
     await setHolidays({ holidays: ["2026-12-25"] }, admin);
     const [latest] = await listAdminEvents("holidays_");
     expect(latest.payload).toMatchObject({ added: [], removed: ["2026-12-24"] });
+  });
+});
+
+describe("batas percobaan login", () => {
+  it("5 kali salah → terkunci 15 menit (kata sandi benar pun ditolak), lalu bisa masuk lagi", async () => {
+    const { account, tempPassword } = await newStaff();
+    const t0 = new Date();
+    for (let i = 1; i < LOGIN_MAX_FAILS; i += 1) {
+      expect(await authenticate(account.email, "salah", t0)).toBeNull();
+    }
+    const locked = await expectAppError(authenticate(account.email, "salah", t0), 429);
+    expect(locked.message).toContain("15 menit");
+    await expectAppError(authenticate(account.email, tempPassword, t0), 429);
+
+    const after = new Date(t0.getTime() + LOGIN_LOCK_MS + 1000);
+    expect(await authenticate(account.email, tempPassword, after)).not.toBeNull();
+  });
+
+  it("login berhasil mengembalikan hitungan ke 0", async () => {
+    const { account, tempPassword } = await newStaff();
+    for (let i = 1; i < LOGIN_MAX_FAILS; i += 1) await authenticate(account.email, "salah");
+    expect(await authenticate(account.email, tempPassword)).not.toBeNull();
+    for (let i = 1; i < LOGIN_MAX_FAILS; i += 1) {
+      expect(await authenticate(account.email, "salah")).toBeNull();
+    }
+  });
+
+  it("reset kata sandi oleh admin membuka kunci", async () => {
+    const { account } = await newStaff();
+    for (let i = 1; i < LOGIN_MAX_FAILS; i += 1) await authenticate(account.email, "salah");
+    await expectAppError(authenticate(account.email, "salah"), 429);
+    const reset = await resetStaffPassword(account.id, admin);
+    expect(await authenticate(account.email, reset.tempPassword)).not.toBeNull();
   });
 });
