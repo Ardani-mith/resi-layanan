@@ -17,13 +17,14 @@ Nama aplikasi **Pantas** (folder & repo masih `resi-layanan`; awalan resi `RL-` 
 src/
 ├── app/            # route berbahasa Indonesia; client component khusus satu halaman di folder route-nya
 │   ├── (public)/   # halaman warga; layout.tsx = navbar + footer
+│   ├── (auth)/     # /masuk: layar penuh tanpa navbar/footer ("← Beranda" + tombol tema sendiri)
 │   ├── (staff)/    # area petugas: top bar + tab bar HP; kerja/(antrean) = antrean dua panel; pantau, admin/*, akun
 │   └── api/        # route tipis (lihat Arsitektur); /api/stats = data terbuka rapor
 ├── components/
 │   ├── ui.tsx      # Button, Alert, Field, Skeleton, NotFoundView, DemoClockBanner, SectionLabel, PageHeader
 │   ├── application/# ApplyForm, ResiSearch, Badges (StatusBadge, ChannelBadge, STEP_STATE), Timeline, ReceiptCard, OfficeMap, DocumentArt
 │   ├── charts/     # index.tsx (server) + ColumnChart.tsx (client)
-│   ├── landing/    # HeroSection (+ data kantor), SummaryStats, CountUp, Scene
+│   ├── landing/    # HeroSection (+ data kantor), SummaryStats, CountUp, pixel.ts (mesin) + PixelArt.tsx
 │   ├── office/     # kantor pixel-art: layout.ts (denah), engine.ts (jalur & karakter), PixelOffice.tsx (Canvas)
 │   └── layout/     # StaffShell (top bar, tab bar, IdleGuard), ThemeToggle
 ├── config/         # site.ts (teks landing), staff-nav.ts (menu petugas per peran), offices.ts/json (peta)
@@ -67,9 +68,12 @@ design/sprites/     # sumber lembar karakter AI (tidak diserve)
 
 ## UI
 
+- **Transisi halaman** (React `<ViewTransition>`, tanpa pustaka): semua page.tsx warga dibungkus `PageSlide` (ui.tsx, bukan di layout). Navigasi bertipe `nav-forward` geser ke kiri, `nav-back` ke kanan, tanpa tipe = tanpa animasi (mis. back browser). Tautan masuk lebih dalam diberi `transitionTypes={["nav-forward"]}` (Link/Button/`router.push`), tautan kembali `nav-back`. Menu navbar memakai `SlideLink` (arah dari urutan `ORDER`: beranda → lacak → layanan → rapor → ajukan; `usePathname` jadi dibungkus `<Suspense>` dengan `Link` biasa). Data dari `<Suspense>` muncul lewat `SuspenseReveal` (kerangka `slide-down` keluar, isi `slide-up` masuk). Navbar diam (`viewTransitionName: site-header`). CSS di globals.css (`vt-*`), mati saat "kurangi gerakan".
+- **Navbar warga** (`(public)/layout.tsx`): transparan di atas, padat + blur setelah digulir 64px lewat CSS scroll-driven (`.site-header` di globals.css, cadangan = padat); satu-satunya tombol = Masuk/Dasbor petugas.
 - Root layout hanya `<html>/<body>`; kerangka di route group. 404 per group (`NotFoundView`), alamat tak dikenal ditangkap `(public)/[...missing]`; `error.ts` group me-re-export `app/error.tsx`. Jangan pasang navbar di not-found/error.
 - **Area petugas tanpa sidebar:** `StaffTopBar` (tab per peran dari `config/staff-nav.ts`, dropdown Admin, cari resi ⌘K, chip jam demo, menu akun), `StaffTabBar` di HP (maks. 4). Antrean dua panel di `kerja/(antrean)/layout.tsx` (`data-detail` + `group-has-[[data-detail]]` untuk HP). Setelah aksi, `ActionPanel` pindah ke tugas berikutnya dengan `?selesai=&aksi=` (`ACTION_DONE`).
 - **Halaman warga** menjawab "lalu saya harus apa?": kartu `NextStep` per status di /lacak (jangan banner terpisah), urutan langkah + berkas dibawa di /ajukan/sukses, peta terbuka hanya saat warga perlu datang.
+- **Landing = bahasa pixel-art** (teknik dari portofolio penulis, `ardanicz-space`; tipografi tetap sans + mono): `landing/pixel.ts` = grid sel 5 tingkat (putih → dither → biru muda → dither → biru tua, dither 2px) + noise Perlin, warna dari token `--px-*` (ikut tema; nada `dusk`/`dawn` untuk kartu), animasi hanya saat terlihat, diam saat "kurangi gerakan" ATAU Jeda di kantor (`setPixelMotion`, dipanggil PixelOffice). `PixelArt.tsx`: `PixelSky` (awan menebal di tepi yang diberi kedalaman sel; noise menggeser batas awan; HP: sisi tipis), `PixelDecoration` (bars, hourglass, route, receipt, stamp; sprite = baris teks), `PixelCard` (ilustrasi kartu), `PixelStreet` (warga & petugas arsip berjalan, lembar karakter kantor). **Hero bergaya Collect UI** (tanpa langit piksel): gradien atas → bawah (`--hero-from` → `--bg`), ditarik ke bawah navbar (`-mt-16 pt-16`; navbar `h-16`), label + judul + pengantar + kolom resi di tengah, lalu kantor transparan sebagai "visual produk" di bingkai jendela aplikasi, strip fakta di bawahnya.
 - **Identitas visual = struk resi:** IBM Plex Mono untuk angka & resi, token `paper`/`paper-line`/`ink-soft`, utilitas `receipt-edge-top` & `rule-dashed`, `SectionLabel`/`PageHeader`. Hindari pola template (label pil, grid ikon seragam, latar gradien). Token di `globals.css`; teks landing di `site.ts`; hero memakai token `hero-*`.
 - **Tema:** skrip inline (`lib/theme.ts`) memasang `<html data-theme>` sebelum paint; `dark:` mengikuti data-theme; tombol di `ThemeToggle.tsx`.
 - **Grafik** (`components/charts/`): satu hue `--chart`, tooltip hover + fokus, tabel alternatif; prop ke client harus bisa diserialisasi.

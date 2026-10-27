@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
-import { Skeleton } from "@/components/ui";
+import { PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import { site } from "@/config/site";
 import type { ParamsOf } from "@/lib/api";
 import { getClockInfo, getTracking } from "@/lib/dal";
@@ -22,7 +21,11 @@ function Problem({ title, body }: { title: string; body: string }) {
       </div>
       <p className="mt-4 text-sm text-muted">
         Lupa nomor resi?{" "}
-        <Link href="/lacak/lupa" className="font-semibold text-brand hover:underline">
+        <Link
+          href="/lacak/lupa"
+          transitionTypes={["nav-forward"]}
+          className="font-semibold text-brand hover:underline"
+        >
           Cari dengan NIK & nomor HP
         </Link>
       </p>
@@ -71,10 +74,10 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <Suspense fallback={<TrackSkeleton />}>
+    <PageSlide className="px-20 py-8">
+      <SuspenseReveal fallback={<TrackSkeleton />}>
         <Tracking params={params} />
-      </Suspense>
-    </div>
+      </SuspenseReveal>
+    </PageSlide>
   );
 }

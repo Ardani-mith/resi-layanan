@@ -8,7 +8,7 @@ import { qrPng, siteOrigin, trackUrl } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 
 // Gambar bukti resi (PNG) untuk disimpan di galeri HP atau dicetak. Isinya data publik
-// saja (nama disamarkan), sama dengan yang terlihat siapa pun yang tahu nomor resi.
+// saja (nama disamarkan), sama dengan yang terlihat siapa pun yang tau nomor resi.
 // ImageResponse (Satori): <div> berisi lebih dari satu node wajib display:flex, jadi teks
 // campuran ditulis sebagai satu string.
 export async function GET(_request: Request, { params }: ParamsOf<{ resi: string }>) {

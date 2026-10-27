@@ -40,7 +40,8 @@ export default function ResiSearch({
       setError(`Format resi: RL-XXXX-XXXX, contoh ${example}.`);
       return;
     }
-    router.push(`/lacak/${resi}`);
+    // Maju ke halaman lacak: konten bergeser ke kiri (PageSlide + view-transitions.css).
+    router.push(`/lacak/${resi}`, { transitionTypes: ["nav-forward"] });
   }
 
   return (

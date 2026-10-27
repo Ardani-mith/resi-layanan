@@ -7,6 +7,7 @@
 
 import { Pause, Play } from "lucide-react";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
+import { setPixelMotion } from "@/components/landing/pixel";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { useReducedMotion } from "@/lib/hooks";
@@ -430,6 +431,8 @@ export default function PixelOffice({
   const overlayRef = useRef<HTMLDivElement>(null);
   // Nilai terbaru untuk loop animasi (diperbarui lewat effect, bukan saat render).
   const live = useRef({ playing, active, dirty: true });
+  // Jeda/Putar di sini berlaku untuk semua animasi piksel di halaman (langit, hiasan, strip jalan).
+  useEffect(() => setPixelMotion(playing), [playing]);
   useEffect(() => {
     live.current.playing = playing;
     live.current.active = active;

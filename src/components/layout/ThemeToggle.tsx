@@ -49,7 +49,7 @@ const OPTIONS = {
 /** Tombol tema: tiap klik berganti Sistem → Terang → Gelap. */
 export default function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useTheme();
-  // Render server belum tahu pilihan pengguna: tampilkan "Sistem" sampai hydration selesai.
+  // Render server belum tau pilihan pengguna: tampilkan "Sistem" sampai hydration selesai.
   const current = theme ?? "system";
   const next = THEMES[(THEMES.indexOf(current) + 1) % THEMES.length];
   const { label, Icon } = OPTIONS[current];
@@ -61,7 +61,7 @@ export default function ThemeToggle({ className }: { className?: string }) {
       aria-label={`Tema: ${label}. Ganti ke ${OPTIONS[next].label.toLowerCase()}`}
       title={`Tema: ${label}`}
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-text",
+        "grid size-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:text-text",
         className,
       )}
     >

@@ -9,7 +9,14 @@ export const site = {
   tagline: "Kalau paket bisa dilacak, kenapa KTP tidak?",
   description:
     "Lacak permohonan layanan publik seperti melacak paket: setiap tahap punya tenggat yang terlihat warga, dan keterlambatan otomatis naik ke atasan.",
-  demoNotice: "Instansi dan data pada situs ini fiktif, dibuat untuk Web In Action MIA 2026.",
+  demoNotice: "Instansi dan data pada situs ini fiktif.",
+  /** Lomba tempat karya ini dibuat (logo di footer). */
+  event: {
+    competition: "Web In Action",
+    name: "Multimedia In Action 2026",
+    url: "https://www.mia2026.com",
+    logo: "/brand/mia2026.webp",
+  },
   /** Penjelasan latar demo: Pantas dipasang per instansi; Kota Harapan Jaya = instansi contoh. */
   demo: {
     badge: "Instansi demo",
@@ -20,7 +27,7 @@ export const site = {
   hero: {
     kicker: "Pelacakan permohonan Dukcapil",
     // Satu elemen = satu baris yang dianimasikan muncul bergantian.
-    titleLines: ["Tahu pasti permohonan", "Anda sampai di mana,", "dan kapan selesai."],
+    titleLines: ["Tau pasti permohonan", "Anda sampai di mana,", "dan kapan selesai."],
     body: "Masukkan nomor resi dari loket atau pengajuan online. Tanpa login, tanpa antre bertanya.",
     exampleResi: "RL-HJ26-AKTA",
     highlights: ["Nama pemohon disamarkan", "Tenggat tiap tahap terlihat", "Terlambat? Naik ke atasan"],
@@ -41,7 +48,7 @@ export const site = {
   // VERIFIKASI ULANG angka & sumber sebelum submit (lihat docs/HANDOFF-WIA.md §2).
   problem: {
     title: "Masalahnya bukan hanya lambat, tapi gelap.",
-    body: "Warga tidak tahu berkasnya di meja siapa, kapan selesai, dan ke mana harus mengadu ketika molor. Laporan Ombudsman RI menunjukkan pola yang sama di banyak daerah.",
+    body: "Warga tidak tau berkasnya di meja siapa, kapan selesai, dan ke mana harus mengadu ketika molor. Laporan Ombudsman RI menunjukkan pola yang sama di banyak daerah.",
     stats: [
       { value: "38,0%", label: "laporan penundaan berlarut", source: "Ombudsman RI Perwakilan Sulsel, 2025" },
       {
@@ -113,24 +120,24 @@ export const site = {
 
   perspectives: {
     title: "Satu resi, tiga sudut pandang.",
-    body: "Data yang sama tampil sesuai kebutuhan: warga tahu harus apa, petugas tahu dasar keputusannya, pimpinan tahu di mana macetnya.",
+    body: "Data yang sama tampil sesuai kebutuhan: warga tau harus apa, petugas tau dasar keputusannya, pimpinan tau di mana macetnya.",
     items: [
       {
         role: "Warga",
-        scene: "pagi",
-        title: "Tahu harus apa sekarang",
+        tone: "dawn",
+        title: "tau harus apa sekarang",
         body: "Hitung mundur tiap tahap dan satu langkah berikutnya yang jelas. Data pribadi baru terbuka dengan 4 digit nomor HP.",
       },
       {
         role: "Petugas",
-        scene: "siang",
+        tone: "sky",
         title: "Selesai dengan dasar tercatat",
         body: "Antrean urut paling mendesak. Tahap baru bisa diselesaikan setelah syarat selesai dicentang, lalu lanjut ke tugas berikutnya.",
       },
       {
         role: "Pimpinan",
-        scene: "senja",
-        title: "Tahu di mana macetnya",
+        tone: "dusk",
+        title: "tau di mana macetnya",
         body: "Eskalasi Kasi → Kabid berjalan otomatis, tahap yang paling sering molor terlihat, dan persen terbit ≤ 24 jam terukur per layanan.",
       },
     ],

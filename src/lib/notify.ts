@@ -44,13 +44,13 @@ export function applicantEmail(
       `Resi ${app.resi}: permohonan ${app.serviceName} diterima`,
       app.status === STATUS.MENUNGGU_KEDATANGAN
         ? [
-            "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
-            "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
-          ]
+          "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
+          "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
+        ]
         : [
-            "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
-            "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
-          ],
+          "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
+          "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
+        ],
     ],
     request_fix: [
       `Resi ${app.resi}: berkas perlu dilengkapi`,
@@ -117,7 +117,7 @@ export async function sendEmail(message: EmailMessage): Promise<boolean> {
   }
 }
 
-/** Beri tahu pemohon tentang `action` yang baru terjadi (dipanggil lewat after() di route). */
+/** Beri tau pemohon tentang `action` yang baru terjadi (dipanggil lewat after() di route). */
 export async function notifyApplicant(
   action: Action | "created",
   app: Parameters<typeof applicantEmail>[1] & Pick<ApplicationData, "status">,

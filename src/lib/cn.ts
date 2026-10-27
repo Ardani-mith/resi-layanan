@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
-// Token desain dari globals.css (@theme). tailwind-merge perlu tahu bahwa ini WARNA,
+// Token desain dari globals.css (@theme). tailwind-merge perlu tau bahwa ini WARNA,
 // kalau tidak `text-muted` dikira ukuran font dan bisa membuang `text-sm` saat digabung.
 // prettier-ignore
 const COLORS = [

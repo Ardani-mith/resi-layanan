@@ -40,66 +40,80 @@ function OfficeSkeleton() {
 export default function HeroSection({ hero }: { hero: typeof site.hero }) {
   const lastLine = hero.titleLines.length - 1;
   return (
-    <section aria-labelledby="hero-title" className="relative overflow-hidden border-b border-line">
-      <div className="mx-auto max-w-6xl px-4 pt-12 sm:pt-16 lg:pt-20">
-        {/* Baris kop: seperti kepala surat dinas, bukan label "pil". */}
-        <p className="flex items-center gap-3 font-mono text-xs tracking-[0.14em] text-muted uppercase motion-safe:animate-fade-up">
-          <span className="hidden sm:inline">{site.agency}</span>
-          <span aria-hidden className="hidden h-px flex-1 bg-line sm:block" />
-          <span className="text-brand">{hero.kicker}</span>
+    // Gradien atas → bawah; -mt-16 + pt-16 menarik hero ke bawah navbar transparan (tinggi h-16).
+    <section
+      aria-labelledby="hero-title"
+      className="relative -mt-16 overflow-hidden border-b border-line bg-[linear-gradient(to_bottom,var(--hero-from),var(--bg)_65%)] pt-16"
+    >
+      {/* Teks di tengah: label, judul, pengantar, lalu satu aksi utama (cek resi). */}
+      <div className="relative mx-auto max-w-4xl px-4 pt-16 text-center sm:pt-20 lg:pt-24">
+        <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted shadow-card motion-safe:animate-fade-up">
+          <span aria-hidden className="size-1.5 rounded-full bg-ok motion-safe:animate-pulse" />
+          {hero.kicker}
+          <span aria-hidden className="hidden h-3 w-px bg-line sm:block" />
+          <span className="hidden text-text sm:inline">{site.agency}</span>
         </p>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-14">
-          {/* HP: teks mengalir alami (text-balance) dan muncul sebagai satu blok.
-              Desktop: tiap baris naik bergantian dari balik "jendela" overflow-hidden. */}
-          <h1
-            id="hero-title"
-            className="text-[clamp(2.3rem,9vw,3rem)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance motion-safe:animate-fade-up lg:text-[clamp(3rem,4.6vw,4.1rem)] lg:motion-safe:animate-none"
-          >
-            {hero.titleLines.map((line, i) => (
-              <span key={line} className="lg:-mb-1 lg:block lg:overflow-hidden lg:pb-1">
-                <span
-                  className={cn(
-                    "lg:block lg:whitespace-nowrap lg:motion-safe:animate-rise",
-                    i === lastLine && "text-brand",
-                  )}
-                  style={delay(100 + i * 90)}
-                >
-                  {line}
-                </span>
-                {i < lastLine && " "}
+        {/* HP: teks mengalir alami (text-balance). Desktop: tiap baris naik bergantian dari balik
+            "jendela" overflow-hidden. */}
+        <h1
+          id="hero-title"
+          className="mt-6 text-[clamp(2.3rem,9vw,3.1rem)] leading-[1.03] font-extrabold tracking-[-0.035em] text-balance motion-safe:animate-fade-up lg:text-[clamp(3.2rem,5.2vw,4.6rem)] lg:motion-safe:animate-none"
+        >
+          {hero.titleLines.map((line, i) => (
+            <span key={line} className="lg:-mb-1 lg:block lg:overflow-hidden lg:pb-1">
+              <span
+                className={cn("lg:block lg:motion-safe:animate-rise", i === lastLine && "text-brand")}
+                style={delay(100 + i * 90)}
+              >
+                {line}
               </span>
-            ))}
-          </h1>
+              {i < lastLine && " "}
+            </span>
+          ))}
+        </h1>
 
-          <div className="motion-safe:animate-fade-up" style={delay(350)}>
-            <p className="text-lg text-muted">{hero.body}</p>
-            <div className="mt-6">
-              <ResiSearch example={hero.exampleResi} />
+        <p
+          className="mx-auto mt-5 max-w-xl text-lg text-muted motion-safe:animate-fade-up"
+          style={delay(300)}
+        >
+          {hero.body}
+        </p>
+        <div className="mx-auto mt-8 max-w-xl text-left motion-safe:animate-fade-up" style={delay(400)}>
+          <ResiSearch example={hero.exampleResi} />
+        </div>
+      </div>
+
+      {/* Visual produk: kantor transparan dalam bingkai jendela aplikasi. */}
+      <div className="relative px-4 pt-14 pb-12 motion-safe:animate-fade-up lg:px-20" style={delay(550)}>
+        <div className="rounded-[1.75rem] border border-line bg-surface-2/70 p-2 shadow-[0_40px_80px_-40px_rgb(15_27_45/0.35)] sm:p-3">
+          <div className="rounded-[1.35rem] border border-line bg-surface px-3 pt-3 pb-4 sm:px-5 sm:pt-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+              <p className="flex items-center gap-3 text-sm">
+                <span aria-hidden className="hidden gap-1.5 sm:flex">
+                  <span className="size-2.5 rounded-full bg-line" />
+                  <span className="size-2.5 rounded-full bg-line" />
+                  <span className="size-2.5 rounded-full bg-line" />
+                </span>
+                <span className="font-semibold">{hero.office.label}</span>
+                <span className="hidden text-muted sm:inline">{hero.office.caption}</span>
+              </p>
+              <p className="flex items-center gap-2 rounded-full bg-ok-soft px-2.5 py-0.5 font-mono text-xs text-ok">
+                <span aria-hidden className="size-1.5 rounded-full bg-ok motion-safe:animate-pulse" />
+                {hero.office.live}
+              </p>
             </div>
+            <SectionError message="Denah kantor sementara tidak dapat dimuat. Lacak resi tetap bisa dipakai.">
+              <Suspense fallback={<OfficeSkeleton />}>
+                <OfficeLive />
+              </Suspense>
+            </SectionError>
           </div>
         </div>
 
-        {/* Kantor transparan: denah pixel-art dengan berkas asli per ruangan. */}
-        <div className="mt-14 motion-safe:animate-fade-up" style={delay(500)}>
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-4">
-            <p className="font-mono text-xs tracking-[0.14em] text-muted uppercase">
-              <span className="text-brand">{hero.office.label}</span> · {hero.office.caption}
-            </p>
-            <p className="flex items-center gap-2 font-mono text-xs text-muted">
-              <span aria-hidden className="size-2 rounded-full bg-ok motion-safe:animate-pulse" />
-              {hero.office.live}
-            </p>
-          </div>
-          <SectionError message="Denah kantor sementara tidak dapat dimuat. Lacak resi tetap bisa dipakai.">
-            <Suspense fallback={<OfficeSkeleton />}>
-              <OfficeLive />
-            </Suspense>
-          </SectionError>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line py-5 text-sm text-muted">
-          <ul className="flex flex-wrap gap-x-6 gap-y-2">
+        {/* Strip fakta singkat di bawah visual. */}
+        <div className="mt-8 flex flex-col items-center gap-3 text-sm text-muted">
+          <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2">
             {hero.highlights.map((text, i) => (
               <li key={text} className="flex items-baseline gap-2">
                 <span className="font-mono text-xs text-brand">0{i + 1}</span>
@@ -107,7 +121,7 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
               </li>
             ))}
           </ul>
-          <p className="text-xs">
+          <p className="text-center text-xs">
             <span className="mr-2 rounded-sm border border-line px-1.5 py-0.5 font-semibold">
               {site.demo.badge}
             </span>

@@ -1,14 +1,16 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PageSlide } from "@/components/ui";
 import RecoverForm from "./RecoverForm";
 
 export const metadata = { title: "Lupa nomor resi" };
 
 export default function ForgotResiPage() {
   return (
-    <div className="mx-auto max-w-xl px-4 py-14">
+    <PageSlide className="mx-auto max-w-xl px-4 py-14">
       <Link
         href="/lacak"
+        transitionTypes={["nav-back"]}
         className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
       >
         <ArrowLeft aria-hidden className="size-4" /> Lacak resi
@@ -25,6 +27,6 @@ export default function ForgotResiPage() {
         Nomor HP sudah tidak aktif? Datang ke loket layanan dengan membawa KTP-el; petugas bisa mencarikan
         resi Anda.
       </p>
-    </div>
+    </PageSlide>
   );
 }

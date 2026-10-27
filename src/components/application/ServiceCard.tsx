@@ -67,6 +67,7 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
   return (
     <Link
       href={`/layanan/${service.slug}`}
+      transitionTypes={["nav-forward"]}
       style={style}
       className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface transition-shadow hover:shadow-card"
     >

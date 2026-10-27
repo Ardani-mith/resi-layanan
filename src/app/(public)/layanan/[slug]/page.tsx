@@ -1,8 +1,7 @@
 import { CheckCircle2, FileCheck2 } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { StatTile } from "@/components/charts";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
 import { getServiceCatalog } from "@/lib/dal";
 import { formatPercent, formatWorkHours } from "@/lib/format";
@@ -26,7 +25,9 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{service.name}</h1>
           <p className="mt-2 text-muted">{service.description}</p>
         </div>
-        <Button href={`/ajukan?layanan=${service.slug}`}>Ajukan sekarang</Button>
+        <Button href={`/ajukan?layanan=${service.slug}`} transitionTypes={["nav-forward"]}>
+          Ajukan sekarang
+        </Button>
       </div>
 
       <section aria-labelledby="kinerja" className="mt-8">
@@ -108,10 +109,10 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
 
 export default function ServiceDetailPage({ params }: ParamsOf<{ slug: string }>) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <Suspense fallback={<Skeleton />}>
+    <PageSlide className="px-20 py-8">
+      <SuspenseReveal fallback={<Skeleton />}>
         <ServiceDetail params={params} />
-      </Suspense>
-    </div>
+      </SuspenseReveal>
+    </PageSlide>
   );
 }

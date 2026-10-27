@@ -221,7 +221,7 @@ async function Dashboard() {
 
 export default function MonitorPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+    <div className="space-y-6 px-20 py-8">
       <Suspense fallback={<Skeleton />}>
         <Dashboard />
       </Suspense>

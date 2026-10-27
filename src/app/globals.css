@@ -65,6 +65,20 @@
   --paper-line: #d9d3c4;
   --ink-soft: #6b6557;
 
+  /* Gradien hero beranda: biru muda di atas, memudar ke warna latar. */
+  --hero-from: #d3e6fb;
+
+  /* Pixel-art landing (langit, hiasan, strip jalan): tingkat putih → biru muda → biru tua,
+     tingkat di antaranya berupa dither 2px. Senja & fajar untuk ilustrasi kartu. */
+  --px-white: #ffffff;
+  --px-light: #9dccff;
+  --px-dark: #3d8fe6;
+  --px-ink: #0f1b2d;
+  --px-dusk-light: #ffd2a6;
+  --px-dusk-dark: #f08a4b;
+  --px-dawn-light: #ffe7b0;
+  --px-dawn-dark: #9fbcef;
+
   --radius: 14px;
   --shadow: 0 1px 2px rgb(15 27 45 / 0.06), 0 4px 16px rgb(15 27 45 / 0.06);
 
@@ -120,6 +134,17 @@
   --paper: #162236;
   --paper-line: #2e3d57;
   --ink-soft: #9aa8bd;
+
+  --hero-from: #0f2a4f;
+
+  --px-white: #15223a;
+  --px-light: #1c3a66;
+  --px-dark: #2a5fa6;
+  --px-ink: #e6edf7;
+  --px-dusk-light: #3d2a2c;
+  --px-dusk-dark: #8a4a35;
+  --px-dawn-light: #2e2c3a;
+  --px-dawn-dark: #34508a;
 
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
 
@@ -243,6 +268,107 @@ body {
 /* Hanya bergerak saat panggung diputar (data-playing, default dari pengaturan "kurangi gerakan"). */
 [data-playing="true"] .iso-pulse {
   animation: iso-pulse 1.6s ease-in-out infinite;
+}
+
+/* Navbar warga: transparan di posisi paling atas (menyatu dengan gradien hero), lalu padat
+   + blur + garis bawah setelah digulir 64px. Murni CSS (scroll-driven animation); browser yang
+   belum mendukung langsung memakai keadaan padat. */
+.site-header {
+  background-color: color-mix(in srgb, var(--surface) 90%, transparent);
+  border-color: var(--line);
+  backdrop-filter: blur(8px);
+}
+@supports (animation-timeline: scroll()) {
+  .site-header {
+    animation: header-solid linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 64px;
+  }
+}
+@keyframes header-solid {
+  from {
+    background-color: transparent;
+    border-color: transparent;
+    backdrop-filter: blur(0);
+  }
+}
+
+/* --- Transisi halaman (React <ViewTransition>, lihat PageSlide di components/ui.tsx) ----------
+   Maju (cek resi → lacak): konten lama keluar ke kiri, baru masuk dari kanan; kembali (logo →
+   beranda) sebaliknya. Yang lama pergi cepat & memudar dengan blur, yang baru datang lebih pelan
+   dengan easing expo-out. Navbar tetap diam sebagai titik acuan. Browser tanpa dukungan:
+   pindah halaman biasa. */
+::view-transition {
+  pointer-events: none; /* klik tetap sampai ke halaman selama animasi */
+}
+::view-transition-old(.nav-forward),
+::view-transition-old(.nav-back) {
+  animation:
+    180ms cubic-bezier(0.4, 0, 1, 1) both vt-fade reverse,
+    480ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide reverse;
+}
+::view-transition-new(.nav-forward),
+::view-transition-new(.nav-back) {
+  animation:
+    260ms ease-out 140ms both vt-fade,
+    560ms cubic-bezier(0.22, 1, 0.36, 1) both vt-slide;
+}
+::view-transition-old(.nav-forward) {
+  --vt-offset: -80px;
+}
+::view-transition-new(.nav-forward) {
+  --vt-offset: 80px;
+}
+::view-transition-old(.nav-back) {
+  --vt-offset: 80px;
+}
+::view-transition-new(.nav-back) {
+  --vt-offset: -80px;
+}
+/* Data halaman lacak tiba: kerangka turun & memudar, isi naik masuk. */
+::view-transition-old(.slide-down) {
+  animation:
+    150ms ease-out both vt-fade reverse,
+    150ms ease-out both vt-rise reverse;
+}
+::view-transition-new(.slide-up) {
+  animation:
+    220ms ease-in 150ms both vt-fade,
+    420ms cubic-bezier(0.22, 1, 0.36, 1) both vt-rise;
+}
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+@keyframes vt-fade {
+  from {
+    filter: blur(4px);
+    opacity: 0;
+  }
+}
+@keyframes vt-slide {
+  from {
+    translate: var(--vt-offset) 0;
+  }
+}
+@keyframes vt-rise {
+  from {
+    translate: 0 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }
 
 /* Cetak: jika halaman punya .print-area (mis. bukti resi), hanya bagian itu yang dicetak. */

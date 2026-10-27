@@ -4,10 +4,10 @@ import { Fragment, type ReactNode, Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
 import CountUp from "@/components/landing/CountUp";
 import HeroSection from "@/components/landing/HeroSection";
-import Scene, { GlassCard } from "@/components/landing/Scene";
+import { type DecorationName, PixelCard, PixelDecoration, PixelStreet } from "@/components/landing/PixelArt";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
 import SectionError from "@/components/SectionError";
-import { Button, SectionLabel } from "@/components/ui";
+import { Button, PageSlide, SectionLabel } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
@@ -17,6 +17,7 @@ function Section({
   label,
   title,
   intro,
+  decoration,
   children,
   className,
 }: {
@@ -25,24 +26,25 @@ function Section({
   label: string;
   title: string;
   intro?: string;
+  /** Hiasan piksel beranimasi di samping judul (seperti situs portofolio). */
+  decoration?: DecorationName;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <section
-      id={id}
-      aria-labelledby={`${id}-title`}
-      className={cn("mx-auto max-w-6xl px-4 py-20 sm:py-24", className)}
-    >
+    <section id={id} aria-labelledby={`${id}-title`} className={cn("px-20 py-20 sm:py-24", className)}>
       <SectionLabel index={index} className="reveal">
         {label}
       </SectionLabel>
-      <h2
-        id={`${id}-title`}
-        className="reveal mt-6 max-w-3xl text-[clamp(1.9rem,5vw,2.75rem)] leading-[1.08] font-extrabold tracking-[-0.03em] text-balance"
-      >
-        {title}
-      </h2>
+      <div className="mt-6 flex items-end justify-between gap-8">
+        <h2
+          id={`${id}-title`}
+          className="reveal max-w-3xl text-[clamp(1.9rem,5vw,2.75rem)] leading-[1.08] font-extrabold tracking-[-0.03em] text-balance"
+        >
+          {title}
+        </h2>
+        {decoration && <PixelDecoration name={decoration} className="mb-1 hidden sm:block" />}
+      </div>
       {intro && <p className="reveal mt-4 max-w-2xl text-lg text-muted">{intro}</p>}
       <div className="mt-12">{children}</div>
     </section>
@@ -50,6 +52,15 @@ function Section({
 }
 
 // --- Kartu kaca untuk "Satu resi, tiga sudut pandang" (ilustrasi, aria-hidden) -------------
+
+/** Kartu "kaca gelap" di atas langit piksel: teks putih, tepi tipis. */
+function GlassCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="w-full max-w-[19rem] rounded-md border border-white/15 bg-[#1b1f24]/70 p-4 text-white shadow-[0_20px_40px_-12px_rgb(0_0_0/0.45)] backdrop-blur-md">
+      {children}
+    </div>
+  );
+}
 
 function GlassHead({ title, meta }: { title: string; meta: string }) {
   return (
@@ -139,19 +150,21 @@ function Corner({ className }: { className: string }) {
 export default function Home() {
   const { hero, summary, problem, howItWorks, perspectives, closing } = site;
   return (
-    <>
+    <PageSlide>
       <HeroSection hero={hero} />
 
       {/* Rapor ringkas: angka asli dari database, di-stream setelah kerangka halaman tampil. */}
       <section aria-labelledby="rapor-ringkas-title" className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[16rem_1fr] lg:items-end">
+        <div className="grid gap-10 px-20 py-12 lg:grid-cols-[16rem_1fr] lg:items-end">
           <div>
+            {/* <PixelDecoration name="bars" className="mb-4" /> */}
             <h2 id="rapor-ringkas-title" className="font-mono text-xs tracking-[0.14em] text-brand uppercase">
               {summary.title}
             </h2>
             <p className="mt-3 text-sm text-muted">{summary.body}</p>
             <Link
               href="/rapor"
+              transitionTypes={["nav-forward"]}
               className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
             >
               {summary.cta} <ArrowRight aria-hidden className="size-4" />
@@ -166,7 +179,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Section id="masalah" index="01" label="Masalah" title={problem.title}>
+      <Section id="masalah" index="01" label="Masalah" title={problem.title} decoration="hourglass">
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
             <p className="reveal text-lg text-muted">{problem.body}</p>
@@ -234,7 +247,7 @@ export default function Home() {
       </Section>
 
       <div className="border-y border-line bg-surface">
-        <Section id="cara-kerja" index="02" label="Cara kerja" title={howItWorks.title}>
+        <Section id="cara-kerja" index="02" label="Cara kerja" title={howItWorks.title} decoration="route">
           {/* Jalur seperti rute paket: titik + garis putus-putus, label waktu di atas. */}
           <ol className="relative grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             <span
@@ -262,7 +275,7 @@ export default function Home() {
       </div>
 
       {/* Satu resi, tiga sudut pandang: bingkai blueprint, kepala dua kolom, panel pemandangan. */}
-      <section aria-labelledby="sudut-pandang-title" className="mx-auto max-w-6xl px-4 py-20 sm:py-24">
+      <section aria-labelledby="sudut-pandang-title" className="px-20 py-20 sm:py-24">
         <SectionLabel index="03" className="reveal">
           Untuk siapa
         </SectionLabel>
@@ -273,7 +286,10 @@ export default function Home() {
           >
             {perspectives.title}
           </h2>
-          <p className="reveal text-muted lg:pb-2">{perspectives.body}</p>
+          <div className="reveal flex items-end gap-6 lg:pb-2">
+            <p className="text-muted">{perspectives.body}</p>
+            <PixelDecoration name="receipt" className="hidden sm:block" />
+          </div>
         </div>
 
         <div className="relative mt-14 border-y border-line lg:border-x">
@@ -290,9 +306,9 @@ export default function Home() {
               return (
                 <li key={item.role} className="reveal flex flex-col p-5 sm:p-7">
                   <div aria-hidden>
-                    <Scene name={item.scene}>
+                    <PixelCard tone={item.tone} seed={i * 17}>
                       <Mini />
-                    </Scene>
+                    </PixelCard>
                   </div>
                   <p className="mt-8 font-mono text-sm text-muted">
                     0{i + 1} <span className="ml-2 text-brand">{item.role}</span>
@@ -308,16 +324,21 @@ export default function Home() {
         </div>
         <p className="reveal mt-8 text-sm text-muted">
           {perspectives.more}{" "}
-          <Link href="/rapor" className="font-semibold text-brand hover:underline">
+          <Link
+            href="/rapor"
+            transitionTypes={["nav-forward"]}
+            className="font-semibold text-brand hover:underline"
+          >
             Buka rapor SLA
           </Link>
         </p>
       </section>
 
       {/* Penutup: sobekan struk berisi ajakan & kolom cek resi. */}
-      <section aria-labelledby="penutup-title" className="px-4 pb-20">
-        <div className="mx-auto max-w-6xl drop-shadow-[0_18px_30px_rgb(15_27_45/0.10)]">
-          <div className="grid gap-10 bg-paper px-6 pt-14 pb-10 receipt-edge-top sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+      <section aria-labelledby="penutup-title" className="px-20 pb-20">
+        <div className="drop-shadow-[0_18px_30px_rgb(15_27_45/0.10)]">
+          <div className="relative grid gap-10 bg-paper px-6 pt-14 pb-10 receipt-edge-top sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <PixelDecoration name="stamp" className="absolute top-12 right-10 hidden lg:block" />
             <div>
               <p className="font-mono text-xs tracking-[0.14em] text-ink-soft uppercase">
                 — potong di sini —
@@ -330,8 +351,10 @@ export default function Home() {
               </h2>
               <p className="reveal mt-4 max-w-xl text-lg text-muted">{closing.body}</p>
               <div className="reveal mt-6 flex flex-wrap gap-3">
-                <Button href="/ajukan">Ajukan permohonan</Button>
-                <Button href="/rapor" variant="secondary">
+                <Button href="/ajukan" transitionTypes={["nav-forward"]}>
+                  Ajukan permohonan
+                </Button>
+                <Button href="/rapor" transitionTypes={["nav-forward"]} variant="secondary">
                   Lihat rapor SLA
                 </Button>
               </div>
@@ -343,6 +366,9 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </>
+
+      {/* Strip penutup: warga & petugas arsip berjalan ke/dari kantor di atas awan. */}
+      <PixelStreet />
+    </PageSlide>
   );
 }

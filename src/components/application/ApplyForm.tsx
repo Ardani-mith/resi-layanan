@@ -426,7 +426,9 @@ function ApplyFormBody({
     }
     // pending tetap true sampai halaman sukses terbuka, mencegah pengajuan ganda.
     onSubmitted();
-    router.push(`/ajukan/sukses?resi=${res.data.resi}${isLoket ? "&loket=1" : ""}`);
+    router.push(`/ajukan/sukses?resi=${res.data.resi}${isLoket ? "&loket=1" : ""}`, {
+      transitionTypes: ["nav-forward"],
+    });
   }
 
   if (!service) {

@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import ServiceCard from "@/components/application/ServiceCard";
-import { PageHeader, Skeleton } from "@/components/ui";
+import { PageHeader, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import { site } from "@/config/site";
 import { getServiceCatalog } from "@/lib/dal";
 
@@ -27,16 +26,16 @@ async function Catalog() {
 
 export default function ServicesPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
+    <PageSlide className="px-20 py-12">
       <PageHeader label={`Layanan ${site.agency}`} title="Pilih dokumen, lihat janjinya dulu.">
         Setiap layanan punya tahapan dengan tenggat dalam jam kerja; dokumen terbit paling lama 24 jam setelah
         berkas lengkap (Permendagri 19/2018). Angka tepat waktu dihitung dari permohonan yang sudah selesai.
       </PageHeader>
       <div className="mt-10">
-        <Suspense fallback={<Skeleton className="h-64" />}>
+        <SuspenseReveal fallback={<Skeleton className="h-64" />}>
           <Catalog />
-        </Suspense>
+        </SuspenseReveal>
       </div>
-    </div>
+    </PageSlide>
   );
 }

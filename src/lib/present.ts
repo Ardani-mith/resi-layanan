@@ -111,13 +111,13 @@ export const APPLICANT_MIN_AGE = 17;
 
 export type NikCheck =
   | {
-      ok: true;
-      birthDate: string;
-      gender: "LAKI-LAKI" | "PEREMPUAN";
-      age: number;
-      /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
-      needsMarried: boolean;
-    }
+    ok: true;
+    birthDate: string;
+    gender: "LAKI-LAKI" | "PEREMPUAN";
+    age: number;
+    /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
+    needsMarried: boolean;
+  }
   | { ok: false; message: string };
 
 /**
@@ -214,7 +214,7 @@ function stepView(app: ApplicationData, step: Step, index: number, now: DateLike
   };
 }
 
-/** Untuk siapa pun yang tahu nomor resi. */
+/** Untuk siapa pun yang tau nomor resi. */
 export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
   const steps = app.steps.map((s, i) => stepView(app, s, i, now));
   const current = steps[app.currentStep];
@@ -235,8 +235,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     estimatedCompletion:
       // Belum datang: tenggat belum berjalan, jadi perkiraan baru ada setelah warga hadir.
       app.status === STATUS.SELESAI ||
-      app.status === STATUS.DITOLAK ||
-      app.status === STATUS.MENUNGGU_KEDATANGAN
+        app.status === STATUS.DITOLAK ||
+        app.status === STATUS.MENUNGGU_KEDATANGAN
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
     /** Janji terbit ≤ 24 jam (1 hari kerja) setelah berkas lengkap, Permendagri 19/2018. */

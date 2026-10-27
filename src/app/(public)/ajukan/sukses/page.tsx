@@ -1,8 +1,8 @@
 import { Check, CheckCircle2 } from "lucide-react";
-import { type ReactNode, Suspense } from "react";
+import type { ReactNode } from "react";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
-import { Button, Skeleton } from "@/components/ui";
+import { Button, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import type { SearchParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { getTracking } from "@/lib/dal";
@@ -55,7 +55,7 @@ async function Success({ searchParams }: SearchParamsOf) {
       <div className="text-center">
         <h1 className="text-2xl font-bold">Nomor resi tidak ditemukan di tautan ini</h1>
         <p className="mt-2 text-muted">Jika Anda baru saja mengajukan, cek resi di halaman lacak.</p>
-        <Button href="/lacak" className="mt-6">
+        <Button href="/lacak" transitionTypes={["nav-forward"]} className="mt-6">
           Lacak resi
         </Button>
       </div>
@@ -174,7 +174,7 @@ async function Success({ searchParams }: SearchParamsOf) {
             </ol>
           </section>
 
-          {/* Belum perlu sekarang: peta ringkas, dibuka bila warga ingin tahu lokasinya. */}
+          {/* Belum perlu sekarang: peta ringkas, dibuka bila warga ingin tau lokasinya. */}
           {!isLoket && <OfficeMap defaultOpen={false} title="Lokasi pengambilan dokumen nanti" />}
         </div>
 
@@ -184,8 +184,14 @@ async function Success({ searchParams }: SearchParamsOf) {
             Untuk melihat detail di halaman lacak, siapkan 4 digit terakhir nomor HP yang didaftarkan.
           </p>
           <div className="grid gap-2">
-            <Button href={`/lacak/${resi}`}>Lacak sekarang</Button>
-            <Button href={isLoket ? "/kerja/baru" : "/"} variant="secondary">
+            <Button href={`/lacak/${resi}`} transitionTypes={["nav-forward"]}>
+              Lacak sekarang
+            </Button>
+            <Button
+              href={isLoket ? "/kerja/baru" : "/"}
+              transitionTypes={isLoket ? undefined : ["nav-back"]}
+              variant="secondary"
+            >
               {isLoket ? "Input warga berikutnya" : "Kembali ke beranda"}
             </Button>
           </div>
@@ -197,10 +203,10 @@ async function Success({ searchParams }: SearchParamsOf) {
 
 export default function SuccessPage({ searchParams }: SearchParamsOf) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <Suspense fallback={<Skeleton className="h-80" />}>
+    <PageSlide className="px-20 py-10">
+      <SuspenseReveal fallback={<Skeleton className="h-80" />}>
         <Success searchParams={searchParams} />
-      </Suspense>
-    </div>
+      </SuspenseReveal>
+    </PageSlide>
   );
 }

@@ -443,7 +443,7 @@ export default function TrackView({
                   , paling lambat <span className="font-semibold">{formatDateTime(current.dueAt)}</span>
                 </>
               )}
-              . Halaman ini akan memberi tahu jika berkas perlu dilengkapi dan saat dokumen siap diambil.
+              . Halaman ini akan memberi tau jika berkas perlu dilengkapi dan saat dokumen siap diambil.
             </p>
             <details className="group rounded-xl bg-surface-2 px-3 py-2">
               <summary className="cursor-pointer font-semibold">

@@ -74,6 +74,7 @@ export default function RecoverForm() {
               <li key={app.resi}>
                 <Link
                   href={`/lacak/${app.resi}`}
+                  transitionTypes={["nav-forward"]}
                   className="flex items-center gap-3 rounded-xl px-2 py-3 hover:bg-surface-2"
                 >
                   <span className="min-w-0 flex-1">

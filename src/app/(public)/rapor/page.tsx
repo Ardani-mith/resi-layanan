@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
-import { PageHeader, Skeleton } from "@/components/ui";
+import { PageHeader, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { getStats } from "@/lib/dal";
@@ -80,7 +79,11 @@ async function Report() {
               className="grid gap-x-4 gap-y-2 px-5 py-4 sm:grid-cols-[1.4fr_1.2fr_1fr_1fr] sm:items-center"
             >
               <div>
-                <Link href={`/layanan/${s.slug}`} className="font-medium hover:text-brand">
+                <Link
+                  href={`/layanan/${s.slug}`}
+                  transitionTypes={["nav-forward"]}
+                  className="font-medium hover:text-brand"
+                >
                   {s.name}
                 </Link>
                 <span className="block text-xs text-muted">
@@ -121,14 +124,14 @@ async function Report() {
 
 export default function ReportPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-12">
+    <PageSlide className="space-y-8 px-20 py-12">
       <PageHeader label="Rapor SLA publik" title="Janji waktu, ditepati atau tidak.">
         Seberapa sering {site.agency} menepati janji waktu layanannya. Terbuka untuk siapa pun, diperbarui
         langsung dari data permohonan.
       </PageHeader>
-      <Suspense fallback={<Skeleton />}>
+      <SuspenseReveal fallback={<Skeleton />}>
         <Report />
-      </Suspense>
-    </div>
+      </SuspenseReveal>
+    </PageSlide>
   );
 }

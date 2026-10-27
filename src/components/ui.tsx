@@ -2,7 +2,14 @@
 // Component (tanpa state); form client cukup mengimpornya.
 
 import Link from "next/link";
-import { type ComponentProps, type ComponentPropsWithoutRef, type ReactNode, useId } from "react";
+import {
+  type ComponentProps,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  Suspense,
+  useId,
+  ViewTransition,
+} from "react";
 import { cn } from "@/lib/cn";
 import { DAY_MS } from "@/lib/sla";
 
@@ -218,5 +225,39 @@ export function PageHeader({
       </h1>
       {children && <p className="mt-3 max-w-2xl text-lg text-muted">{children}</p>}
     </header>
+  );
+}
+
+// --- Transisi halaman -----------------------------------------------------------------
+
+const SLIDE = { "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" };
+
+/**
+ * Konten halaman yang bergeser berarah saat navigasi bertipe "nav-forward" (masuk lebih dalam /
+ * maju di menu: geser ke kiri) atau "nav-back" (kembali: geser ke kanan). Navigasi lain (tombol
+ * back browser, refresh) tanpa animasi. Taruh di page.tsx, bukan layout (layout tidak berganti).
+ */
+export function PageSlide({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <ViewTransition enter={SLIDE} exit={SLIDE} default="none">
+      <div className={className}>{children}</div>
+    </ViewTransition>
+  );
+}
+
+/** `<Suspense>` dengan reveal: saat data tiba, kerangka turun & memudar, isi naik masuk. */
+export function SuspenseReveal({ fallback, children }: { fallback: ReactNode; children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <ViewTransition exit="slide-down" default="none">
+          {fallback}
+        </ViewTransition>
+      }
+    >
+      <ViewTransition enter="slide-up" default="none">
+        {children}
+      </ViewTransition>
+    </Suspense>
   );
 }

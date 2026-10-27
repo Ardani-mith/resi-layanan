@@ -188,7 +188,7 @@ const REJECT_NOTES = [
   "Pemohon sudah memiliki KTP-el aktif. Untuk KTP rusak/hilang gunakan layanan penggantian.",
 ];
 const COMMENTS = [
-  "Prosesnya jelas, saya tahu harus menunggu sampai kapan.",
+  "Prosesnya jelas, saya tau harus menunggu sampai kapan.",
   "Lebih cepat dari perkiraan. Terima kasih petugas loket.",
   "Sempat terlambat sehari, tapi statusnya selalu ter-update.",
   "Tidak perlu bolak-balik tanya ke kantor lagi.",
