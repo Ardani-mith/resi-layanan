@@ -7,6 +7,7 @@ import { type ActorRole, type Role, ROLES } from "./lib/roles.ts";
 import {
   type ApplicationData,
   type Escalation,
+  type EscalationResponse,
   type KtpDetails,
   type ServiceData,
   STATUS,
@@ -57,6 +58,20 @@ const escalationSchema = new Schema<Escalation>(
     note: { type: String, default: null },
     createdAt: { type: Date, required: true },
     resolvedAt: { type: Date, default: null },
+    response: {
+      type: new Schema<EscalationResponse>(
+        {
+          note: { type: String, required: true },
+          instruction: { type: String, default: null },
+          byId: { type: ObjectId, ref: "User", default: null },
+          byName: { type: String, required: true },
+          at: { type: Date, required: true },
+          promisedAt: { type: Date, default: null },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { _id: false },
 );

@@ -13,7 +13,15 @@ import {
   type StepState,
   stepState,
 } from "./sla.ts";
-import { type ApplicationData, arrivalDeadline, STATUS, STATUS_LABELS, type Step } from "./workflow.ts";
+import {
+  type ApplicationData,
+  arrivalDeadline,
+  fixDeadline,
+  followUpFor,
+  STATUS,
+  STATUS_LABELS,
+  type Step,
+} from "./workflow.ts";
 
 // --- Penyamaran data pribadi --------------------------------------------------------
 
@@ -111,13 +119,13 @@ export const APPLICANT_MIN_AGE = 17;
 
 export type NikCheck =
   | {
-    ok: true;
-    birthDate: string;
-    gender: "LAKI-LAKI" | "PEREMPUAN";
-    age: number;
-    /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
-    needsMarried: boolean;
-  }
+      ok: true;
+      birthDate: string;
+      gender: "LAKI-LAKI" | "PEREMPUAN";
+      age: number;
+      /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
+      needsMarried: boolean;
+    }
   | { ok: false; message: string };
 
 /**
@@ -210,14 +218,29 @@ function stepView(app: ApplicationData, step: Step, index: number, now: DateLike
     remainingMs: state === "ditolak" ? null : remainingMs(step, now),
     finishedLate: finishedLate(step),
     escalated: (app.escalations ?? []).some((e) => e.stepKey === step.key),
+    followUp: publicFollowUp(app, step.key),
     publicNote: step.publicNote,
   };
+}
+
+/** Tindak lanjut pimpinan untuk warga: jabatan & tanggapan, tanpa nama pimpinan atau arahan internal. */
+function publicFollowUp(app: ApplicationData, stepKey: string) {
+  const followUp = followUpFor(app.escalations, stepKey);
+  return (
+    followUp && {
+      target: followUp.target,
+      note: followUp.note,
+      at: followUp.at,
+      promisedAt: followUp.promisedAt,
+    }
+  );
 }
 
 /** Untuk siapa pun yang tau nomor resi. */
 export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
   const steps = app.steps.map((s, i) => stepView(app, s, i, now));
   const current = steps[app.currentStep];
+  const fixPausedAt = app.status === STATUS.PERLU_PERBAIKAN ? app.steps[app.currentStep]?.pausedAt : null;
   return {
     resi: app.resi,
     serviceName: app.serviceName,
@@ -235,8 +258,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     estimatedCompletion:
       // Belum datang: tenggat belum berjalan, jadi perkiraan baru ada setelah warga hadir.
       app.status === STATUS.SELESAI ||
-        app.status === STATUS.DITOLAK ||
-        app.status === STATUS.MENUNGGU_KEDATANGAN
+      app.status === STATUS.DITOLAK ||
+      app.status === STATUS.MENUNGGU_KEDATANGAN
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
     /** Janji terbit ≤ 24 jam (1 hari kerja) setelah berkas lengkap, Permendagri 19/2018. */
@@ -245,6 +268,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     arrivalDeadline:
       app.status === STATUS.MENUNGGU_KEDATANGAN ? arrivalDeadline(app.createdAt, holidays) : null,
     fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
+    /** Menunggu perbaikan: lengkapi paling lambat ini, lewat itu dibatalkan otomatis. */
+    fixDeadline: fixPausedAt ? fixDeadline(fixPausedAt, holidays) : null,
     rejectionReason: app.rejectionReason,
     rated: Boolean(app.rating?.score),
     steps,

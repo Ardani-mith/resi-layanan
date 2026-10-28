@@ -1,4 +1,4 @@
-import { CheckCircle2, FileCheck2 } from "lucide-react";
+import { CheckCircle2, FileCheck2, HandCoins, Megaphone } from "lucide-react";
 import { notFound } from "next/navigation";
 import { StatTile } from "@/components/charts";
 import { Button, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
@@ -22,6 +22,10 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
+          <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-ok-soft px-2.5 py-1 text-xs font-semibold text-ok">
+            <HandCoins aria-hidden className="size-3.5" />
+            Gratis · Rp0
+          </p>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{service.name}</h1>
           <p className="mt-2 text-muted">{service.description}</p>
         </div>
@@ -101,6 +105,51 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
               </li>
             ))}
           </ol>
+        </section>
+      </div>
+
+      {/* Komponen standar pelayanan yang sering ditanyakan: biaya dan jalur pengaduan. */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="biaya" className="rounded-card border border-line bg-surface p-5">
+          <h2 id="biaya" className="flex items-center gap-2 text-lg font-bold">
+            <HandCoins aria-hidden className="size-5 text-ok" />
+            Biaya: gratis
+          </h2>
+          <p className="mt-2 text-sm">
+            Pengurusan dan penerbitan dokumen kependudukan tidak dipungut biaya (UU 24/2013 tentang
+            Administrasi Kependudukan, Pasal 79A). Tidak ada biaya resmi untuk mempercepat, mencetak, atau
+            mengambil dokumen.
+          </p>
+          <p className="mt-3 rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">
+            Petugas tidak boleh meminta atau menerima imbalan dalam bentuk apa pun.
+          </p>
+        </section>
+
+        <section aria-labelledby="pengaduan" className="rounded-card border border-line bg-surface p-5">
+          <h2 id="pengaduan" className="flex items-center gap-2 text-lg font-bold">
+            <Megaphone aria-hidden className="size-5 text-brand" />
+            Jika ada masalah
+          </h2>
+          <ul className="mt-2 space-y-2 text-sm">
+            <li>
+              <span className="font-semibold">Terlambat:</span> tidak perlu mengadu. Tahap yang melewati
+              tenggat otomatis diteruskan ke Kepala Seksi, lalu Kepala Bidang, dan tanggapannya tampil di
+              halaman lacak.
+            </li>
+            <li>
+              <span className="font-semibold">Dimintai bayaran atau dipersulit:</span> laporkan ke SP4N-LAPOR!
+              di{" "}
+              <a
+                href="https://www.lapor.go.id"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-brand hover:underline"
+              >
+                lapor.go.id
+              </a>{" "}
+              dengan menyertakan nomor resi Anda.
+            </li>
+          </ul>
         </section>
       </div>
     </>

@@ -23,6 +23,23 @@ function liveState(step: TimelineStep, now: number): StepViewState {
   return step.state;
 }
 
+/** Tanggapan pimpinan atas tahap yang terlambat (jabatan, bukan nama), dipakai juga di halaman lacak. */
+export function FollowUpNote({ followUp }: { followUp: NonNullable<TimelineStep["followUp"]> }) {
+  return (
+    <blockquote className="mt-2 rounded-xl border-l-4 border-late bg-late-soft/60 px-3 py-2 text-sm">
+      <span className="block text-xs font-semibold text-late">
+        Tindak lanjut {followUp.target} · {formatDateTime(followUp.at)}
+      </span>
+      {followUp.note}
+      {followUp.promisedAt && (
+        <span className="mt-1 block font-semibold">
+          Target selesai: {formatDateTime(followUp.promisedAt)}
+        </span>
+      )}
+    </blockquote>
+  );
+}
+
 function Progress({ step, now }: { step: TimelineStep; now: number }) {
   const start = new Date(step.startedAt ?? now).getTime();
   const due = new Date(step.dueAt ?? now).getTime();
@@ -146,6 +163,10 @@ export default function Timeline({
                   <span className="block text-xs font-semibold text-brand">Catatan petugas</span>
                   {step.publicNote}
                 </blockquote>
+              )}
+              {/* Tahap terlambat yang sedang berjalan: tanggapan sudah tampil di banner atas halaman lacak. */}
+              {step.followUp && (staff || !(step.isCurrent && state === "terlambat")) && (
+                <FollowUpNote followUp={step.followUp} />
               )}
               {staff && Boolean(step.handledByName || step.internalNote || step.checked?.length) && (
                 <div className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">

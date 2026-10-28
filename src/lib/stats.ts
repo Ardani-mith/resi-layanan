@@ -186,7 +186,7 @@ export function computeStats(
 
 /**
  * Eskalasi yang belum selesai, satu baris per tahap dengan level tertingginya
- * (tahap di level 2 tidak muncul dua kali). Paling parah & paling lama dulu. Khusus petugas.
+ * (tahap di level 2 tidak muncul dua kali), beserta status tindak lanjut pimpinan. Khusus petugas.
  */
 export function openEscalations(apps: StatsApp[], now: DateLike) {
   const rows = [];
@@ -207,10 +207,18 @@ export function openEscalations(apps: StatsApp[], now: DateLike) {
         target: esc.target,
         createdAt: esc.createdAt,
         lateMs: step?.dueAt ? Number(new Date(now)) - Number(step.dueAt) : null,
+        respondedAt: esc.response?.at ?? null,
+        promisedAt: esc.response?.promisedAt ?? null,
       });
     }
   }
-  return rows.sort((a, b) => b.level - a.level || (b.lateMs ?? 0) - (a.lateMs ?? 0));
+  // Yang belum ditanggapi pimpinan di atas, lalu level tertinggi & paling lama terlambat.
+  return rows.sort(
+    (a, b) =>
+      Number(Boolean(a.respondedAt)) - Number(Boolean(b.respondedAt)) ||
+      b.level - a.level ||
+      (b.lateMs ?? 0) - (a.lateMs ?? 0),
+  );
 }
 
 export type Stats = ReturnType<typeof computeStats>;

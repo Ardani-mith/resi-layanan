@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BLOOD_TYPES, MARITAL_STATUSES, normalizePhone, RELIGIONS } from "./present.ts";
 import { normalizeResi, RESI_PATTERN } from "./resi.ts";
 import { PASSWORD_MIN, ROLES } from "./roles.ts";
-import { ACTIONS } from "./workflow.ts";
+import { ACTIONS, FOLLOW_UP_PROMISE_HOURS } from "./workflow.ts";
 
 // Pesan bawaan Zod (yang tidak kita tulis sendiri) dalam bahasa Indonesia.
 z.config(z.locales.id());
@@ -101,6 +101,13 @@ export const actionSchema = z.object({
   evidence: trimmed(120).optional(),
 });
 
+/** Tindak lanjut eskalasi oleh pimpinan. */
+export const followUpSchema = z.object({
+  publicNote: trimmed(500).min(10, "Tulis tanggapan untuk warga, minimal 10 huruf."),
+  internalNote: trimmed(1000).optional(),
+  promiseHours: z.literal(FOLLOW_UP_PROMISE_HOURS, { error: "Pilih janji selesai." }).optional(),
+});
+
 const last4Schema = z.string().regex(/^\d{4}$/, "Masukkan 4 digit terakhir nomor HP.");
 
 export const trackActionSchema = z.discriminatedUnion("action", [
@@ -196,6 +203,7 @@ export type ApplicationInput = z.infer<typeof applicationSchema>;
 export type RecoverInput = z.infer<typeof recoverSchema>;
 // Bentuk input (sebelum default Zod): field opsional tetap opsional bagi pemanggil.
 export type ActionInput = z.input<typeof actionSchema>;
+export type FollowUpInput = z.infer<typeof followUpSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
 export type ServiceInput = z.input<typeof serviceSchema>;

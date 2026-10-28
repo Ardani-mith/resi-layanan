@@ -7,6 +7,7 @@ import {
   type ApplicationData,
   type Escalation,
   expireArrival,
+  expireFix,
   RUNNING_STATUSES,
   STATUS,
 } from "./workflow.ts";
@@ -84,39 +85,39 @@ export async function syncEscalations(
   return created;
 }
 
-type ArrivalApp = Pick<
+type ExpiryApp = Pick<
   ApplicationData,
   | "_id"
   | "status"
   | "createdAt"
   | "currentStep"
   | "steps"
+  | "escalations"
   | "currentDueAt"
   | "rejectionReason"
   | "completedAt"
 >;
 
 /**
- * Batalkan pendaftaran yang lewat batas kedatangan (lazy, seperti eskalasi). Idempoten: update
- * hanya berlaku bila status masih menunggu, jadi request paralel tidak mencatat event ganda.
+ * Batalkan permohonan yang menunggu warga terlalu lama (lazy, seperti eskalasi): pendaftaran yang
+ * lewat batas kedatangan, atau berkas yang tidak dilengkapi sampai batas perbaikan. Idempoten:
+ * update hanya berlaku bila status masih sama, jadi request paralel tidak mencatat event ganda.
  * `app` lean ikut diperbarui di memori.
  */
-export async function syncArrivalExpiry(
-  app: ArrivalApp,
-  now: DateLike,
-  holidays?: Holidays,
-): Promise<boolean> {
-  const entry = expireArrival(app, now, holidays);
+export async function syncExpiry(app: ExpiryApp, now: DateLike, holidays?: Holidays): Promise<boolean> {
+  const from = app.status;
+  const entry = expireArrival(app, now, holidays) ?? expireFix(app, now, holidays);
   if (!entry) return false;
   const result = await Application.updateOne(
-    { _id: app._id, status: STATUS.MENUNGGU_KEDATANGAN },
+    { _id: app._id, status: from },
     {
       $set: {
         status: app.status,
         rejectionReason: app.rejectionReason,
         currentDueAt: null,
         completedAt: app.completedAt,
-        [`steps.${app.currentStep}.publicNote`]: app.rejectionReason,
+        [`steps.${app.currentStep}`]: app.steps[app.currentStep],
+        escalations: app.escalations ?? [],
       },
     },
   );
@@ -134,20 +135,23 @@ export async function syncArrivalExpiry(
 }
 
 /** 10 hari kerja tidak mungkin lebih pendek dari 11 hari kalender: penyaring kasar untuk query. */
-const ARRIVAL_MIN_CALENDAR_MS = 11 * 24 * 3_600_000;
+const WAIT_MIN_CALENDAR_MS = 11 * 24 * 3_600_000;
 
 /**
  * Sinkronkan semua permohonan yang tahap berjalannya sudah lewat tenggat, dan batalkan
- * pendaftaran yang lewat batas kedatangan.
+ * yang lewat batas kedatangan atau batas perbaikan berkas.
  */
 export async function syncOverdue(now: Date, holidays?: Holidays): Promise<number> {
+  const cutoff = new Date(now.getTime() - WAIT_MIN_CALENDAR_MS);
   const waiting = await Application.find({
-    status: STATUS.MENUNGGU_KEDATANGAN,
-    createdAt: { $lte: new Date(now.getTime() - ARRIVAL_MIN_CALENDAR_MS) },
+    $or: [
+      { status: STATUS.MENUNGGU_KEDATANGAN, createdAt: { $lte: cutoff } },
+      { status: STATUS.PERLU_PERBAIKAN, "steps.pausedAt": { $lte: cutoff } },
+    ],
   })
-    .select("status createdAt currentStep steps currentDueAt rejectionReason completedAt")
-    .lean<ArrivalApp[]>();
-  for (const app of waiting) await syncArrivalExpiry(app, now, holidays);
+    .select("status createdAt currentStep steps escalations currentDueAt rejectionReason completedAt")
+    .lean<ExpiryApp[]>();
+  for (const app of waiting) await syncExpiry(app, now, holidays);
 
   const overdue = await Application.find({
     status: { $in: RUNNING_STATUSES },

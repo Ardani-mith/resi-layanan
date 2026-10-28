@@ -12,17 +12,18 @@ import {
   type VerificationData,
 } from "../models.ts";
 import type { Clock } from "./clock.ts";
-import { syncArrivalExpiry, syncEscalations } from "./escalation.ts";
+import { syncEscalations, syncExpiry } from "./escalation.ts";
 import { hashNik, protectNik } from "./pii.ts";
 import { checkNik, KTP_MIN_AGE, ktpAgeAllowed, needsKtpData } from "./present.ts";
 import { generateResi } from "./resi.ts";
 import { DAY_MS } from "./sla.ts";
-import type { ActionInput, ApplicationInput, RecoverInput } from "./validators.ts";
+import type { ActionInput, ApplicationInput, FollowUpInput, RecoverInput } from "./validators.ts";
 import {
   type Actor,
   AppError,
   type ApplicationData,
   applyAction,
+  applyFollowUp,
   applyRating,
   type AuditEntry,
   buildApplication,
@@ -41,7 +42,7 @@ type Ctx = Pick<Clock, "now" | "holidays">;
 export async function loadByResi(resi: string, clock: Ctx): Promise<ApplicationData | null> {
   const app = await Application.findOne({ resi }).lean<ApplicationData>();
   if (app) {
-    await syncArrivalExpiry(app, clock.now, clock.holidays);
+    await syncExpiry(app, clock.now, clock.holidays);
     await syncEscalations(app, clock.now, clock.holidays);
   }
   return app;
@@ -276,8 +277,8 @@ async function mutate(
     .select("status createdAt currentStep steps currentDueAt rejectionReason completedAt escalations")
     .lean<ApplicationData>();
   if (!snapshot) throw new WorkflowError("not_found", "Permohonan tidak ditemukan.");
-  // Lewat batas kedatangan = sudah final; aksi "Warga sudah hadir" sesudahnya ditolak.
-  await syncArrivalExpiry(snapshot, clock.now, clock.holidays);
+  // Lewat batas kedatangan/perbaikan = sudah final; aksi warga atau petugas sesudahnya ditolak.
+  await syncExpiry(snapshot, clock.now, clock.holidays);
   await syncEscalations(snapshot, clock.now, clock.holidays);
 
   const app = await Application.findOne({ resi });
@@ -304,6 +305,29 @@ export async function performAction({
       throw new WorkflowError("forbidden", "Tahap ini bukan tugas peran Anda.");
     }
     const { action, payload } = applyAction(app, {
+      ...input,
+      actor,
+      now: clock.now,
+      holidays: clock.holidays,
+    });
+    return { action, payload, actorId: actor.id, actorName: actor.name, actorRole: actor.role };
+  });
+}
+
+/** Pimpinan menindaklanjuti eskalasi tahap berjalan (lihat applyFollowUp). */
+export async function followUpEscalation({
+  resi,
+  input,
+  actor,
+  clock,
+}: {
+  resi: string;
+  input: FollowUpInput;
+  actor: Actor;
+  clock: Ctx;
+}) {
+  return mutate(resi, clock, (app) => {
+    const { action, payload } = applyFollowUp(app, {
       ...input,
       actor,
       now: clock.now,

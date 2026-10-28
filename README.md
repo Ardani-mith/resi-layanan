@@ -2,6 +2,8 @@
 
 Lacak permohonan layanan publik seperti melacak paket. Setiap tahap punya tenggat (SLA) dalam jam kerja yang terlihat oleh warga, dan tahap yang terlambat otomatis dieskalasi ke atasan.
 
+**Demo live:** https://pantas-eosin.vercel.app (akun & resi demo ada [di bawah](#akun--resi-demo)).
+
 Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Skenario demo: **Disdukcapil Kota Harapan Jaya** (instansi fiktif) dengan 3 layanan: perekaman KTP-el, perubahan Kartu Keluarga, dan akta kelahiran.
 
 ## Fitur
@@ -13,6 +15,22 @@ Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Sken
 - **Aturan layanan:** SLA jam kerja WIB (Senin–Jumat 08.00–16.00, di luar libur), janji terbit ≤ 24 jam setelah berkas lengkap (Permendagri 19/2018), jeda saat perlu perbaikan, layanan wajib hadir (KTP-el) yang tenggatnya baru berjalan saat warga datang. Alurnya dijelaskan di [docs/ALUR-TAHAPAN.md](docs/ALUR-TAHAPAN.md).
 - **Keamanan & privasi (UU PDP):** NIK tidak disimpan apa adanya (hash + enkripsi + tersamar), nama & HP disamarkan di halaman publik, login dikunci setelah 5x salah, sesi petugas berakhir setelah 30 menit diam (maks. 12 jam), pemisahan tugas per peran.
 - **Kantor transparan** di beranda: denah pixel-art yang isinya mengikuti data antrean asli.
+
+## Progress
+
+Per 28 Oktober 2026 (tahap Build It), semua fitur inti sudah berjalan di demo live.
+
+- [x] Pengajuan online (NIK + OTP) dan input warga di loket, nomor resi + bukti ber-QR
+- [x] Halaman lacak: timeline, hitung mundur tenggat, langkah berikutnya untuk warga, lupa resi
+- [x] Antrean petugas per peran, syarat selesai per tahap, audit log
+- [x] Tenggat SLA jam kerja (termasuk hari libur), deteksi terlambat & eskalasi ke pimpinan
+- [x] Pimpinan menindaklanjuti eskalasi (tanggapan & janji selesai tampil ke warga), batas 10 hari kerja untuk perbaikan berkas, info biaya gratis & jalur pengaduan
+- [x] Dashboard pimpinan, rapor SLA publik + API data terbuka, rating layanan
+- [x] Mode demo (simulasi waktu), kantor transparan pixel-art di beranda
+- [x] Keamanan: NIK terenkripsi, data publik tersamar, kunci login, sesi petugas berbatas waktu
+- [x] Teruji: 146 tes unit & integrasi, 26 tes end-to-end di Chrome
+- [ ] Berikutnya (sebelum final): perbaikan dari masukan mentor, unggah dokumen persyaratan, pengujian di Edge, Firefox & HP
+- [ ] Visi jangka panjang: integrasi SIAK melalui kerja sama resmi dengan Dukcapil, notifikasi WhatsApp, multi-instansi
 
 ## Tech stack
 

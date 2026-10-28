@@ -19,7 +19,7 @@ import { type ReactNode, useState } from "react";
 import { StatusBadge } from "@/components/application/Badges";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
-import Timeline from "@/components/application/Timeline";
+import Timeline, { FollowUpNote } from "@/components/application/Timeline";
 import { Alert, Button, buttonClass, DemoClockBanner } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Tracking } from "@/lib/dal";
@@ -313,6 +313,12 @@ export default function TrackView({
         return (
           <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
             <blockquote className="rounded-xl bg-pause-soft px-3 py-2 font-medium">{data.fixNote}</blockquote>
+            {data.fixDeadline && (
+              <p className="font-medium">
+                Lengkapi paling lambat {formatDateTime(data.fixDeadline)}. Lewat dari itu permohonan
+                dibatalkan otomatis dan Anda perlu mengajukan ulang.
+              </p>
+            )}
             <p className="text-muted">
               Hitung mundur instansi dihentikan sementara dan tidak merugikan Anda. Lengkapi berkas langsung
               di lokasi layanan terdekat (peta di bawah), lalu konfirmasi di sini agar proses berlanjut.
@@ -428,11 +434,23 @@ export default function TrackView({
       default:
         return data.isLate ? (
           <NextStep tone="late" icon={AlertTriangle} title={`Tahap "${current?.name}" melewati tenggat`}>
-            <p>
-              Keterlambatan ini tercatat dan{" "}
-              {data.isEscalated ? "sudah diteruskan otomatis" : "akan diteruskan"} ke atasan petugas. Anda
-              tidak perlu melapor ulang atau datang ke kantor.
-            </p>
+            {current?.followUp ? (
+              <>
+                <p>
+                  Keterlambatan ini sudah ditindaklanjuti {current.followUp.target}. Anda tidak perlu melapor
+                  ulang atau datang ke kantor.
+                </p>
+                <FollowUpNote followUp={current.followUp} />
+              </>
+            ) : (
+              <p>
+                Keterlambatan ini tercatat dan{" "}
+                {data.isEscalated
+                  ? "sudah diteruskan otomatis ke atasan petugas, menunggu tanggapannya"
+                  : "akan diteruskan ke atasan petugas"}
+                . Anda tidak perlu melapor ulang atau datang ke kantor.
+              </p>
+            )}
           </NextStep>
         ) : (
           <NextStep tone="brand" icon={Clock} title="Tidak ada yang perlu Anda lakukan sekarang">

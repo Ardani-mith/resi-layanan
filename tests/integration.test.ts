@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createApplication,
   DAILY_ONLINE_LIMIT,
+  followUpEscalation,
   performAction,
   performCitizenAction,
   recoverResi,
@@ -560,5 +561,64 @@ describe("batas kedatangan (layanan wajib hadir)", () => {
     expect(app.status).toBe("ditolak");
     expect(app.rejectionReason).toMatch(/kedaluwarsa/);
     expect(await Event.countDocuments({ applicationId: app._id, action: "expired" })).toBe(1);
+  });
+});
+
+describe("tindak lanjut eskalasi", () => {
+  it("pimpinan menanggapi eskalasi terbuka; tersimpan, tercatat sekali, dan tampil di dashboard", async () => {
+    const app = await newApplication(clockAt(-5)); // tenggat verifikasi sudah lewat > 1 hari kerja
+    const input = { publicNote: "Sudah dialihkan ke petugas lain hari ini.", promiseHours: 8 as const };
+    await expect(
+      followUpEscalation({ resi: app.resi, input, actor: actor("petugas_loket"), clock: clockAt() }),
+    ).rejects.toMatchObject({ code: "forbidden" });
+
+    const saved = await followUpEscalation({
+      resi: app.resi,
+      input,
+      actor: actor("pimpinan"),
+      clock: clockAt(),
+    });
+    expect(saved.escalations.map((e) => e.level)).toEqual([1, 2]);
+    expect(saved.escalations.every((e) => e.response?.note === input.publicNote)).toBe(true);
+    expect(publicView(saved, clockAt()).steps[0].followUp?.target).toBe("Kepala Bidang");
+    expect(await Event.countDocuments({ applicationId: saved._id, action: "follow_up" })).toBe(1);
+    const row = openEscalations([await stored(app.resi)], NOW)[0];
+    expect(row.respondedAt).toEqual(NOW);
+
+    await expect(
+      followUpEscalation({ resi: app.resi, input, actor: actor("pimpinan"), clock: clockAt() }),
+    ).rejects.toMatchObject({ code: "invalid_state" });
+  });
+});
+
+describe("batas perbaikan berkas", () => {
+  it("berkas yang tidak dilengkapi 10 hari kerja dibatalkan otomatis, sekali saja, tahapnya tetap utuh", async () => {
+    const app = await newApplication();
+    await performAction({
+      resi: app.resi,
+      input: { action: "request_fix", publicNote: "Lampirkan KK" },
+      actor: actor("petugas_loket"),
+      clock: clockAt(),
+    });
+    const later = new Date(NOW.getTime() + 20 * DAY_MS);
+    await syncOverdue(later);
+    await syncOverdue(later); // idempoten
+    const saved = await stored(app.resi);
+    expect(saved.status).toBe("ditolak");
+    expect(saved.rejectionReason).toMatch(/tidak dilengkapi/);
+    expect(saved.steps[0]).toMatchObject({
+      key: "verifikasi",
+      pausedAt: null,
+      publicNote: saved.rejectionReason,
+    });
+    expect(saved.steps[0].checklist.length).toBeGreaterThan(0);
+    expect(await Event.countDocuments({ applicationId: saved._id, action: "fix_expired" })).toBe(1);
+    await expect(
+      performCitizenAction({
+        resi: app.resi,
+        input: { action: "resubmit" },
+        clock: { now: later, holidays: new Set() },
+      }),
+    ).rejects.toMatchObject({ code: "invalid_state" });
   });
 });

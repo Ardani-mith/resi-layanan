@@ -7,12 +7,16 @@ import {
   type Actor,
   type ApplicationData,
   applyAction,
+  applyFollowUp,
   applyRating,
   arrivalDeadline,
   buildApplication,
   canActOn,
   expireArrival,
   EXPIRED_REASON,
+  expireFix,
+  FIX_EXPIRED_REASON,
+  fixDeadline,
   type ServiceData,
   statusForStep,
   WorkflowError,
@@ -370,5 +374,87 @@ describe("tampilan publik vs petugas", () => {
     const late = publicView(app, { now: wib("2026-10-13T12:00:00") });
     expect(late.isLate).toBe(true);
     expect(late.steps[0].state).toBe("terlambat");
+  });
+});
+
+describe("batas perbaikan berkas", () => {
+  it("10 hari kerja sejak diminta perbaikan; lewat itu dibatalkan, jeda ditutup, eskalasi selesai", () => {
+    const app = newApp();
+    const late = wib("2026-10-13T10:00:00"); // tenggat verifikasi Selasa 09.00 sudah lewat
+    app.escalations.push(...pendingEscalations(app, late));
+    act(app, "request_fix", loket, late, { publicNote: "Lampirkan KK" });
+    const deadline = fixDeadline(late);
+    expect(deadline).toEqual(wib("2026-10-27T10:00:00"));
+    expect(publicView(app, { now: late }).fixDeadline).toEqual(deadline);
+
+    expect(expireFix(app, new Date(deadline.getTime() - 1))).toBeNull();
+    const entry = expireFix(app, deadline);
+    expect(entry).toMatchObject({
+      action: "fix_expired",
+      payload: { from: "perlu_perbaikan", to: "ditolak" },
+    });
+    expect(app.status).toBe("ditolak");
+    expect(app.rejectionReason).toBe(FIX_EXPIRED_REASON);
+    expect(app.completedAt).toEqual(deadline);
+    expect(app.steps[0].pausedAt).toBeNull();
+    expect(app.escalations.every((e) => e.resolvedAt)).toBe(true);
+    expect(expireFix(app, deadline)).toBeNull(); // sudah final
+  });
+
+  it("yang sudah dilengkapi tidak ikut dibatalkan", () => {
+    const app = newApp();
+    act(app, "request_fix", loket, wib("2026-10-12T10:00:00"), { publicNote: "x" });
+    act(app, "resume", loket, wib("2026-10-13T10:00:00"));
+    expect(expireFix(app, new Date(T0.getTime() + 30 * DAY_MS))).toBeNull();
+  });
+});
+
+describe("tindak lanjut eskalasi", () => {
+  const overdue = () => {
+    const app = newApp();
+    app.escalations.push(...pendingEscalations(app, wib("2026-10-13T10:00:00")));
+    return app;
+  };
+  const followUp = (app: ApplicationData, actor: Actor, extra = {}) =>
+    applyFollowUp(app, {
+      actor,
+      publicNote: "Petugas kami sedang cuti, sudah dialihkan.",
+      now: T1,
+      ...extra,
+    });
+  const T1 = wib("2026-10-13T11:00:00");
+
+  it("hanya pimpinan, dan hanya bila ada eskalasi terbuka", () => {
+    expect(() => followUp(overdue(), loket)).toThrow(/pimpinan/);
+    expect(() => followUp(newApp(), pimpinan)).toThrow(/Tidak ada eskalasi/);
+    expect(() => applyFollowUp(overdue(), { actor: pimpinan, publicNote: " ", now: T1 })).toThrow(
+      WorkflowError,
+    );
+  });
+
+  it("tanggapan & janji tampil ke warga tanpa nama pimpinan atau arahan internal", () => {
+    const app = overdue();
+    const { action, payload } = followUp(app, pimpinan, { internalNote: "ARAHAN-INTERNAL", promiseHours: 8 });
+    expect(action).toBe("follow_up");
+    expect(payload).toMatchObject({ stepKey: "verifikasi", levels: [1] });
+    expect(app.escalations[0].response?.promisedAt).toEqual(wib("2026-10-14T11:00:00"));
+    // Tenggat SLA tidak berubah: keterlambatan tetap tercatat.
+    expect(app.steps[0].dueAt).toEqual(wib("2026-10-13T09:00:00"));
+
+    const view = publicView(app, { now: T1 });
+    expect(view.steps[0].followUp).toMatchObject({ target: "Kepala Seksi", note: expect.any(String) });
+    const json = JSON.stringify(view);
+    expect(json).not.toContain("Hendra");
+    expect(json).not.toContain("ARAHAN-INTERNAL");
+    expect(() => followUp(app, pimpinan)).toThrow(/Tidak ada eskalasi/); // sudah ditanggapi
+  });
+
+  it("naik ke Kepala Bidang = perlu ditanggapi lagi", () => {
+    const app = overdue();
+    followUp(app, pimpinan);
+    app.escalations.push(...pendingEscalations(app, wib("2026-10-14T10:00:00")));
+    expect(app.escalations.map((e) => e.level)).toEqual([1, 2]);
+    expect(followUp(app, pimpinan).payload).toMatchObject({ levels: [2] });
+    expect(publicView(app, { now: T1 }).steps[0].followUp?.target).toBe("Kepala Bidang");
   });
 });

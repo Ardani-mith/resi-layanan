@@ -5,7 +5,7 @@ import ColumnChart from "@/components/charts/ColumnChart";
 import { Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getStats, requireStaffPage } from "@/lib/dal";
-import { formatDuration, formatPercent, formatWorkHours } from "@/lib/format";
+import { formatDateTime, formatDuration, formatPercent, formatWorkHours } from "@/lib/format";
 import type { Stats } from "@/lib/stats";
 
 export const metadata = { title: "Pantau kinerja" };
@@ -26,6 +26,7 @@ async function Dashboard() {
   await requireStaffPage(["pimpinan", "admin"], "/pantau");
   const stats = await getStats({ internal: true });
   const { overall, services, escalations, trend } = stats;
+  const unanswered = escalations.filter((e) => !e.respondedAt).length;
 
   return (
     <>
@@ -43,7 +44,7 @@ async function Dashboard() {
         <StatTile
           label="Terlambat sekarang"
           value={overall.overdueNow}
-          note={`${escalations.length} eskalasi terbuka`}
+          note={`${escalations.length} eskalasi terbuka, ${unanswered} belum ditanggapi`}
           tone={overall.overdueNow > 0 ? "late" : undefined}
         />
         <StatTile
@@ -69,12 +70,13 @@ async function Dashboard() {
             Eskalasi terbuka
           </h2>
           <p className="text-sm text-muted">
-            Level 1 diteruskan ke Kepala Seksi; lewat 1 hari kerja dari tenggat naik ke Kepala Bidang.
+            Level 1 diteruskan ke Kepala Seksi; lewat 1 hari kerja dari tenggat naik ke Kepala Bidang. Buka
+            resinya untuk menindaklanjuti: tanggapan Anda tampil di halaman lacak warga.
           </p>
         </div>
         {escalations.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-left text-sm">
+            <table className="w-full min-w-[48rem] text-left text-sm">
               <thead className="text-muted">
                 <tr>
                   <th scope="col" className="px-5 py-2 font-medium">
@@ -91,6 +93,9 @@ async function Dashboard() {
                   </th>
                   <th scope="col" className="px-5 py-2 text-right font-medium">
                     Terlambat
+                  </th>
+                  <th scope="col" className="px-5 py-2 font-medium">
+                    Tindak lanjut
                   </th>
                 </tr>
               </thead>
@@ -119,6 +124,22 @@ async function Dashboard() {
                     </td>
                     <td className="px-5 py-2.5 text-right tabular-nums">
                       {e.lateMs ? formatDuration(e.lateMs) : "—"}
+                    </td>
+                    <td className="px-5 py-2.5">
+                      {e.respondedAt ? (
+                        <>
+                          Ditanggapi {formatDateTime(e.respondedAt)}
+                          {e.promisedAt && (
+                            <span className="block text-xs text-muted">
+                              janji selesai {formatDateTime(e.promisedAt)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <Link href={`/kerja/${e.resi}`} className="font-semibold text-late hover:underline">
+                          Belum ditanggapi →
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}

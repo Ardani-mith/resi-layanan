@@ -13,8 +13,9 @@ import { formatDateTime } from "@/lib/format";
 import { receiptFor } from "@/lib/qr";
 import { isValidResi } from "@/lib/resi";
 import { ROLE_LABELS, STAFF_ROLES } from "@/lib/roles";
-import { ACTION_DONE, EVENT_LABELS, WAITING_CITIZEN_STATUSES } from "@/lib/workflow";
+import { ACTION_DONE, EVENT_LABELS, followUpFor, WAITING_CITIZEN_STATUSES } from "@/lib/workflow";
 import ActionPanel from "./ActionPanel";
+import FollowUpPanel from "./FollowUpPanel";
 
 export const metadata = { title: "Detail permohonan" };
 
@@ -153,6 +154,14 @@ async function StaffDetail({ params, searchParams }: Props) {
 
   const current = app.steps[app.currentStep];
   const next = app.status === "perlu_perbaikan" ? null : app.steps[app.currentStep + 1];
+  const isOpen = app.status !== "selesai" && app.status !== "ditolak";
+  // Eskalasi tertinggi yang menunggu tanggapan pimpinan, dan tanggapan terakhir untuk tahap ini.
+  const awaiting = isOpen
+    ? app.escalations
+        .filter((e) => e.stepKey === current?.key && !e.resolvedAt && !e.response)
+        .sort((a, b) => b.level - a.level)[0]
+    : undefined;
+  const followUp = isOpen && current ? followUpFor(app.escalations, current.key) : null;
   // Setelah aksi, panel langsung pindah ke tugas berikutnya (urutan antrean = paling mendesak).
   const nextTask = queue.items.find(
     (i) => i.mine && !WAITING_CITIZEN_STATUSES.includes(i.status) && i.resi !== app.resi,
@@ -186,6 +195,44 @@ async function StaffDetail({ params, searchParams }: Props) {
       {/* Container query: panel detail sempit (di samping antrean) atau lebar (HP/tablet). */}
       <div className="grid gap-5 @4xl:grid-cols-[1fr_20rem] @4xl:items-start">
         <div className="min-w-0 space-y-5">
+          {user.role === "pimpinan" && awaiting && (
+            <FollowUpPanel
+              resi={app.resi}
+              stepName={current?.name ?? awaiting.stepKey}
+              target={awaiting.target}
+            />
+          )}
+          {followUp && (
+            <section
+              aria-label="Tindak lanjut pimpinan"
+              className="rounded-card border-l-4 border-late bg-late-soft/60 px-4 py-3 text-sm"
+            >
+              <p className="font-semibold">
+                Tindak lanjut {followUp.target} · {followUp.byName}
+              </p>
+              <p className="text-xs text-muted">{formatDateTime(followUp.at)}</p>
+              {followUp.instruction && (
+                <p className="mt-2">
+                  <span className="font-semibold">Arahan untuk petugas:</span> {followUp.instruction}
+                </p>
+              )}
+              <p className="mt-1">
+                <span className="font-semibold">Tanggapan ke warga:</span> {followUp.note}
+              </p>
+              {followUp.promisedAt && (
+                <p className="mt-1">
+                  <span className="font-semibold">Janji selesai:</span> {formatDateTime(followUp.promisedAt)}
+                </p>
+              )}
+            </section>
+          )}
+          {app.status === "perlu_perbaikan" && app.fixDeadline && (
+            <p className="rounded-card bg-pause-soft px-4 py-3 text-sm">
+              Menunggu warga melengkapi berkas, paling lambat{" "}
+              <span className="font-semibold">{formatDateTime(app.fixDeadline)}</span>. Lewat dari itu
+              permohonan dibatalkan otomatis.
+            </p>
+          )}
           {app.canAct ? (
             <ActionPanel
               // Pindah permohonan/tahap = isian (centang, bukti) mulai dari kosong.
@@ -199,8 +246,7 @@ async function StaffDetail({ params, searchParams }: Props) {
               evidenceLabel={current?.evidenceLabel ?? null}
             />
           ) : (
-            app.status !== "selesai" &&
-            app.status !== "ditolak" && (
+            isOpen && (
               <p
                 className={cn(
                   "rounded-card px-4 py-3 text-sm",
@@ -213,7 +259,10 @@ async function StaffDetail({ params, searchParams }: Props) {
                   <span className="mt-1 block">
                     Tahap ini melewati tenggat dan tercatat di eskalasi. Penyelesaiannya tetap oleh{" "}
                     {ROLE_LABELS[current?.role] ?? "peran pemilik tahap"} agar timeline dan audit log jelas
-                    siapa mengerjakan apa; tindak lanjuti dengan menghubungi petugasnya.
+                    siapa mengerjakan apa
+                    {user.role === "pimpinan"
+                      ? "; tanggapan & arahan Anda dicatat lewat tindak lanjut eskalasi."
+                      : "; tindak lanjuti dengan menghubungi petugasnya."}
                   </span>
                 )}
               </p>
@@ -277,6 +326,13 @@ async function StaffDetail({ params, searchParams }: Props) {
                     <span className="block text-muted">
                       {formatDateTime(e.createdAt)} ·{" "}
                       {e.resolvedAt ? `selesai ${formatDateTime(e.resolvedAt)}` : "belum selesai"}
+                    </span>
+                    <span className={cn("mt-1 block", !e.response && !e.resolvedAt && "text-late")}>
+                      {e.response
+                        ? `Ditindaklanjuti ${e.response.byName}, ${formatDateTime(e.response.at)}`
+                        : e.resolvedAt
+                          ? "Tanpa tindak lanjut pimpinan"
+                          : "Menunggu tindak lanjut pimpinan"}
                     </span>
                   </li>
                 ))}

@@ -46,6 +46,8 @@ export const EVENT_LABELS: Record<string, string> = {
   reject: "Permohonan ditolak",
   escalated: "Eskalasi otomatis",
   expired: "Pendaftaran kedaluwarsa (warga tidak datang)",
+  fix_expired: "Dibatalkan otomatis (perbaikan berkas tidak dilengkapi)",
+  follow_up: "Pimpinan menindaklanjuti eskalasi",
   rated: "Warga memberi rating",
 };
 
@@ -116,6 +118,20 @@ export interface Escalation {
   note: string | null;
   createdAt: Date;
   resolvedAt: Date | null;
+  /** Tindak lanjut pimpinan; null = belum ditanggapi. */
+  response?: EscalationResponse | null;
+}
+
+export interface EscalationResponse {
+  /** Tanggapan untuk warga: tampil di halaman lacak (tanpa nama pimpinan). */
+  note: string;
+  /** Arahan untuk petugas pemilik tahap; hanya terlihat petugas. */
+  instruction: string | null;
+  byId: Types.ObjectId | string | null;
+  byName: string;
+  at: Date;
+  /** Janji selesai dari pimpinan. Tenggat SLA tahap tidak berubah: keterlambatan tetap tercatat. */
+  promisedAt: Date | null;
 }
 
 /** Isi KTP-el yang diajukan warga (hanya untuk layanan perekaman KTP-el). */
@@ -328,7 +344,7 @@ export function canActOn(app: Pick<ApplicationData, "status" | "currentStep" | "
   return step.role === role;
 }
 
-function resolveEscalations(app: WorkflowApp, stepKey: string, now: Date) {
+function resolveEscalations(app: Pick<WorkflowApp, "escalations">, stepKey: string, now: Date) {
   for (const esc of app.escalations ?? []) {
     if (esc.stepKey === stepKey && !esc.resolvedAt) esc.resolvedAt = now;
   }
@@ -472,6 +488,84 @@ export function applyAction(
   return { action, payload };
 }
 
+// --- Tindak lanjut eskalasi (pimpinan) -----------------------------------------------
+
+/** Pilihan janji selesai saat menindaklanjuti, dalam jam kerja: setengah hari, 1 dan 2 hari kerja. */
+export const FOLLOW_UP_PROMISE_HOURS = [4, 8, 16] as const;
+
+/** Eskalasi tahap berjalan yang belum ditanggapi pimpinan. */
+export function awaitingFollowUp(
+  app: Pick<ApplicationData, "status" | "currentStep" | "steps" | "escalations">,
+): Escalation[] {
+  if (!OPEN_STATUSES.includes(app.status)) return [];
+  const key = app.steps[app.currentStep]?.key;
+  return (app.escalations ?? []).filter((e) => e.stepKey === key && !e.resolvedAt && !e.response);
+}
+
+/**
+ * Pimpinan menanggapi eskalasi tahap berjalan: tanggapan untuk warga (wajib), arahan untuk
+ * petugas, dan janji selesai (opsional). Tahapnya tetap diselesaikan peran pemiliknya (canActOn)
+ * dan tenggat SLA tidak diubah, jadi keterlambatan tetap masuk rapor. Eskalasi level berikutnya
+ * (naik ke Kepala Bidang) perlu ditanggapi lagi.
+ */
+export function applyFollowUp(
+  app: WorkflowApp,
+  {
+    actor,
+    publicNote,
+    internalNote,
+    promiseHours,
+    now,
+    holidays,
+  }: {
+    actor: Actor;
+    publicNote?: string;
+    internalNote?: string;
+    promiseHours?: number;
+    now: Date;
+    holidays?: Holidays;
+  },
+): AuditEntry {
+  if (actor.role !== "pimpinan") {
+    throw new WorkflowError("forbidden", "Eskalasi hanya bisa ditindaklanjuti pimpinan.");
+  }
+  const open = awaitingFollowUp(app);
+  if (!open.length) {
+    throw new WorkflowError("invalid_state", "Tidak ada eskalasi yang menunggu tindak lanjut.");
+  }
+  const note = publicNote?.trim() || null;
+  requireNote(note, "Tulis tanggapan untuk warga.");
+  const promisedAt = promiseHours ? addWorkHours(now, promiseHours, holidays) : null;
+  for (const esc of open) {
+    esc.response = {
+      note,
+      instruction: internalNote?.trim() || null,
+      byId: actor.id,
+      byName: actor.name,
+      at: now,
+      promisedAt,
+    };
+  }
+  return {
+    action: "follow_up",
+    payload: {
+      stepKey: open[0].stepKey,
+      levels: open.map((e) => e.level),
+      publicNote: note,
+      ...(promisedAt && { promisedAt }),
+    },
+  };
+}
+
+/** Tindak lanjut terbaru untuk satu tahap (level tertinggi yang sudah ditanggapi), atau null. */
+export function followUpFor(escalations: Escalation[] | undefined, stepKey: string) {
+  const latest = (escalations ?? []).reduce<Escalation | null>(
+    (best, e) => (e.stepKey === stepKey && e.response && e.level > (best?.level ?? 0) ? e : best),
+    null,
+  );
+  return latest?.response ? { target: latest.target, ...latest.response } : null;
+}
+
 // --- Batas kedatangan (layanan wajib hadir) ----------------------------------------
 
 /** Pendaftaran online layanan wajib hadir berlaku 10 hari kerja; lewat itu dibatalkan otomatis. */
@@ -507,6 +601,49 @@ export function expireArrival(
   app.currentDueAt = null;
   app.completedAt = deadline;
   return { action: "expired", payload: { from: STATUS.MENUNGGU_KEDATANGAN, to: STATUS.DITOLAK, deadline } };
+}
+
+// --- Batas perbaikan berkas -------------------------------------------------------
+
+/** Berkas yang diminta perbaikan wajib dilengkapi dalam 10 hari kerja, sama dengan batas kedatangan. */
+const FIX_WINDOW_WORK_HOURS = ARRIVAL_WINDOW_WORK_HOURS;
+
+/** Batas warga melengkapi berkas yang diminta perbaikan pada `pausedAt`. */
+export function fixDeadline(pausedAt: DateLike, holidays?: Holidays): Date {
+  return addWorkHours(pausedAt, FIX_WINDOW_WORK_HOURS, holidays);
+}
+
+export const FIX_EXPIRED_REASON =
+  "Permohonan dibatalkan karena berkas tidak dilengkapi dalam 10 hari kerja sejak diminta perbaikan. Silakan ajukan ulang bila masih memerlukan layanan ini.";
+
+/**
+ * Batalkan permohonan yang berkasnya tidak dilengkapi sampai batas (status final "ditolak"),
+ * supaya tidak menggantung di antrean dan NIK-nya tidak terkunci cek permohonan ganda.
+ * Jeda ditutup di batas waktu, eskalasi tahapnya dianggap selesai. null = belum waktunya.
+ */
+export function expireFix(
+  app: Pick<
+    ApplicationData,
+    "status" | "currentStep" | "steps" | "escalations" | "currentDueAt" | "rejectionReason" | "completedAt"
+  >,
+  now: DateLike,
+  holidays?: Holidays,
+): AuditEntry | null {
+  const step = app.steps[app.currentStep];
+  if (app.status !== STATUS.PERLU_PERBAIKAN || !step?.pausedAt) return null;
+  const deadline = fixDeadline(step.pausedAt, holidays);
+  if (new Date(now) < deadline) return null;
+  resumeStep(step, deadline, holidays);
+  step.publicNote = FIX_EXPIRED_REASON;
+  resolveEscalations(app, step.key, deadline);
+  app.status = STATUS.DITOLAK;
+  app.rejectionReason = FIX_EXPIRED_REASON;
+  app.currentDueAt = null;
+  app.completedAt = deadline;
+  return {
+    action: "fix_expired",
+    payload: { stepKey: step.key, from: STATUS.PERLU_PERBAIKAN, to: STATUS.DITOLAK, deadline },
+  };
 }
 
 /** Rating hanya untuk permohonan selesai, sekali saja. */

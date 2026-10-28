@@ -2,16 +2,17 @@
 // bila RESEND_API_KEY & EMAIL_FROM diisi; tanpa itu hanya dicatat di log server, jadi
 // demo tetap jalan. Hanya untuk pemohon yang mengisi email (opsional di form).
 
-import { type Action, type ApplicationData, STATUS } from "./workflow.ts";
+import { formatDateTime } from "./format.ts";
+import { type Action, type ApplicationData, followUpFor, STATUS } from "./workflow.ts";
 
-export type NotifyKind = "created" | "request_fix" | "ready" | "completed" | "rejected";
+export type NotifyKind = "created" | "request_fix" | "ready" | "completed" | "rejected" | "follow_up";
 
 /** Jenis notifikasi setelah sebuah aksi, atau null jika warga tidak perlu diberi tahu. */
 export function notificationFor(
-  action: Action | "created",
+  action: Action | "created" | "follow_up",
   app: Pick<ApplicationData, "status">,
 ): NotifyKind | null {
-  if (action === "created") return "created";
+  if (action === "created" || action === "follow_up") return action;
   if (action === "request_fix") return "request_fix";
   if (action === "reject") return "rejected";
   if (action === "complete" && app.status === STATUS.SIAP_DIAMBIL) return "ready";
@@ -30,34 +31,52 @@ export function applicantEmail(
   kind: NotifyKind,
   app: Pick<
     ApplicationData,
-    "resi" | "serviceName" | "applicant" | "steps" | "currentStep" | "rejectionReason" | "status"
+    | "resi"
+    | "serviceName"
+    | "applicant"
+    | "steps"
+    | "currentStep"
+    | "rejectionReason"
+    | "status"
+    | "escalations"
   >,
   origin: string,
 ): EmailMessage | null {
   const to = app.applicant.email;
   if (!to) return null;
   const link = `${origin}/lacak/${app.resi}`;
-  const note = app.steps[app.currentStep]?.publicNote;
+  const step = app.steps[app.currentStep];
+  const note = step?.publicNote;
+  const followUp = step ? followUpFor(app.escalations, step.key) : null;
 
   const bodies: Record<NotifyKind, [subject: string, lines: string[]]> = {
     created: [
       `Resi ${app.resi}: permohonan ${app.serviceName} diterima`,
       app.status === STATUS.MENUNGGU_KEDATANGAN
         ? [
-          "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
-          "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
-        ]
+            "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
+            "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
+          ]
         : [
-          "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
-          "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
-        ],
+            "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
+            "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
+          ],
     ],
     request_fix: [
       `Resi ${app.resi}: berkas perlu dilengkapi`,
       [
         "Petugas meminta Anda melengkapi berkas. Hitung mundur instansi dihentikan sampai Anda melengkapinya.",
         note ? `Catatan petugas: ${note}` : "",
+        "Lengkapi paling lambat 10 hari kerja. Lewat dari itu permohonan dibatalkan otomatis dan Anda perlu mengajukan ulang.",
         "Setelah dilengkapi, konfirmasi di halaman lacak (siapkan 4 digit terakhir nomor HP Anda).",
+      ],
+    ],
+    follow_up: [
+      `Resi ${app.resi}: tanggapan atas keterlambatan`,
+      [
+        `Tahap "${step?.name ?? "-"}" melewati tenggat dan sudah ditindaklanjuti ${followUp?.target ?? "pimpinan"}.`,
+        followUp ? `Tanggapan: ${followUp.note}` : "",
+        followUp?.promisedAt ? `Target selesai: ${formatDateTime(followUp.promisedAt)}.` : "",
       ],
     ],
     ready: [
@@ -119,7 +138,7 @@ export async function sendEmail(message: EmailMessage): Promise<boolean> {
 
 /** Beri tau pemohon tentang `action` yang baru terjadi (dipanggil lewat after() di route). */
 export async function notifyApplicant(
-  action: Action | "created",
+  action: Action | "created" | "follow_up",
   app: Parameters<typeof applicantEmail>[1] & Pick<ApplicationData, "status">,
   origin: string,
 ): Promise<void> {
