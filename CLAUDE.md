@@ -2,7 +2,7 @@
 
 # Pantas (Pantau Tahapan Sipil): catatan untuk sesi berikutnya
 
-Nama aplikasi **Pantas** (folder & repo masih `resi-layanan`; awalan resi `RL-` sengaja tetap). Nama, kepanjangan, dan huruf logo di `src/config/site.ts`. Konteks lomba, jadwal, dan prioritas: `../docs/HANDOFF-WIA.md`; catatan pribadi deploy/demo: `../docs/PANDUAN-PRIBADI.md` (di luar repo).
+Nama aplikasi **Pantas** (folder & repo masih `resi-layanan`; awalan resi `RL-` sengaja tetap). Nama & kepanjangan di `src/config/site.ts`; logo dari `public/brand/pantas-logo.png` (versi web dipangkas: `pantas-wordmark.png`, `pantas-p*.png`; favicon `src/app/icon.png`), dipakai lewat `src/components/Logo.tsx`. Konteks lomba, jadwal, dan prioritas: `../docs/HANDOFF-WIA.md`; catatan pribadi deploy/demo: `../docs/PANDUAN-PRIBADI.md` (di luar repo).
 
 ## Perintah
 

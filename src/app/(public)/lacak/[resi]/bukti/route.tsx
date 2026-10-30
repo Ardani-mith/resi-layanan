@@ -1,5 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { P_GLYPH } from "@/components/Logo";
 import { site } from "@/config/site";
 import type { ParamsOf } from "@/lib/api";
 import { getTracking } from "@/lib/dal";
@@ -18,6 +19,7 @@ export async function GET(_request: Request, { params }: ParamsOf<{ resi: string
 
   const url = trackUrl(await siteOrigin(), resi);
   const qr = await qrPng(url, 420);
+  const logo = `data:image/png;base64,${await readFile(join(process.cwd(), "public/brand/pantas-p-white.png"), "base64")}`;
   const rows: [string, string][] = [
     ["Layanan", data.serviceName],
     ["Pemohon", data.applicantMasked],
@@ -50,11 +52,8 @@ export async function GET(_request: Request, { params }: ParamsOf<{ resi: string
             justifyContent: "center",
           }}
         >
-          <svg width="26" height="32" viewBox={P_GLYPH.viewBox} fill="#ffffff">
-            <rect width={P_GLYPH.stem.width} height={P_GLYPH.stem.height} />
-            <path d={P_GLYPH.bowl} fill="none" stroke="#ffffff" strokeWidth={P_GLYPH.stroke} />
-            <circle {...P_GLYPH.dot} fill="#5aa2ec" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse hanya mengenal <img> */}
+          <img src={logo} width={28} height={34} alt="" />
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 30, fontWeight: 700 }}>{site.name}</div>
