@@ -205,7 +205,7 @@ async function Dashboard() {
                           <td className="py-2.5 pr-3">
                             {step.name}
                             {step.key === worst && (
-                              <span className="ml-2 rounded bg-late-soft px-1.5 py-0.5 text-[11px] font-semibold text-late">
+                              <span className="ml-2 rounded bg-late-soft px-1.5 py-0.5 text-xs font-semibold text-late">
                                 bottleneck
                               </span>
                             )}
@@ -242,7 +242,7 @@ async function Dashboard() {
 
 export default function MonitorPage() {
   return (
-    <div className="space-y-6 px-20 py-8">
+    <div className="space-y-6 px-page py-8">
       <Suspense fallback={<Skeleton />}>
         <Dashboard />
       </Suspense>

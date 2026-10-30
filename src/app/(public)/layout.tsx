@@ -74,7 +74,7 @@ function Navbar() {
     // viewTransitionName: navbar tidak ikut bergeser saat pindah halaman (titik acuan tetap).
     <header className="site-header sticky top-0 z-20 border-b" style={{ viewTransitionName: "site-header" }}>
       {/* Tinggi tetap h-16: hero beranda ditarik ke bawahnya (-mt-16) agar gradien menyatu. */}
-      <nav className="flex h-16 items-center gap-2 px-4 lg:px-20">
+      <nav className="flex h-16 items-center gap-2 px-page">
         <Link
           href="/"
           transitionTypes={["nav-back"]}
@@ -102,7 +102,7 @@ function Navbar() {
 function Footer() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="space-y-3 px-4 py-6 text-sm text-muted lg:px-20">
+      <div className="space-y-3 px-page py-6 text-sm text-muted">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex flex-wrap items-center gap-2">
             <span>

@@ -36,9 +36,7 @@ function QueuePreview() {
               className="flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2"
             >
               <span className="font-mono text-xs tracking-wide text-muted">{row.resi}</span>
-              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${row.tone}`}>
-                {row.left}
-              </span>
+              <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${row.tone}`}>{row.left}</span>
             </li>
           ))}
         </ul>

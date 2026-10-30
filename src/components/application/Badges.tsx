@@ -82,7 +82,7 @@ export function ChannelBadge({
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-md font-semibold whitespace-nowrap",
-        long ? "px-2 py-1 text-xs" : "px-1.5 py-0.5 text-[11px]",
+        long ? "px-2 py-1 text-xs" : "px-1.5 py-0.5 text-xs",
         info.tone,
         className,
       )}

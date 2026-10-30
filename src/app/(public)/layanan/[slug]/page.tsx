@@ -158,7 +158,7 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
 
 export default function ServiceDetailPage({ params }: ParamsOf<{ slug: string }>) {
   return (
-    <PageSlide className="px-20 py-8">
+    <PageSlide className="px-page py-8">
       <SuspenseReveal fallback={<Skeleton />}>
         <ServiceDetail params={params} />
       </SuspenseReveal>

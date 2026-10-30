@@ -85,7 +85,7 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
       </div>
 
       {/* Visual produk: kantor transparan dalam bingkai jendela aplikasi. */}
-      <div className="relative px-4 pt-14 pb-12 motion-safe:animate-fade-up lg:px-20" style={delay(550)}>
+      <div className="relative px-page pt-14 pb-12 motion-safe:animate-fade-up" style={delay(550)}>
         <div className="rounded-[1.75rem] border border-line bg-surface-2/70 p-2 shadow-[0_40px_80px_-40px_rgb(15_27_45/0.35)] sm:p-3">
           <div className="rounded-[1.35rem] border border-line bg-surface px-3 pt-3 pb-4 sm:px-5 sm:pt-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">

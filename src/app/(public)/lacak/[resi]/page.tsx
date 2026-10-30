@@ -74,7 +74,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {
   return (
-    <PageSlide className="px-20 py-8">
+    <PageSlide className="px-page py-8">
       <SuspenseReveal fallback={<TrackSkeleton />}>
         <Tracking params={params} />
       </SuspenseReveal>

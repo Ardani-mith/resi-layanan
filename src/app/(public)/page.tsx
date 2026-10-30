@@ -32,7 +32,7 @@ function Section({
   className?: string;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className={cn("px-20 py-20 sm:py-24", className)}>
+    <section id={id} aria-labelledby={`${id}-title`} className={cn("px-page py-14 sm:py-24", className)}>
       <SectionLabel index={index} className="reveal">
         {label}
       </SectionLabel>
@@ -66,7 +66,7 @@ function GlassHead({ title, meta }: { title: string; meta: string }) {
   return (
     <p className="mb-3 flex items-center justify-between gap-2 text-[13px] font-semibold">
       {title}
-      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-normal whitespace-nowrap text-white/70">
+      <span className="flex shrink-0 items-center gap-1.5 text-xs font-normal whitespace-nowrap text-white/70">
         <span className="size-1.5 bg-white/80" />
         {meta}
       </span>
@@ -155,7 +155,7 @@ export default function Home() {
 
       {/* Rapor ringkas: angka asli dari database, di-stream setelah kerangka halaman tampil. */}
       <section aria-labelledby="rapor-ringkas-title" className="border-b border-line bg-surface">
-        <div className="grid gap-10 px-20 py-12 lg:grid-cols-[16rem_1fr] lg:items-end">
+        <div className="grid gap-10 px-page py-12 lg:grid-cols-[16rem_1fr] lg:items-end">
           <div>
             {/* <PixelDecoration name="bars" className="mb-4" /> */}
             <h2 id="rapor-ringkas-title" className="font-mono text-xs tracking-[0.14em] text-brand uppercase">
@@ -207,7 +207,7 @@ export default function Home() {
                   <dt className="font-semibold">{row.topic}</dt>
                   <dd className="text-sm text-muted line-through decoration-line">{row.today}</dd>
                   <dd className="rounded-lg bg-brand-soft px-3 py-2 text-sm font-medium">
-                    <span className="mr-1.5 font-mono text-[11px] font-semibold text-brand uppercase">
+                    <span className="mr-1.5 font-mono text-xs font-semibold text-brand uppercase">
                       {site.name}
                     </span>
                     {row.pantas}
@@ -218,7 +218,7 @@ export default function Home() {
             <table className="hidden w-full text-left text-sm sm:table">
               <caption className="sr-only">Perbandingan layanan hari ini dan dengan Pantas</caption>
               <thead>
-                <tr className="border-b border-line font-mono text-[11px] tracking-[0.12em] uppercase">
+                <tr className="border-b border-line font-mono text-xs tracking-[0.12em] uppercase">
                   <th scope="col" className="w-1/4 px-4 py-3 font-medium text-muted sm:px-5">
                     <span className="sr-only">Hal</span>
                   </th>
@@ -275,7 +275,7 @@ export default function Home() {
       </div>
 
       {/* Satu resi, tiga sudut pandang: bingkai blueprint, kepala dua kolom, panel pemandangan. */}
-      <section aria-labelledby="sudut-pandang-title" className="px-20 py-20 sm:py-24">
+      <section aria-labelledby="sudut-pandang-title" className="px-page py-14 sm:py-24">
         <SectionLabel index="03" className="reveal">
           Untuk siapa
         </SectionLabel>
@@ -335,7 +335,7 @@ export default function Home() {
       </section>
 
       {/* Penutup: sobekan struk berisi ajakan & kolom cek resi. */}
-      <section aria-labelledby="penutup-title" className="px-20 pb-20">
+      <section aria-labelledby="penutup-title" className="px-page pb-20">
         <div className="drop-shadow-[0_18px_30px_rgb(15_27_45/0.10)]">
           <div className="relative grid gap-10 bg-paper px-6 pt-14 pb-10 receipt-edge-top sm:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <PixelDecoration name="stamp" className="absolute top-12 right-10 hidden lg:block" />

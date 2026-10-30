@@ -203,7 +203,7 @@ async function Success({ searchParams }: SearchParamsOf) {
 
 export default function SuccessPage({ searchParams }: SearchParamsOf) {
   return (
-    <PageSlide className="px-20 py-10">
+    <PageSlide className="px-page py-10">
       <SuspenseReveal fallback={<Skeleton className="h-80" />}>
         <Success searchParams={searchParams} />
       </SuspenseReveal>

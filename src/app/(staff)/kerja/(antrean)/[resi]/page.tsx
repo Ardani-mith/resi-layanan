@@ -118,7 +118,7 @@ function KtpData({ app }: { app: StaffApplication }) {
             <tr key={label} className="even:bg-surface-2/60">
               <th
                 scope="row"
-                className="w-40 px-3 py-1.5 text-left align-top font-mono text-[11px] font-medium tracking-wide text-muted uppercase"
+                className="w-40 px-3 py-1.5 text-left align-top font-mono text-xs font-medium tracking-wide text-muted uppercase"
               >
                 {label}
               </th>

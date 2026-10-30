@@ -301,7 +301,8 @@ export function StaffTabBar({ user }: { user: StaffUser }) {
     pathname,
     all.map((item) => item.href),
   );
-  const tab = "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium";
+  const tab =
+    "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-center text-xs leading-tight font-medium";
 
   return (
     <nav

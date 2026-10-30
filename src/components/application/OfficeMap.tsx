@@ -114,7 +114,8 @@ export default function OfficeMap({
       >
         <MapPin className="size-5" />
       </span>
-      <div className="min-w-0 flex-1">
+      {/* basis: di HP teks tidak dijepit tombol; tombol turun ke baris bawah selebar kartu. */}
+      <div className="min-w-0 flex-1 basis-56">
         <h2 id="loket-title" className="font-bold">
           {props.title ?? "Lokasi layanan terdekat"}
         </h2>
@@ -127,7 +128,7 @@ export default function OfficeMap({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={buttonClass("secondary", "min-h-9 px-3")}
+        className={buttonClass("secondary", "min-h-9 w-full px-3 sm:w-auto")}
       >
         Tampilkan peta
       </button>

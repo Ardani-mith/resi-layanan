@@ -52,7 +52,7 @@ function Row({ item, now, selected }: { item: Item; now: number; selected: boole
         {selected && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-brand" />}
         <span className="flex items-center justify-between gap-2">
           <span className="font-mono text-xs tracking-wide text-muted">{item.resi}</span>
-          <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold", TONE[u.tone])}>
+          <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold", TONE[u.tone])}>
             {u.text}
           </span>
         </span>
@@ -64,7 +64,7 @@ function Row({ item, now, selected }: { item: Item; now: number; selected: boole
           {item.serviceName} · {item.stepName}
         </span>
         {(item.escalationLevel > 0 || (!item.mine && item.stepRole)) && (
-          <span className="mt-1.5 flex flex-wrap gap-1.5 text-[11px] font-semibold">
+          <span className="mt-1.5 flex flex-wrap gap-1.5 text-xs font-semibold">
             {item.escalationLevel > 0 && (
               <span className="rounded-full bg-late px-2 py-0.5 text-surface">
                 Eskalasi {item.escalationLevel === 2 ? "Kabid" : "Kasi"}

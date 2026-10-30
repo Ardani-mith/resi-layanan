@@ -75,14 +75,14 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
         aria-hidden
         className="relative grid aspect-[16/11] place-items-center overflow-hidden bg-(--tint) bg-[radial-gradient(ellipse_at_30%_15%,var(--tint-glow),transparent_60%)] *:transition-transform *:duration-500 group-hover:*:scale-[1.03] sm:aspect-[6/5]"
       >
-        <span className="absolute top-3 left-3 z-10 rounded-sm bg-surface px-2 py-1 text-[11px] font-medium text-text tabular-nums">
+        <span className="absolute top-3 left-3 z-10 rounded-sm bg-surface px-2 py-1 text-xs font-medium text-text tabular-nums">
           {String(index + 1).padStart(2, "0")}
         </span>
         <ServiceArt slug={service.slug} />
       </div>
 
       <div className="flex flex-1 flex-col p-6">
-        <p className="flex items-center gap-2 text-[11px] font-medium tracking-wide text-muted uppercase">
+        <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted uppercase">
           <span aria-hidden className="size-1.5 rounded-full bg-(--accent)" />
           {service.output || "Layanan kependudukan"}
         </p>
@@ -91,7 +91,7 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
         </h2>
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted">{service.description}</p>
 
-        <ul className="mt-4 flex flex-wrap gap-1.5 text-[11px] font-medium text-muted">
+        <ul className="mt-4 flex flex-wrap gap-1.5 text-xs font-medium text-muted">
           <li className="rounded-sm bg-ok-soft px-2 py-1 text-ok">gratis</li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">
             terbit ≤ {formatWorkHours(service.issueSlaHours, { short: true })}
@@ -100,7 +100,7 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
           <li className="rounded-sm bg-surface-2 px-2 py-1">{service.requirements.length} syarat</li>
         </ul>
 
-        <p className="mt-auto pt-6 text-[11px] font-medium text-muted">
+        <p className="mt-auto pt-6 text-xs font-medium text-muted">
           {perf.completed
             ? `${formatPercent(perf.onTimeRate)} selesai tepat waktu dari ${perf.completed} permohonan`
             : "Belum ada permohonan yang selesai"}

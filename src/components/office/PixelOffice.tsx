@@ -663,7 +663,7 @@ export default function PixelOffice({
                 active === key ? "border-brand bg-brand-soft" : "border-line bg-surface",
               )}
             >
-              <p className="font-mono text-[10px] tracking-[0.1em] text-muted uppercase">
+              <p className="font-mono text-xs tracking-[0.1em] text-muted uppercase">
                 0{i + 1} · {room.who}
               </p>
               <p className="mt-0.5 font-semibold">{room.name}</p>

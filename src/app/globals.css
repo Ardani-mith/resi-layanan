@@ -207,6 +207,17 @@ body {
 /* --- Landing page --------------------------------------------------------------
    Teks & hiasan bagian hero/penutup memakai token hero-* (text-hero-fg, bg-hero-soft, dst.). */
 
+/* Jarak tepi kiri-kanan halaman: rapat di HP, lega di desktop. Dipakai semua halaman & section. */
+@utility px-page {
+  padding-inline: 1rem;
+  @variant sm {
+    padding-inline: 2rem;
+  }
+  @variant lg {
+    padding-inline: 5rem;
+  }
+}
+
 /* Hanya tepi atas bergerigi (sobekan struk di bagian penutup). */
 @utility receipt-edge-top {
   --tooth: 14px;

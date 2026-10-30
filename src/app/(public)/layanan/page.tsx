@@ -26,7 +26,7 @@ async function Catalog() {
 
 export default function ServicesPage() {
   return (
-    <PageSlide className="px-20 py-12">
+    <PageSlide className="px-page py-12">
       <PageHeader label={`Layanan ${site.agency}`} title="Pilih dokumen, lihat janjinya dulu.">
         Setiap layanan punya tahapan dengan tenggat dalam jam kerja; dokumen terbit paling lama 24 jam setelah
         berkas lengkap (Permendagri 19/2018). Angka tepat waktu dihitung dari permohonan yang sudah selesai.

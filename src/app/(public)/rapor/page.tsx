@@ -124,7 +124,7 @@ async function Report() {
 
 export default function ReportPage() {
   return (
-    <PageSlide className="space-y-8 px-20 py-12">
+    <PageSlide className="space-y-8 px-page py-12">
       <PageHeader label="Rapor SLA publik" title="Janji waktu, ditepati atau tidak.">
         Seberapa sering {site.agency} menepati janji waktu layanannya. Terbuka untuk siapa pun, diperbarui
         langsung dari data permohonan.
