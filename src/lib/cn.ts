@@ -11,7 +11,7 @@ const COLORS = [
   "late", "late-soft", "pause", "pause-soft",
   "chart", "chart-track", "grid",
   "hero-fg", "hero-muted", "hero-soft", "hero-line", "hero-line-strong",
-  "hero-accent", "hero-accent-end", "hero-alert", "hero-chip",
+  "hero-accent", "hero-alert", "hero-chip", "nav-fg", "nav-muted",
 ];
 
 const twMerge = extendTailwindMerge({

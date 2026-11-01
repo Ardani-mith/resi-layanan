@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type ComponentType, type ReactNode, Suspense } from "react";
+import FooterWordmark from "@/components/layout/FooterWordmark";
+import HeaderTone from "@/components/layout/HeaderTone";
 import SlideLink from "@/components/layout/SlideLink";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import { LogoMark, Wordmark } from "@/components/Logo";
@@ -12,7 +14,7 @@ import { getCurrentUser } from "@/lib/dal";
 import { homeFor, PASSWORD_PATH } from "@/lib/roles";
 
 const linkClass =
-  "shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted transition-colors hover:text-text sm:px-3";
+  "shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap text-nav-muted transition-colors hover:text-nav-fg sm:px-3";
 
 /** Label pendek di HP, lengkap di layar lebar. */
 function Label({ short, full }: { short: string; full: string }) {
@@ -79,7 +81,7 @@ function Navbar() {
           href="/"
           transitionTypes={["nav-back"]}
           aria-label={`${site.name}, beranda`}
-          className="mr-auto flex shrink-0 items-center rounded-lg"
+          className="mr-auto flex shrink-0 items-center rounded-lg text-nav-fg"
         >
           {/* HP sempit: ikon saja agar menu & tombol tema muat. */}
           <LogoMark className="min-[430px]:hidden" />
@@ -93,42 +95,88 @@ function Navbar() {
             <SessionLink />
           </Suspense>
         </div>
-        <ThemeToggle className="-mr-2" />
+        <ThemeToggle className="-mr-2 text-nav-muted hover:text-nav-fg" />
       </nav>
+      {/* usePathname = data saat request: di dalam <Suspense> agar kerangka tetap di-prerender. */}
+      <Suspense>
+        <HeaderTone />
+      </Suspense>
     </header>
   );
 }
 
+const footerLink = "rounded text-hero-muted transition-colors hover:text-hero-fg";
+
+/**
+ * Footer gelap selebar layar, senada dengan hero. Di beranda menyambung tanpa garis dengan CTA
+ * penutup: warna dasar sama, dan pendar birunya meneruskan pendar di dasar CTA (glow-seam-*).
+ * Dasar footer: wordmark "Pantas" raksasa yang sedikit terpotong.
+ */
 function Footer() {
   return (
-    <footer className="border-t border-line bg-surface">
-      <div className="space-y-3 px-page py-6 text-sm text-muted">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex flex-wrap items-center gap-2">
-            <span>
-              <span className="font-semibold text-text">{site.name}</span> · {site.agency}
-            </span>
-            <span className="rounded-full border border-line px-2 py-0.5 text-xs font-semibold">
+    <footer
+      data-header-dark
+      className="relative isolate overflow-hidden bg-(--hero-g1) text-sm text-hero-muted"
+    >
+      <div aria-hidden className="absolute inset-0 -z-10 glow-seam-top" />
+      {/* Pendar biru lembut di dasar halaman, di belakang wordmark raksasa. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 -z-10 h-3/5 bg-[radial-gradient(ellipse_75%_100%_at_50%_100%,color-mix(in_srgb,var(--hero-g3)_38%,transparent),transparent_75%)]"
+      />
+      <div className="grid gap-10 px-page pt-14 pb-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+        <div className="space-y-4">
+          <p className="flex flex-wrap items-center gap-2 font-semibold text-hero-fg">
+            {site.agency}
+            <span className="rounded-full border border-hero-line-strong px-2 py-0.5 text-xs font-semibold text-hero-fg">
               {site.demo.badge}
             </span>
           </p>
+          <p className="max-w-md">{site.description}</p>
+        </div>
+        <nav aria-label="Tautan footer">
+          <p className="font-mono text-xs tracking-[0.12em] text-hero-fg uppercase">Untuk warga</p>
+          <ul className="mt-4 space-y-2.5">
+            {[
+              ["/layanan", "Layanan & syarat"],
+              ["/ajukan", "Ajukan permohonan"],
+              ["/lacak", "Lacak resi"],
+              ["/rapor", "Rapor SLA"],
+              ["/masuk", "Masuk petugas"],
+            ].map(([href, label]) => (
+              <li key={href}>
+                <Link href={href} className={footerLink}>
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div>
+          <p className="font-mono text-xs tracking-[0.12em] text-hero-fg uppercase">Karya untuk</p>
           <a
             href={site.event.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-lg hover:text-text"
+            className="mt-4 flex items-center gap-3 rounded-lg text-hero-muted hover:text-hero-fg"
           >
-            <Image src={site.event.logo} alt="" width={29} height={32} className="h-8 w-auto" />
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white p-1.5">
+              <Image src={site.event.logo} alt="" width={29} height={32} className="h-8 w-auto" />
+            </span>
             <span className="leading-tight">
-              <span className="block text-xs">Karya untuk {site.event.competition}</span>
-              <span className="block font-semibold text-text">{site.event.name}</span>
+              <span className="block text-xs">{site.event.competition}</span>
+              <span className="block font-semibold text-hero-fg">{site.event.name}</span>
             </span>
           </a>
         </div>
-        <p className="max-w-3xl text-xs">
-          {site.demoNotice} {site.demo.note}
-        </p>
       </div>
+      {/* <p className="px-page pb-8 text-xs text-hero-muted/80">
+        {site.demoNotice} {site.demo.note}
+      </p> */}
+      {/* -mb: dasar huruf sedikit terpotong tepi halaman. */}
+      {/* <div className="-mb-[3.5%] px-page">
+        <FooterWordmark />
+      </div> */}
     </footer>
   );
 }

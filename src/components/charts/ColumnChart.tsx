@@ -84,7 +84,7 @@ export default function ColumnChart({
                 <span
                   aria-hidden
                   className={cn(
-                    "w-full max-w-6 rounded-t-[4px] bg-chart transition-opacity group-focus-visible:ring-2 group-focus-visible:ring-brand group-focus-visible:ring-offset-2",
+                    "w-full max-w-6 rounded-t-[4px] bg-chart transition-opacity",
                     active !== null && active !== i && "opacity-50",
                   )}
                   style={{ height: `${Math.max(d.value * 100, 1)}%` }}

@@ -1,17 +1,14 @@
 import "./globals.css";
-import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { site } from "@/config/site";
 import { themeScript } from "@/lib/theme";
 
 // next/font mengunduh font saat build dan menyajikannya dari domain sendiri (self-hosted).
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
+// Geist: sans geometris yang rapat untuk judul besar, tetap jelas di ukuran kecil.
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 // Mono untuk nomor resi, angka, dan "struk" di beranda: identitas visual Pantas (resi = struk).
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
-});
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata = {
   title: { default: `${site.name}: lacak layanan publik`, template: `%s · ${site.name}` },
@@ -32,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // untuk atribut elemen ini, tidak untuk anak-anaknya, jadi mismatch sungguhan tetap terdeteksi.
     <html
       lang="id"
-      className={`${jakarta.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

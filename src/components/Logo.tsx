@@ -5,7 +5,7 @@
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
-const maskStyle = (src: string) => ({
+export const maskStyle = (src: string) => ({
   maskImage: `url(${src})`,
   maskSize: "contain",
   maskRepeat: "no-repeat",

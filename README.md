@@ -95,4 +95,4 @@ Tanpa data demo, tidak ada pendaftaran lewat web: admin pertama dibuat dengan `n
 
 ## Kredit
 
-Aset & teknik kantor pixel-art dari [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) (MIT); lihat `public/office/pixel/LICENSE.txt`. Karakter petugas dibuat khusus untuk Pantas (sumber di `design/sprites/`). Logo Multimedia In Action 2026 milik penyelenggara MIA ([mia2026.com](https://www.mia2026.com)), dipakai di footer sebagai keterangan lomba.
+Aset & teknik kantor pixel-art dari [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) (MIT); lihat `public/office/pixel/LICENSE.txt`. Karakter petugas dibuat khusus untuk Pantas (sumber di `design/sprites/`). Efek sorot cahaya & grid di hero beranda diadaptasi dari [Aceternity UI](https://ui.aceternity.com) (Spotlight, Grid Background). Logo Multimedia In Action 2026 milik penyelenggara MIA ([mia2026.com](https://www.mia2026.com)), dipakai di footer sebagai keterangan lomba.

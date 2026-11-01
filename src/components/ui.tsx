@@ -28,7 +28,7 @@ export type ButtonVariant = keyof typeof BUTTON_VARIANTS;
 /** Class tombol; `extra` boleh kondisional dan menimpa bawaan bila bentrok (mis. "w-full", "px-6"). */
 export function buttonClass(variant: ButtonVariant = "primary", ...extra: Parameters<typeof cn>): string {
   return cn(
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
     BUTTON_VARIANTS[variant],
     ...extra,
   );
@@ -180,10 +180,7 @@ export function NotFoundView({
 
 // --- Kepala halaman & label bagian (identitas "dokumen" halaman warga) ----------------
 
-/**
- * Label bagian bergaya dokumen: nomor mono + nama + garis rambut, seperti penomoran pasal.
- * Sengaja bukan "pil" berwarna (pola template yang terlalu umum).
- */
+/** Label bagian: pil kecil berisi nomor mono + nama, senada dengan badge di hero beranda. */
 export function SectionLabel({
   index,
   className,
@@ -196,13 +193,13 @@ export function SectionLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-3 font-mono text-xs tracking-[0.14em] text-muted uppercase",
+        "inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 font-mono text-xs tracking-[0.12em] text-muted uppercase shadow-card",
         className,
       )}
     >
       <span className="text-brand">{index}</span>
+      <span aria-hidden className="h-3 w-px bg-line" />
       <span>{children}</span>
-      <span aria-hidden className="h-px flex-1 bg-line" />
     </p>
   );
 }

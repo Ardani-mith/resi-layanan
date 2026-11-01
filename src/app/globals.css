@@ -19,15 +19,15 @@
   --muted: #5b6b80;
   --line: #dbe3ee;
 
-  --brand: #0b5cad;
-  --brand-strong: #084a8c;
-  --brand-soft: #e6f0fb;
+  --brand: #2156d9;
+  --brand-strong: #1a44ad;
+  --brand-soft: #e9effd;
   --on-brand: #ffffff;
 
   --ok: #13795b;
   --ok-soft: #e3f5ee;
-  --run: #0b5cad;
-  --run-soft: #e6f0fb;
+  --run: #2156d9;
+  --run-soft: #e9effd;
   --warn: #a15c00;
   --warn-soft: #fdf1dc;
   --late: #c0362c;
@@ -36,20 +36,24 @@
   --pause-soft: #efecfb;
 
   /* Grafik: satu hue (data satu seri), divalidasi dataviz validate_palette per mode. */
-  --chart: #0b5cad;
-  --chart-track: #e6eef8;
+  --chart: #2156d9;
+  --chart-track: #e6ecfa;
   --grid: #e7ecf3;
 
-  /* Hero & penutup landing: biru muda bercahaya di mode terang, navy di mode gelap. */
-  --hero-fg: #0f1b2d;
-  --hero-muted: #42536b;
-  --hero-soft: rgb(11 92 173 / 0.08);
-  --hero-line: rgb(11 92 173 / 0.14);
-  --hero-line-strong: rgb(11 92 173 / 0.35);
-  --hero-accent: #0b5cad;
-  --hero-accent-end: #2b7fd4;
-  --hero-alert: #c0362c;
-  --hero-chip: rgb(255 255 255 / 0.92);
+  /* Hero beranda: selalu gelap (navy → biru → memudar ke latar) di kedua tema, jadi teks &
+     hiasannya memakai token hero-* yang terang. Stop gradien saja yang berbeda per tema. */
+  --hero-fg: #ffffff;
+  --hero-muted: rgb(219 229 255 / 0.82);
+  --hero-soft: rgb(255 255 255 / 0.08);
+  --hero-line: rgb(255 255 255 / 0.12);
+  --hero-line-strong: rgb(255 255 255 / 0.3);
+  --hero-accent: #a8c2ff;
+  --hero-alert: #ffb4ab;
+  --hero-chip: rgb(255 255 255 / 0.06);
+  --hero-g1: #040a1a;
+  --hero-g2: #0c1f5c;
+  --hero-g3: #2155dc;
+  --hero-g4: #6d97f5;
 
   /* Panel ilustrasi kartu layanan (bergiliran per layanan): latar pastel + aksen. */
   --tint-1: #e4f29e;
@@ -59,14 +63,6 @@
   --tint-3: #f9d3c0;
   --tint-3-accent: #e2875f;
   --tint-glow: rgb(255 255 255 / 0.5);
-
-  /* Kertas struk (beranda): putih gading, tinta navy, cap biru. */
-  --paper: #fffdf7;
-  --paper-line: #d9d3c4;
-  --ink-soft: #6b6557;
-
-  /* Gradien hero beranda: biru muda di atas, memudar ke warna latar. */
-  --hero-from: #d3e6fb;
 
   /* Pixel-art landing (langit, hiasan, strip jalan): tingkat putih → biru muda → biru tua,
      tingkat di antaranya berupa dither 2px. Senja & fajar untuk ilustrasi kartu. */
@@ -93,15 +89,15 @@
   --muted: #93a3b8;
   --line: #24324b;
 
-  --brand: #5aa2ec;
-  --brand-strong: #84bbf2;
-  --brand-soft: #142a47;
+  --brand: #6d9bff;
+  --brand-strong: #9bbaff;
+  --brand-soft: #16264d;
   --on-brand: #06101f;
 
   --ok: #4cc59a;
   --ok-soft: #0f2e25;
-  --run: #5aa2ec;
-  --run-soft: #142a47;
+  --run: #6d9bff;
+  --run-soft: #16264d;
   --warn: #f0b44c;
   --warn-soft: #33270f;
   --late: #ff7b70;
@@ -109,19 +105,12 @@
   --pause: #a99cf0;
   --pause-soft: #241f3f;
 
-  --chart: #4a92dd;
-  --chart-track: #1b2a42;
+  --chart: #5b8cf5;
+  --chart-track: #1a2744;
   --grid: #1f2b40;
 
-  --hero-fg: #ffffff;
-  --hero-muted: rgb(255 255 255 / 0.78);
-  --hero-soft: rgb(255 255 255 / 0.1);
-  --hero-line: rgb(255 255 255 / 0.1);
-  --hero-line-strong: rgb(255 255 255 / 0.3);
-  --hero-accent: #7dd3fc;
-  --hero-accent-end: #ffffff;
-  --hero-alert: #ffa49a;
-  --hero-chip: rgb(13 31 58 / 0.9);
+  --hero-g3: #1b43b8;
+  --hero-g4: #1d3270;
 
   --tint-1: #2c3714;
   --tint-1-accent: #a9cd3c;
@@ -130,12 +119,6 @@
   --tint-3: #3a241b;
   --tint-3-accent: #f0a07c;
   --tint-glow: rgb(255 255 255 / 0.06);
-
-  --paper: #162236;
-  --paper-line: #2e3d57;
-  --ink-soft: #9aa8bd;
-
-  --hero-from: #0f2a4f;
 
   --px-white: #15223a;
   --px-light: #1c3a66;
@@ -181,16 +164,14 @@
   --color-hero-line: var(--hero-line);
   --color-hero-line-strong: var(--hero-line-strong);
   --color-hero-accent: var(--hero-accent);
-  --color-hero-accent-end: var(--hero-accent-end);
   --color-hero-alert: var(--hero-alert);
   --color-hero-chip: var(--hero-chip);
-  --color-paper: var(--paper);
-  --color-paper-line: var(--paper-line);
-  --color-ink-soft: var(--ink-soft);
+  --color-nav-fg: var(--nav-fg);
+  --color-nav-muted: var(--nav-muted);
   --radius-card: var(--radius);
   --shadow-card: var(--shadow);
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 body {
@@ -199,9 +180,12 @@ body {
   font-family: var(--font-sans);
 }
 
-:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+/* Tanpa garis fokus (permintaan desain): termasuk garis bawaan browser. Kolom isian tetap
+   menandai fokus lewat warna tepinya (focus:border-brand / cincin kartu cek resi). */
+@layer base {
+  :focus-visible {
+    outline: none;
+  }
 }
 
 /* --- Landing page --------------------------------------------------------------
@@ -216,20 +200,6 @@ body {
   @variant lg {
     padding-inline: 5rem;
   }
-}
-
-/* Hanya tepi atas bergerigi (sobekan struk di bagian penutup). */
-@utility receipt-edge-top {
-  --tooth: 14px;
-  mask:
-    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / var(--tooth) 51% repeat-x,
-    linear-gradient(#000, #000) 0 100% / 100% 51% no-repeat;
-}
-
-/* Garis potong putus-putus di struk. */
-@utility rule-dashed {
-  background: repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 11px) 0 50% / 100% 1px
-    no-repeat;
 }
 
 @keyframes rise {
@@ -281,27 +251,136 @@ body {
   animation: iso-pulse 1.6s ease-in-out infinite;
 }
 
-/* Navbar warga: transparan di posisi paling atas (menyatu dengan gradien hero), lalu padat
-   + blur + garis bawah setelah digulir 64px. Murni CSS (scroll-driven animation); browser yang
-   belum mendukung langsung memakai keadaan padat. */
+/* Navbar warga: transparan di posisi paling atas, latar blur setelah digulir. Teks putih saat
+   berada di atas area gelap ([data-header-dark], mis. hero beranda), gelap di atas latar terang.
+   Status dari HeaderTone.tsx (data-scrolled, data-on-dark); sebelum skrip jalan: transparan, dan
+   putih bila halaman punya hero gelap. Warna teks lewat --nav-fg/--nav-muted (text-nav-fg). */
+@property --nav-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0f1b2d;
+}
+@property --nav-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #5b6b80;
+}
 .site-header {
-  background-color: color-mix(in srgb, var(--surface) 90%, transparent);
+  --nav-fg: var(--text);
+  --nav-muted: var(--muted);
+  background-color: color-mix(in srgb, var(--surface) 82%, transparent);
   border-color: var(--line);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px) saturate(1.4);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    backdrop-filter 0.25s ease,
+    --nav-fg 0.25s ease,
+    --nav-muted 0.25s ease;
 }
-@supports (animation-timeline: scroll()) {
-  .site-header {
-    animation: header-solid linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 64px;
+.site-header:not([data-scrolled="true"]) {
+  background-color: transparent;
+  border-color: transparent;
+  backdrop-filter: none;
+}
+.site-header[data-on-dark="true"],
+body:has([data-header-dark]) .site-header:not([data-on-dark]) {
+  --nav-fg: #ffffff;
+  --nav-muted: rgb(219 229 255 / 0.8);
+}
+.site-header[data-on-dark="true"][data-scrolled="true"] {
+  background-color: rgb(4 10 26 / 0.45);
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+/* Kartu sorot (SpotlightCard) sedang aktif: disorot kursor, difokus keyboard, atau perangkat
+   tanpa hover (layar sentuh: demo mini langsung tampil dalam keadaan aktif). */
+@custom-variant spot-on {
+  &:where(.group\/spot:is(:hover, :focus-within) *) {
+    @slot;
+  }
+  @media (hover: none) {
+    @slot;
   }
 }
-@keyframes header-solid {
+
+/* Batang grafik tumbuh dari kiri (demo mini kartu "Untuk siapa"). */
+@keyframes bar-grow {
   from {
-    background-color: transparent;
-    border-color: transparent;
-    backdrop-filter: blur(0);
+    scale: 0 1;
   }
+}
+@utility animate-bar-grow {
+  transform-origin: left;
+  animation: bar-grow 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tepi kartu yang menyala mengikuti kursor (SpotlightCard): gradien hanya di garis 1px. */
+@utility spot-border {
+  padding: 1px;
+  background: radial-gradient(
+    280px circle at var(--spot-x) var(--spot-y),
+    color-mix(in srgb, var(--brand) 70%, transparent),
+    transparent 70%
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+/* Pita berjalan (diadaptasi dari "Infinite Moving Cards", Aceternity UI): isi digandakan, lalu
+   digeser setengah lebarnya agar mulus berulang. Berhenti saat disorot. */
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+@utility animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+/* Melayang naik-turun pelan (kartu kaca di CTA penutup). */
+@keyframes float {
+  50% {
+    translate: 0 -10px;
+  }
+}
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pendar biru di sambungan CTA penutup ↔ footer: elips yang sama persis, berpusat tepat di batas
+   keduanya (separuh di bawah CTA, separuh di atas footer), jadi terlihat satu gradien tanpa garis. */
+@utility glow-seam-bottom {
+  background-image: radial-gradient(
+    70vw 360px at 50% 100%,
+    color-mix(in srgb, var(--hero-g3) 45%, transparent),
+    transparent 70%
+  );
+}
+@utility glow-seam-top {
+  background-image: radial-gradient(
+    70vw 360px at 50% 0%,
+    color-mix(in srgb, var(--hero-g3) 45%, transparent),
+    transparent 70%
+  );
+}
+
+/* Sorot cahaya di hero (diadaptasi dari "Spotlight", Aceternity UI): muncul sekali dari kiri atas. */
+@keyframes spotlight {
+  from {
+    opacity: 0;
+    translate: -72% -62%;
+    scale: 0.5;
+  }
+  to {
+    opacity: 1;
+    translate: -50% -40%;
+    scale: 1;
+  }
+}
+@utility animate-spotlight {
+  animation: spotlight 2s ease 0.75s 1 forwards;
 }
 
 /* --- Transisi halaman (React <ViewTransition>, lihat PageSlide di components/ui.tsx) ----------

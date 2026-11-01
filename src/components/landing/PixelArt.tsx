@@ -101,7 +101,18 @@ export function PixelSky({
 }
 
 /** Panel ilustrasi kartu: langit bernada pagi/siang/senja + isi (kartu kaca) di tengah. */
-export function PixelCard({ tone, seed, children }: { tone: Tone; seed: number; children?: ReactNode }) {
+export function PixelCard({
+  tone,
+  seed,
+  className,
+  children,
+}: {
+  tone: Tone;
+  seed: number;
+  /** Mis. menimpa rasio panel untuk kartu lebar. */
+  className?: string;
+  children?: ReactNode;
+}) {
   const fill =
     tone === "dusk"
       ? "bg-[var(--px-dusk-light)]"
@@ -113,6 +124,7 @@ export function PixelCard({ tone, seed, children }: { tone: Tone; seed: number; 
       className={cn(
         "relative aspect-[4/3] overflow-hidden sm:aspect-[16/10] lg:aspect-[4/3] xl:aspect-[16/10]",
         fill,
+        className,
       )}
     >
       <PixelSky edges={{ top: 4, bottom: 7 }} seed={seed} tone={tone} cell={10} />
@@ -333,9 +345,8 @@ const street: PixelSpec = {
   draw(p, t) {
     const ground = p.rows - 2;
     drawClouds(p, t * 0.25, { bottom: 9 }, 41);
-    // Jalan: garis tinta + trotoar dither, kantor di sisi kanan.
-    p.rect(0, ground, p.cols, 1, Ink);
-    p.rect(0, ground + 1, p.cols, 1, LightChecker);
+    // Jalan: aspal tinta dua baris (menyatu dengan blok penutup gelap di bawahnya), kantor di kanan.
+    p.rect(0, ground, p.cols, 2, Ink);
     p.sprite(BUILDING, p.cols - BUILDING[0].length - 4, ground - BUILDING.length, {
       X: Ink,
       W: White,
