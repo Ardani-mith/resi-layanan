@@ -17,16 +17,16 @@ function subscribe(onChange: () => void) {
 function readTheme(): Theme {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    return stored === "light" || stored === "dark" ? stored : "system";
+    return stored === "dark" || stored === "system" ? stored : "light";
   } catch {
-    return "system";
+    return "light";
   }
 }
 
 /** Simpan pilihan; skrip tema di <head> yang memasang data-theme di <html>. */
 function setTheme(theme: Theme) {
   try {
-    if (theme === "system") localStorage.removeItem(THEME_KEY);
+    if (theme === "light") localStorage.removeItem(THEME_KEY);
     else localStorage.setItem(THEME_KEY, theme);
   } catch {
     return;
@@ -46,11 +46,11 @@ const OPTIONS = {
   dark: { label: "Gelap", Icon: Moon },
 };
 
-/** Tombol tema: tiap klik berganti Sistem → Terang → Gelap. */
+/** Tombol tema: tiap klik berganti Terang → Gelap → Sistem. */
 export default function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useTheme();
-  // Render server belum tau pilihan pengguna: tampilkan "Sistem" sampai hydration selesai.
-  const current = theme ?? "system";
+  // Render server belum tau pilihan pengguna: tampilkan "Terang" (default) sampai hydration selesai.
+  const current = theme ?? "light";
   const next = THEMES[(THEMES.indexOf(current) + 1) % THEMES.length];
   const { label, Icon } = OPTIONS[current];
 

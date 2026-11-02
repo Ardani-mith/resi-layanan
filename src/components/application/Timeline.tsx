@@ -110,9 +110,12 @@ function StepDetail({ step, state, now }: { step: TimelineStep; state: StepViewS
 
 // --- Versi petugas: log aktivitas yang ringkas -------------------------------------------
 
-/** Ikon status kecil di garis waktu petugas. Tahap berjalan = titik bercincin. */
-function StepIcon({ state }: { state: StepViewState }) {
-  const base = "relative z-10 size-4 shrink-0 bg-surface";
+/**
+ * Ikon status di garis waktu. Tahap berjalan = titik bercincin (versi warga `large` berdenyut).
+ * `large` untuk timeline warga, kecil untuk log petugas.
+ */
+function StepIcon({ state, large = false }: { state: StepViewState; large?: boolean }) {
+  const base = cn("relative z-10 shrink-0 rounded-full bg-surface", large ? "size-6" : "size-4");
   switch (state) {
     case "selesai":
       return <CircleCheck aria-hidden className={cn(base, "text-ok")} />;
@@ -126,8 +129,9 @@ function StepIcon({ state }: { state: StepViewState }) {
       return <CircleMinus aria-hidden className={cn(base, "text-muted")} />;
     case "berjalan":
       return (
-        <span aria-hidden className={cn(base, "grid place-items-center rounded-full border-2 border-run")}>
-          <span className="size-1.5 rounded-full bg-run" />
+        <span aria-hidden className={cn(base, "grid place-items-center border-2 border-run")}>
+          {large && <span className="absolute inset-0 rounded-full bg-run/25 motion-safe:animate-ping" />}
+          <span className={cn("rounded-full bg-run", large ? "size-2" : "size-1.5")} />
         </span>
       );
     default:
@@ -290,42 +294,56 @@ export default function Timeline({
         const meta = STEP_STATE[state] ?? STEP_STATE.menunggu;
         const label = state === "berjalan" && !step.dueAt ? "Siap" : meta.label;
         const last = i === steps.length - 1;
+        const muted = state === "menunggu" || state === "dibatalkan";
         return (
           <li
             key={step.key}
-            className="relative flex gap-4 pb-6 last:pb-0"
+            className="relative flex gap-4 pb-7 last:pb-0"
             aria-current={step.isCurrent ? "step" : undefined}
           >
-            {!last && <span aria-hidden className="absolute top-6 bottom-0 left-[9px] w-0.5 bg-line" />}
-            <span
-              aria-hidden
-              className={cn("relative z-10 mt-1 size-5 shrink-0 rounded-full border-2", meta.dot)}
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <h3
+            {/* Garis penghubung: hijau sampai tahap yang sudah selesai. */}
+            {!last && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute top-7 bottom-1 left-[11.5px] w-px",
+                  state === "selesai" ? "bg-ok/40" : "bg-line",
+                )}
+              />
+            )}
+            <span className="mt-0.5">
+              <StepIcon state={state} large />
+            </span>
+            {/* Tahap yang sedang berjalan disorot dengan kotak lembut agar langsung terlihat. */}
+            <div
+              className={cn(
+                "min-w-0 flex-1",
+                step.isCurrent && !muted && "-mt-2 rounded-xl border border-line bg-surface-2/60 px-4 py-3",
+              )}
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <h3 className={cn("font-semibold", muted && "font-medium text-muted")}>{step.name}</h3>
+                <span
                   className={cn(
-                    "font-semibold",
-                    (state === "menunggu" || state === "dibatalkan") && "text-muted",
+                    "inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap",
+                    meta.text,
                   )}
                 >
-                  {step.name}
-                </h3>
-                <span className={cn("text-xs font-semibold tracking-wide uppercase", meta.text)}>
+                  <span aria-hidden className="size-1.5 rounded-full bg-current" />
                   {label}
                 </span>
               </div>
               <div className="mt-0.5">
                 <StepDetail step={step} state={state} now={now} />
               </div>
-              {/* Saat dijeda, catatan perbaikan sudah tampil di banner atas halaman lacak. */}
+              {/* Saat dijeda, catatan perbaikan sudah tampil di kartu langkah berikutnya. */}
               {step.publicNote && state !== "dijeda" && (
-                <blockquote className="mt-2 rounded-xl border-l-4 border-brand bg-brand-soft px-3 py-2 text-sm">
-                  <span className="block text-xs font-semibold text-brand">Catatan petugas</span>
+                <blockquote className="mt-2.5 border-l-2 border-brand/50 pl-3 text-sm">
+                  <span className="block text-xs text-muted">Catatan petugas</span>
                   {step.publicNote}
                 </blockquote>
               )}
-              {/* Tahap terlambat yang sedang berjalan: tanggapan sudah tampil di banner atas halaman lacak. */}
+              {/* Tahap terlambat yang sedang berjalan: tanggapan sudah tampil di kartu langkah berikutnya. */}
               {step.followUp && !(step.isCurrent && state === "terlambat") && (
                 <FollowUpNote followUp={step.followUp} />
               )}

@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import ResiSearch from "@/components/application/ResiSearch";
+import TrackHero, { TrackSearchHero } from "@/components/application/TrackHero";
 import { PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
-import { site } from "@/config/site";
 import type { ParamsOf } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { getClockInfo, getTracking } from "@/lib/dal";
 import { receiptFor } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
@@ -11,34 +10,25 @@ import TrackView from "./TrackView";
 
 export const metadata = { title: "Lacak resi" };
 
+/** Resi salah format / tidak ada: hero setinggi layar dengan kolom cek resi untuk mencoba lagi. */
 function Problem({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="mx-auto max-w-2xl rounded-card border border-line bg-surface p-6 shadow-card">
-      <h1 className="text-xl font-bold">{title}</h1>
-      <p className="mt-2 text-muted">{body}</p>
-      <div className="mt-5">
-        <ResiSearch example={site.hero.exampleResi} />
-      </div>
-      <p className="mt-4 text-sm text-muted">
-        Lupa nomor resi?{" "}
-        <Link
-          href="/lacak/lupa"
-          transitionTypes={["nav-forward"]}
-          className="font-semibold text-brand hover:underline"
-        >
-          Cari dengan NIK & nomor HP
-        </Link>
-      </p>
-    </div>
-  );
+  return <TrackSearchHero title={title} body={body} />;
 }
 
+/** Kerangka saat data dimuat: bentuk kepala gelap + kartu yang sama dengan halaman aslinya. */
 function TrackSkeleton() {
+  const bar = "rounded-full bg-white/10 motion-safe:animate-pulse";
   return (
-    <div className="space-y-5" aria-busy="true" aria-label="Memuat status permohonan">
-      <div className="grid gap-5 lg:grid-cols-[1fr_21rem]">
-        <Skeleton className="h-80" />
-        <Skeleton className="h-80" />
+    <div aria-busy="true" aria-label="Memuat status permohonan">
+      <TrackHero>
+        <div className={cn(bar, "h-7 w-36")} />
+        <div className={cn(bar, "mt-10 h-4 w-40")} />
+        <div className={cn(bar, "mt-4 h-11 w-full max-w-md")} />
+        <div className="mt-8 h-44 rounded-2xl border border-hero-line bg-hero-chip" />
+      </TrackHero>
+      <div className="relative -mt-14 grid gap-5 px-page pb-16 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="h-80 rounded-2xl" delay={150} />
       </div>
     </div>
   );
@@ -74,7 +64,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {
   return (
-    <PageSlide className="px-page py-8">
+    <PageSlide>
       <SuspenseReveal fallback={<TrackSkeleton />}>
         <Tracking params={params} />
       </SuspenseReveal>

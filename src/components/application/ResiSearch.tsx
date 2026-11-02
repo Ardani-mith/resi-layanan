@@ -24,7 +24,8 @@ const VARIANTS = {
     error: "text-hero-alert",
     example: "text-hero-fg",
     row: "flex items-center gap-2 rounded-2xl bg-surface p-2 pl-5 shadow-[0_24px_60px_-20px_rgb(2_8_30/0.7)] ring-1 ring-white/20 focus-within:ring-4 focus-within:ring-white/30",
-    input: "min-h-12 min-w-0 bg-transparent",
+    // Warna teks eksplisit: induknya (hero) berteks putih, kotak isiannya terang.
+    input: "min-h-12 min-w-0 bg-transparent text-text",
     button: "grid size-12 shrink-0 place-items-center rounded-full shadow-[0_8px_20px_-6px_var(--brand)]",
   },
 };

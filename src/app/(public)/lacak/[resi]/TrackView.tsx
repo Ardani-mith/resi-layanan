@@ -2,11 +2,13 @@
 
 import {
   AlertTriangle,
+  ArrowLeft,
   Check,
   CheckCircle2,
   Clock,
   Copy,
   FileWarning,
+  Lock,
   type LucideIcon,
   MapPin,
   PackageCheck,
@@ -14,13 +16,15 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { StatusBadge } from "@/components/application/Badges";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import Timeline, { FollowUpNote } from "@/components/application/Timeline";
-import { Alert, Button, buttonClass, DemoClockBanner } from "@/components/ui";
+import TrackHero from "@/components/application/TrackHero";
+import { Alert, Button, buttonClass, DemoClockBanner, inputClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Tracking } from "@/lib/dal";
 import { formatDateTime, formatDuration } from "@/lib/format";
@@ -47,7 +51,7 @@ function CopyResi({ resi }: { resi: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft"
+      className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-sans text-xs font-medium tracking-normal text-hero-accent transition-colors hover:bg-hero-soft hover:text-hero-fg"
     >
       {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
       {copied ? "Tersalin" : "Salin"}
@@ -81,7 +85,7 @@ function Last4Field({
         placeholder="••••"
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="min-h-11 w-32 rounded-xl border border-line bg-surface px-3 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-brand aria-invalid:border-late"
+        className={cn(inputClass, "w-32 text-center font-mono text-lg tracking-[0.4em]")}
       />
       {error && (
         <p id={`${id}-error`} className="mt-1 text-sm text-late">
@@ -100,16 +104,19 @@ function FormError({ errors, action }: { errors: FormErrors; action: CitizenActi
 }
 
 const TONES = {
-  brand: { box: "border-brand/40", icon: "bg-brand-soft text-brand" },
-  late: { box: "border-late/50", icon: "bg-late-soft text-late" },
-  pause: { box: "border-pause/50", icon: "bg-pause-soft text-pause" },
-  ok: { box: "border-ok/50", icon: "bg-ok-soft text-ok" },
+  brand: { icon: "bg-brand-soft text-brand", glow: "bg-brand/15", dot: "bg-brand" },
+  late: { icon: "bg-late-soft text-late", glow: "bg-late/15", dot: "bg-late" },
+  pause: { icon: "bg-pause-soft text-pause", glow: "bg-pause/15", dot: "bg-pause" },
+  ok: { icon: "bg-ok-soft text-ok", glow: "bg-ok/15", dot: "bg-ok" },
 };
+
+/** Kartu putih yang menumpuk di atas kepala gelap: sudut besar + bayangan lembut. */
+const card = "rounded-2xl border border-line bg-surface shadow-[0_24px_60px_-36px_rgb(15_27_45/0.5)]";
 
 /**
  * Kartu "Langkah Anda berikutnya": satu jawaban jelas untuk "lalu saya harus apa?" sesuai status.
  * Semua pesan status (terlambat, perbaikan, siap diambil, ditolak, penilaian) ada di sini, tidak
- * tersebar menjadi banner terpisah.
+ * tersebar menjadi banner terpisah. Nada status = ikon + pendar lembut di sudut kartu.
  */
 function NextStep({
   tone,
@@ -123,23 +130,33 @@ function NextStep({
   children: ReactNode;
 }) {
   return (
-    <section
-      aria-labelledby="next-title"
-      className={cn("rounded-card border-2 bg-surface p-5 shadow-card", TONES[tone].box)}
-    >
-      <div className="flex items-start gap-3">
+    <section aria-labelledby="next-title" className={cn(card, "relative overflow-hidden p-5 sm:p-6")}>
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute -top-28 -left-20 size-72 rounded-full blur-3xl",
+          TONES[tone].glow,
+        )}
+      />
+      <div className="relative flex items-start gap-4">
         <span
           aria-hidden
-          className={cn("grid size-10 shrink-0 place-items-center rounded-xl", TONES[tone].icon)}
+          className={cn(
+            "grid size-11 shrink-0 place-items-center rounded-xl ring-1 ring-current/10 ring-inset",
+            TONES[tone].icon,
+          )}
         >
           <Icon className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">Langkah Anda berikutnya</p>
-          <h2 id="next-title" className="text-lg leading-snug font-bold">
+          <p className="flex items-center gap-2 font-mono text-xs tracking-[0.14em] text-muted uppercase">
+            <span aria-hidden className={cn("size-1.5 rounded-full", TONES[tone].dot)} />
+            Langkah Anda berikutnya
+          </p>
+          <h2 id="next-title" className="mt-1 text-xl leading-snug font-semibold tracking-[-0.02em]">
             {title}
           </h2>
-          <div className="mt-2 space-y-3 text-sm">{children}</div>
+          <div className="mt-3 space-y-3 text-sm leading-relaxed">{children}</div>
         </div>
       </div>
     </section>
@@ -160,37 +177,53 @@ function Checklist({ items }: { items: string[] }) {
   );
 }
 
-/** Tahap ke berapa dari berapa, sebagai bar bersegmen. */
+/** Warna bar tahap di kepala gelap. */
+function barTone(data: Tracking, step: Tracking["steps"][number], i: number) {
+  if (data.status === "selesai" || step.state === "selesai") return "bg-[#4ade80]";
+  if (i !== data.currentStep) return "bg-white/12";
+  if (step.state === "terlambat" || step.state === "ditolak") return "bg-hero-alert";
+  if (step.state === "dijeda") return "bg-[#fbbf24]";
+  return "bg-hero-accent";
+}
+
+/** Tahap ke berapa dari berapa: bar bersegmen berlabel nama tahap (label disembunyikan di HP). */
 function Progress({ data }: { data: Tracking }) {
   const total = data.steps.length;
   const done = data.status === "selesai" ? total : data.steps.filter((s) => s.state === "selesai").length;
   return (
-    <div className="mt-4">
-      <div className="flex justify-between text-xs text-muted">
+    <div className="border-t border-hero-line px-5 py-4 sm:px-6">
+      <div className="flex justify-between text-xs text-hero-muted">
         <span>
           {data.status === "selesai" ? "Semua tahap selesai" : `Tahap ${data.currentStep + 1} dari ${total}`}
         </span>
-        <span className="tabular-nums">{Math.round((done / total) * 100)}%</span>
+        <span className="font-mono tabular-nums">{Math.round((done / total) * 100)}%</span>
       </div>
-      <div aria-hidden className="mt-1.5 flex gap-1">
-        {data.steps.map((s, i) => (
-          <span
-            key={s.key}
-            className={cn(
-              "h-1.5 flex-1 rounded-full",
-              data.status === "selesai" || s.state === "selesai"
-                ? "bg-ok"
-                : i === data.currentStep
-                  ? s.state === "terlambat" || s.state === "ditolak"
-                    ? "bg-late"
-                    : s.state === "dijeda"
-                      ? "bg-pause"
-                      : "bg-brand"
-                  : "bg-surface-2",
-            )}
-          />
-        ))}
-      </div>
+      <ol
+        aria-hidden
+        className="mt-2.5 grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
+      >
+        {data.steps.map((s, i) => {
+          const current = i === data.currentStep && data.status !== "selesai";
+          return (
+            <li key={s.key} className="min-w-0">
+              <span className={cn("relative block h-1.5 overflow-hidden rounded-full", barTone(data, s, i))}>
+                {current && (
+                  <span className="absolute inset-y-0 left-0 w-1/2 bg-linear-to-r from-transparent via-white/60 to-transparent motion-safe:animate-indeterminate" />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "mt-2 hidden truncate text-xs sm:block",
+                  current ? "font-medium text-hero-fg" : "text-hero-muted/70",
+                )}
+              >
+                {s.name}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
@@ -200,11 +233,12 @@ function Progress({ data }: { data: Tracking }) {
  * jam kerja: belum dimulai, berjalan (dengan batas waktunya), ditepati, atau terlewati.
  */
 function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
-  const base = "mt-4 flex gap-2 rounded-xl px-3 py-2 text-sm";
+  const base = "flex gap-2.5 border-t border-hero-line px-5 py-3.5 text-sm text-hero-muted sm:px-6";
+  const icon = (tone: string) => <ShieldCheck aria-hidden className={cn("mt-0.5 size-4 shrink-0", tone)} />;
   if (!promise) {
     return (
-      <p className={cn(base, "bg-surface-2 text-muted")}>
-        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+      <p className={base}>
+        {icon("text-hero-accent")}
         Setelah berkas dinyatakan lengkap, dokumen terbit paling lama 24 jam (1 hari kerja), sesuai
         Permendagri 19/2018.
       </p>
@@ -213,21 +247,25 @@ function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
   const took = formatDuration(promise.workMs);
   if (promise.issuedAt) {
     return (
-      <p className={cn(base, promise.kept ? "bg-ok-soft text-ok" : "bg-late-soft text-late")}>
-        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
-        {promise.kept
-          ? `Dokumen terbit ${took} kerja setelah berkas lengkap: sesuai janji ≤ 24 jam.`
-          : `Dokumen terbit ${took} kerja setelah berkas lengkap: melewati janji 24 jam.`}
+      <p className={base}>
+        {icon(promise.kept ? "text-[#4ade80]" : "text-hero-alert")}
+        <span className={promise.kept ? "text-hero-fg" : "text-hero-alert"}>
+          {promise.kept
+            ? `Dokumen terbit ${took} kerja setelah berkas lengkap: sesuai janji ≤ 24 jam.`
+            : `Dokumen terbit ${took} kerja setelah berkas lengkap: melewati janji 24 jam.`}
+        </span>
       </p>
     );
   }
   return (
-    <p className={cn(base, promise.kept ? "bg-brand-soft text-text" : "bg-late-soft text-late")}>
-      <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+    <p className={base}>
+      {icon(promise.kept ? "text-hero-accent" : "text-hero-alert")}
       <span>
-        {promise.kept ? "Janji terbit: paling lambat " : "Janji terbit ≤ 24 jam terlewati sejak "}
-        <span className="font-semibold">{formatDateTime(promise.dueAt)}</span>
-        <span className="text-muted"> · berkas lengkap {formatDateTime(promise.verifiedAt)}</span>
+        <span className={promise.kept ? "text-hero-fg" : "text-hero-alert"}>
+          {promise.kept ? "Janji terbit: paling lambat " : "Janji terbit ≤ 24 jam terlewati sejak "}
+          <span className="font-semibold">{formatDateTime(promise.dueAt)}</span>
+        </span>
+        <span> · berkas lengkap {formatDateTime(promise.verifiedAt)}</span>
       </span>
     </p>
   );
@@ -292,7 +330,7 @@ export default function TrackView({
         return (
           <NextStep tone="brand" icon={MapPin} title="Datang ke loket untuk memulai proses">
             {data.arrivalDeadline && (
-              <p className="rounded-xl bg-brand-soft px-3 py-2 font-medium">
+              <p className="rounded-lg bg-brand-soft px-3 py-2 font-medium">
                 Datang paling lambat {formatDateTime(data.arrivalDeadline)}. Lewat dari itu pendaftaran
                 dibatalkan otomatis dan Anda perlu mendaftar ulang.
               </p>
@@ -312,7 +350,7 @@ export default function TrackView({
       case "perlu_perbaikan":
         return (
           <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
-            <blockquote className="rounded-xl bg-pause-soft px-3 py-2 font-medium">{data.fixNote}</blockquote>
+            <blockquote className="rounded-lg bg-pause-soft px-3 py-2 font-medium">{data.fixNote}</blockquote>
             {data.fixDeadline && (
               <p className="font-medium">
                 Lengkapi paling lambat {formatDateTime(data.fixDeadline)}. Lewat dari itu permohonan
@@ -403,7 +441,7 @@ export default function TrackView({
                   onChange={(e) => setComment(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
+                  className={cn(inputClass, "py-2")}
                 />
               </div>
               <div className="flex flex-wrap items-end gap-3">
@@ -421,7 +459,7 @@ export default function TrackView({
       case "ditolak":
         return (
           <NextStep tone="late" icon={XCircle} title="Permohonan ditolak">
-            <blockquote className="rounded-xl bg-late-soft px-3 py-2 font-medium">
+            <blockquote className="rounded-lg bg-late-soft px-3 py-2 font-medium">
               {data.rejectionReason}
             </blockquote>
             <p className="text-muted">
@@ -463,7 +501,7 @@ export default function TrackView({
               )}
               . Halaman ini akan memberi tau jika berkas perlu dilengkapi dan saat dokumen siap diambil.
             </p>
-            <details className="group rounded-xl bg-surface-2 px-3 py-2">
+            <details className="group rounded-lg border border-line bg-surface-2/60 px-3 py-2">
               <summary className="cursor-pointer font-semibold">
                 Siapkan dari sekarang: berkas asli yang dibawa saat pengambilan
               </summary>
@@ -485,65 +523,92 @@ export default function TrackView({
     ditolak: "Tanyakan ke lokasi layanan",
   }[data.status as string];
 
+  // Ringkasan di kepala gelap: label + isi per sel.
+  const facts = [
+    {
+      label:
+        data.status === "selesai" ? "Selesai" : data.status === "ditolak" ? "Ditolak" : "Perkiraan selesai",
+      value: data.completedAt
+        ? formatDateTime(data.completedAt)
+        : data.estimatedCompletion
+          ? formatDateTime(data.estimatedCompletion)
+          : "Menunggu perbaikan berkas",
+      strong: true,
+    },
+    {
+      label: "Tahap saat ini",
+      value: data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName,
+      strong: true,
+    },
+    { label: "Pemohon", value: detail?.applicant.name ?? data.applicantMasked },
+    {
+      label: "Diajukan",
+      value: formatDateTime(data.createdAt),
+      note: data.channel === "loket" ? "Lewat loket" : "Online",
+    },
+  ];
+
   return (
-    <div className="space-y-5">
-      <DemoClockBanner offsetMs={offsetMs} />
+    <div>
+      <TrackHero>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/lacak"
+            transitionTypes={["nav-back"]}
+            className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pr-3.5 pl-2.5 text-sm text-hero-muted backdrop-blur transition-colors hover:border-hero-line-strong hover:text-hero-fg"
+          >
+            <ArrowLeft aria-hidden className="size-4" />
+            Lacak resi lain
+          </Link>
+          {isOpen && (
+            <span className="inline-flex items-center gap-2 text-xs text-hero-muted">
+              <span aria-hidden className="size-1.5 rounded-full bg-[#4ade80] motion-safe:animate-pulse" />
+              Diperbarui otomatis
+            </span>
+          )}
+        </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+        <DemoClockBanner offsetMs={offsetMs} className="mt-6" />
+
+        <div className="mt-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:mt-10">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1 font-mono text-sm tracking-[0.18em] text-hero-muted">
+              {data.resi}
+              <CopyResi resi={data.resi} />
+            </p>
+            <h1 className="mt-1 text-[clamp(2rem,5vw,3.25rem)] leading-[1.05] font-extrabold tracking-[-0.03em] text-balance">
+              {data.serviceName}
+            </h1>
+          </div>
+          <StatusBadge status={data.status} late={data.isLate} size="lg" onDark />
+        </div>
+
+        {/* Kartu kaca ringkasan: fakta utama, bar tahap, janji terbit. */}
+        <div className="mt-8 overflow-hidden rounded-2xl border border-hero-line bg-white/[0.04] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-md">
+          <dl className="grid grid-cols-2 lg:grid-cols-4 [&>div]:border-hero-line lg:[&>div:not(:first-child)]:border-l max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div:nth-child(n+3)]:border-t">
+            {facts.map((fact) => (
+              <div key={fact.label} className="min-w-0 px-5 py-4 sm:px-6">
+                <dt className="text-xs text-hero-muted">{fact.label}</dt>
+                <dd
+                  className={cn("mt-1 text-sm", fact.strong ? "font-semibold sm:text-base" : "font-medium")}
+                >
+                  {fact.value}
+                </dd>
+                {fact.note && <dd className="text-xs text-hero-muted">{fact.note}</dd>}
+              </div>
+            ))}
+          </dl>
+          {data.status !== "ditolak" && <Progress data={data} />}
+          {data.status !== "ditolak" && <PromiseLine promise={data.issuePromise} />}
+        </div>
+      </TrackHero>
+
+      {/* Isi menumpuk ke tepi bawah kepala gelap. */}
+      <div className="relative -mt-14 grid gap-5 px-page pb-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="min-w-0 space-y-5">
-          {/* Ringkasan */}
-          <section className="rounded-card border border-line bg-surface p-5 shadow-card">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-sm tracking-wider text-muted">{data.resi}</p>
-                  <CopyResi resi={data.resi} />
-                </div>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight">{data.serviceName}</h1>
-              </div>
-              <StatusBadge status={data.status} late={data.isLate} size="lg" />
-            </div>
-
-            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
-              <div>
-                <dt className="text-muted">
-                  {data.status === "selesai"
-                    ? "Selesai"
-                    : data.status === "ditolak"
-                      ? "Ditolak"
-                      : "Perkiraan selesai"}
-                </dt>
-                <dd className="font-semibold">
-                  {data.completedAt
-                    ? formatDateTime(data.completedAt)
-                    : data.estimatedCompletion
-                      ? formatDateTime(data.estimatedCompletion)
-                      : "Menunggu perbaikan berkas"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">Tahap saat ini</dt>
-                <dd className="font-semibold">
-                  {data.status === "selesai" ? "Semua tahap selesai" : data.currentStepName}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">Pemohon</dt>
-                <dd className="font-medium">{detail?.applicant.name ?? data.applicantMasked}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Diajukan</dt>
-                <dd className="font-medium">{formatDateTime(data.createdAt)}</dd>
-                <dd className="text-xs text-muted">{data.channel === "loket" ? "Lewat loket" : "Online"}</dd>
-              </div>
-            </dl>
-            {data.status !== "ditolak" && <Progress data={data} />}
-            {data.status !== "ditolak" && <PromiseLine promise={data.issuePromise} />}
-          </section>
-
           {nextStep()}
 
-          <Alert tone="success" className="rounded-card px-4 py-3">
+          <Alert tone="success" className="rounded-xl px-4 py-3">
             {notice}
           </Alert>
 
@@ -551,45 +616,61 @@ export default function TrackView({
             <OfficeMap
               key={data.status}
               defaultOpen={mustVisit}
+              className={card}
               title={mapTitle ?? "Lokasi pengambilan dokumen nanti"}
             />
           )}
 
-          <section className="rounded-card border border-line bg-surface p-5">
-            <h2 className="mb-5 text-lg font-bold">Perjalanan permohonan</h2>
-            <Timeline steps={data.steps} serverNow={serverNow} offsetMs={offsetMs} />
+          <section aria-labelledby="journey-title" className={card}>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-5 py-4 sm:px-6">
+              <h2 id="journey-title" className="font-semibold">
+                Perjalanan permohonan
+              </h2>
+              <p className="text-xs text-muted">
+                Tenggat dihitung dalam jam kerja, Senin–Jumat 08.00–16.00 WIB
+              </p>
+            </div>
+            <div className="p-5 sm:p-6">
+              <Timeline steps={data.steps} serverNow={serverNow} offsetMs={offsetMs} />
+            </div>
           </section>
         </div>
 
         {/* Kolom samping: bukti & data pribadi, tetap terlihat saat menggulir di layar lebar. */}
         <aside className="space-y-5 lg:sticky lg:top-24">
-          <ReceiptCard {...receipt} />
+          <ReceiptCard {...receipt} className={card} />
 
-          <section className="rounded-card border border-line bg-surface p-5">
-            <h2 className="font-bold">Detail pemohon</h2>
+          <section aria-labelledby="applicant-title" className={cn(card, "p-5")}>
+            <h2 id="applicant-title" className="flex items-center gap-2 font-semibold">
+              <Lock aria-hidden className="size-4 text-muted" />
+              Detail pemohon
+            </h2>
             {detail ? (
-              <dl className="mt-3 space-y-2 text-sm">
+              <dl className="mt-3 divide-y divide-line text-sm [&>div]:py-2.5 [&>div:first-child]:pt-0 [&>div:last-child]:pb-0">
                 <div>
-                  <dt className="text-muted">Nama</dt>
+                  <dt className="text-xs text-muted">Nama</dt>
                   <dd className="font-medium">{detail.applicant.name}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted">Nomor HP</dt>
+                  <dt className="text-xs text-muted">Nomor HP</dt>
                   <dd className="font-mono">{detail.applicant.phoneMasked}</dd>
                 </div>
                 {detail.applicant.email && (
                   <div>
-                    <dt className="text-muted">Email</dt>
+                    <dt className="text-xs text-muted">Email</dt>
                     <dd className="break-all">{detail.applicant.email}</dd>
                   </div>
                 )}
                 <div>
-                  <dt className="text-muted">Persyaratan yang dinyatakan lengkap</dt>
+                  <dt className="text-xs text-muted">Persyaratan yang dinyatakan lengkap</dt>
                   <dd>
                     {detail.requirementsChecked.length ? (
-                      <ul className="mt-1 list-inside list-disc">
+                      <ul className="mt-1.5 space-y-1">
                         {detail.requirementsChecked.map((r) => (
-                          <li key={r}>{r}</li>
+                          <li key={r} className="flex gap-2">
+                            <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-ok" />
+                            {r}
+                          </li>
                         ))}
                       </ul>
                     ) : (
@@ -622,11 +703,11 @@ export default function TrackView({
             )}
           </section>
 
-          <p className="text-center text-xs text-muted">
+          {/* <p className="text-center text-xs text-muted">
             {isOpen
               ? "Status diperbarui otomatis setiap 20 detik, tidak perlu memuat ulang."
               : "Simpan tautan halaman ini sebagai bukti."}
-          </p>
+          </p> */}
         </aside>
       </div>
     </div>

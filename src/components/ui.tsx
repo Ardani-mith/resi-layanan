@@ -81,13 +81,16 @@ export function Alert({
 }
 
 /** Penanda jelas bahwa jam sistem sedang digeser (mode demo), agar tidak dikira data asli. */
-export function DemoClockBanner({ offsetMs }: { offsetMs: number }) {
+export function DemoClockBanner({ offsetMs, className }: { offsetMs: number; className?: string }) {
   if (!offsetMs) return null;
   const days = Math.round((offsetMs / DAY_MS) * 10) / 10;
   return (
     <p
       role="status"
-      className="rounded-xl border border-warn bg-warn-soft px-4 py-2 text-sm font-medium text-warn"
+      className={cn(
+        "rounded-xl border border-warn bg-warn-soft px-4 py-2 text-sm font-medium text-warn",
+        className,
+      )}
     >
       Mode demo: jam sistem dimajukan {days > 0 ? "+" : ""}
       {days.toLocaleString("id-ID")} hari dari waktu nyata.

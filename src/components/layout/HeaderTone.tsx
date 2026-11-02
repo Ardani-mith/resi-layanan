@@ -8,7 +8,8 @@ import { useEffect } from "react";
  * - data-scrolled: halaman sudah digulir → latar blur muncul (di posisi paling atas transparan).
  * - data-on-dark: navbar sedang di atas area bertanda [data-header-dark] (mis. hero gelap
  *   beranda) → teks putih; selain itu teks gelap biasa.
- * Warna & latarnya di globals.css. Dicek ulang tiap pindah halaman.
+ * Warna & latarnya di globals.css. Dicek ulang tiap pindah halaman dan saat tinggi halaman
+ * berubah (isi dari <Suspense> baru tiba, mis. kepala gelap halaman lacak).
  */
 export default function HeaderTone() {
   const pathname = usePathname();
@@ -33,10 +34,13 @@ export default function HeaderTone() {
     };
 
     update();
+    const resize = new ResizeObserver(schedule);
+    resize.observe(document.body);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
       cancelAnimationFrame(frame);
+      resize.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };

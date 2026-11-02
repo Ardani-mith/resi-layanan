@@ -90,7 +90,8 @@ function MapBadge() {
   );
 }
 
-type PanelProps = { offices?: Office[]; title?: string; intro?: string };
+/** `className` = gaya kartu tambahan (mis. sudut & bayangan kartu halaman lacak). */
+type PanelProps = { offices?: Office[]; title?: string; intro?: string; className?: string };
 
 /**
  * Peta lokasi layanan. `defaultOpen={false}` = tampil sebagai satu baris ringkas dulu (Leaflet
@@ -106,7 +107,10 @@ export default function OfficeMap({
   return (
     <section
       aria-labelledby="loket-title"
-      className="flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface p-4"
+      className={cn(
+        "flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface p-4",
+        props.className,
+      )}
     >
       <span
         aria-hidden
@@ -144,7 +148,7 @@ const inside = (o: Pos, v: View) =>
  * yang sedang terlihat (geser/zoom = hasil diperbarui), bisa difilter per jenis, diurutkan
  * dari lokasi pengguna atau tengah peta. Leaflet dimuat di browser saja (butuh window).
  */
-function MapPanel({ offices = OFFICES, title = "Lokasi layanan terdekat", intro }: PanelProps) {
+function MapPanel({ offices = OFFICES, title = "Lokasi layanan terdekat", intro, className }: PanelProps) {
   const container = useRef<HTMLDivElement>(null);
   const leaflet = useRef<{ L: Leaflet; map: LeafletMap; markers: Map<string, Marker>; user?: Marker } | null>(
     null,
@@ -311,7 +315,7 @@ function MapPanel({ offices = OFFICES, title = "Lokasi layanan terdekat", intro 
   return (
     <section
       aria-labelledby="loket-title"
-      className="@container rounded-card border border-line bg-surface p-5"
+      className={cn("@container rounded-card border border-line bg-surface p-5", className)}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

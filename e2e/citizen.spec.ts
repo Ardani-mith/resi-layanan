@@ -112,7 +112,8 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
 });
 
 test("tampilan HP & mode gelap tanpa scroll horizontal", async ({ openPage }) => {
-  const page = await openPage({ viewport: MOBILE, colorScheme: "dark" });
+  const page = await openPage({ viewport: MOBILE });
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   for (const path of ["/", "/ajukan", "/lacak/RL-HJ26-AKTA", "/rapor"]) {
     await gotoReady(page, path);
     await page.locator("main h1").first().waitFor();
@@ -120,29 +121,28 @@ test("tampilan HP & mode gelap tanpa scroll horizontal", async ({ openPage }) =>
   }
 });
 
-test("tombol tema: Sistem → Terang → Gelap, tersimpan setelah reload", async ({ openPage }) => {
+test("tombol tema: bawaan Terang → Gelap → Sistem, tersimpan setelah reload", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE, colorScheme: "dark" });
   const html = page.locator("html");
   const toggle = page.getByRole("button", { name: /^Tema:/ });
   await gotoReady(page, "/");
 
-  // Belum ada pilihan: ikut OS (gelap).
-  await expect(html).toHaveAttribute("data-theme", "dark");
-  await expect(toggle).toHaveAccessibleName(/^Tema: Sistem/);
-
-  await toggle.click();
+  // Belum ada pilihan: terang, walau OS gelap.
   await expect(html).toHaveAttribute("data-theme", "light");
   await expect(toggle).toHaveAccessibleName(/^Tema: Terang/);
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 248, 251)");
+
+  await toggle.click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(toggle).toHaveAccessibleName(/^Tema: Gelap/);
 
   // Pilihan dipasang skrip di <head> sebelum paint, jadi langsung benar setelah reload.
   await page.reload();
-  await expect(html).toHaveAttribute("data-theme", "light");
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 248, 251)");
+  await expect(html).toHaveAttribute("data-theme", "dark");
 
   await page.getByRole("button", { name: /^Tema:/ }).click();
-  await expect(html).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: /^Tema:/ }).click();
   await expect(toggle).toHaveAccessibleName(/^Tema: Sistem/);
+  await expect(html).toHaveAttribute("data-theme", "dark");
 
   // Mode Sistem mengikuti perubahan tema OS tanpa reload.
   await page.emulateMedia({ colorScheme: "light" });

@@ -2,17 +2,24 @@
 
 import { Download, Printer } from "lucide-react";
 import { buttonClass } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import type { Receipt } from "@/lib/qr";
 
 /**
  * Bukti resi: QR menuju halaman lacak + unduh gambar PNG + cetak. Saat dicetak, hanya
  * kartu ini yang tampil (kelas print-area, lihat globals.css).
  */
-export default function ReceiptCard({ resi, url, qr, title = "Bukti resi" }: Receipt & { title?: string }) {
+export default function ReceiptCard({
+  resi,
+  url,
+  qr,
+  title = "Bukti resi",
+  className,
+}: Receipt & { title?: string; className?: string }) {
   return (
     <section
       aria-label={title}
-      className="print-area @container rounded-card border border-line bg-surface p-5"
+      className={cn("print-area @container rounded-card border border-line bg-surface p-5", className)}
     >
       {/* Container query: tetap rapi di kolom samping yang sempit maupun selebar halaman. */}
       <div className="flex flex-col items-center gap-4 @md:flex-row @md:items-start">

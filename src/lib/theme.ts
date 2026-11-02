@@ -1,6 +1,6 @@
-// Tema tampilan: "system" (ikut OS), "light", atau "dark". Pilihan disimpan di localStorage
-// (bukan cookie) agar halaman tetap bisa di-prerender; tanpa pilihan tersimpan = "system".
-export const THEMES = ["system", "light", "dark"] as const;
+// Tema tampilan: "light", "dark", atau "system" (ikut OS). Pilihan disimpan di localStorage
+// (bukan cookie) agar halaman tetap bisa di-prerender; tanpa pilihan tersimpan = "light".
+export const THEMES = ["light", "dark", "system"] as const;
 export type Theme = (typeof THEMES)[number];
 
 export const THEME_KEY = "theme";
@@ -20,9 +20,9 @@ function initTheme(key: string, eventName: string) {
     try {
       stored = localStorage.getItem(key);
     } catch {
-      // localStorage diblokir (mis. pengaturan privasi ketat): ikut tema OS.
+      // localStorage diblokir (mis. pengaturan privasi ketat): tema terang.
     }
-    root.dataset.theme = stored === "light" || stored === "dark" ? stored : media.matches ? "dark" : "light";
+    root.dataset.theme = stored === "dark" || (stored === "system" && media.matches) ? "dark" : "light";
   }
   apply();
   media.addEventListener("change", apply);

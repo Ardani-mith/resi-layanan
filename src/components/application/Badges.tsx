@@ -32,21 +32,33 @@ export function StatusBadge({
   status,
   late = false,
   size = "md",
+  onDark = false,
 }: {
   status: Status;
   late?: boolean;
   size?: "md" | "lg";
+  /** di atas kepala gelap (hero): chip kaca berteks putih */
+  onDark?: boolean;
 }) {
   const sizing = size === "lg" ? "px-2.5 py-1 text-sm" : "px-2 py-0.5 text-xs";
+  const glass = onDark && "border-hero-line bg-hero-chip text-hero-fg backdrop-blur";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <span className={cn(chip, sizing)}>
+      <span className={cn(chip, sizing, glass)}>
         <span aria-hidden className={cn("size-1.5 rounded-full", STATUS_DOT[status] ?? "bg-muted")} />
         {STATUS_LABELS[status] ?? status}
       </span>
       {late && (
-        <span className={cn(chip, sizing, "border-late/30 bg-late-soft text-late")}>
-          <span aria-hidden className="size-1.5 rounded-full bg-late" />
+        <span
+          className={cn(
+            chip,
+            sizing,
+            onDark
+              ? "border-hero-alert/40 bg-hero-alert/15 text-hero-alert"
+              : "border-late/30 bg-late-soft text-late",
+          )}
+        >
+          <span aria-hidden className={cn("size-1.5 rounded-full", onDark ? "bg-hero-alert" : "bg-late")} />
           Terlambat
         </span>
       )}

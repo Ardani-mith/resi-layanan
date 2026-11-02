@@ -17,10 +17,8 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f8fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1220" },
-  ],
+  // Tema bawaan terang (lib/theme.ts), jadi warna bilah browser tidak ikut tema OS.
+  themeColor: "#f6f8fb",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
