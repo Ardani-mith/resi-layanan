@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { dbConnect } from "../src/lib/db.ts";
 import { generateResi } from "../src/lib/resi.ts";
-import { Application, Event, Service, Setting, User } from "../src/models.ts";
+import { Application, AssistantQuota, Event, Service, Setting, User } from "../src/models.ts";
 import { buildDemoApplications, HOLIDAYS, SERVICES, USERS } from "./demo-data.ts";
 
 export async function seed({
@@ -20,7 +20,7 @@ export async function seed({
   }
 
   // Lewat driver langsung: hook append-only di model Event sengaja tidak berlaku di sini.
-  const models = [Application, Event, Service, Setting, User] as const;
+  const models = [Application, AssistantQuota, Event, Service, Setting, User] as const;
   for (const model of models) await model.collection.deleteMany({});
   for (const model of models) await model.syncIndexes();
 

@@ -157,7 +157,7 @@ export const getQueue = cache(async (user: SessionUser) => {
   await syncOverdue(clock.now, clock.holidays);
 
   const apps = await Application.find({ status: { $in: OPEN_STATUSES } })
-    .select("resi serviceName applicant.name channel status currentStep steps escalations createdAt")
+    .select("resi serviceName applicant.name channel status currentStep steps escalations urgency createdAt")
     .lean<ApplicationData[]>();
 
   const seesAll = user.role === "pimpinan" || user.role === "admin";
@@ -198,6 +198,19 @@ export async function getStaffApplication(resi: string, user: SessionUser) {
 }
 
 export type StaffApplication = NonNullable<Awaited<ReturnType<typeof getStaffApplication>>>;
+
+/** Konteks asisten catatan (lib/assist.ts): hanya data publik layanan & tahap, tanpa data pemohon. */
+export async function getAssistContext(resi: string) {
+  const clock = await ready();
+  const app = await loadByResi(resi, clock);
+  if (!app) return null;
+  const service = await Service.findOne({ slug: app.serviceSlug }).select("requirements").lean<ServiceData>();
+  return {
+    serviceName: app.serviceName,
+    stepName: app.steps[app.currentStep]?.name ?? null,
+    requirements: service?.requirements ?? [],
+  };
+}
 
 // --- Statistik -----------------------------------------------------------------
 

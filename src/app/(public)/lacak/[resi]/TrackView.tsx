@@ -7,7 +7,9 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  ExternalLink,
   FileWarning,
+  Flag,
   Lock,
   type LucideIcon,
   MapPin,
@@ -24,17 +26,27 @@ import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import Timeline, { FollowUpNote } from "@/components/application/Timeline";
 import TrackHero from "@/components/application/TrackHero";
-import { Alert, Button, buttonClass, DemoClockBanner, inputClass } from "@/components/ui";
+import Select from "@/components/Select";
+import { Alert, Button, buttonClass, DemoClockBanner, Field, inputClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Tracking } from "@/lib/dal";
-import { formatDateTime, formatDuration } from "@/lib/format";
+import { formatDate, formatDateTime, formatDuration } from "@/lib/format";
 import { useAutoRefresh } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { VerifiedView } from "@/lib/present";
 import type { Receipt } from "@/lib/qr";
-import { OPEN_STATUSES } from "@/lib/workflow";
+import type { QuestionId } from "@/lib/validators";
+import { OPEN_STATUSES, URGENCY_MAX_DAYS, URGENCY_REASONS } from "@/lib/workflow";
+import Assistant from "./Assistant";
 
 const REFRESH_MS = 20_000;
+
+const REASON_OPTIONS = Object.entries(URGENCY_REASONS).map(([value, label]) => ({ value, label }));
+
+/** Tanggal WIB (YYYY-MM-DD) untuk batas isian tanggal, dari jam server (ikut mode demo). */
+function wibDate(ms: number) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date(ms));
+}
 
 function CopyResi({ resi }: { resi: string }) {
   const [copied, setCopied] = useState(false);
@@ -97,7 +109,7 @@ function Last4Field({
 }
 
 /** Error dari server hanya tampil di bawah form yang mengirimnya. */
-type CitizenAction = "verify" | "resubmit" | "rate";
+type CitizenAction = "verify" | "resubmit" | "rate" | "urgent";
 
 function FormError({ errors, action }: { errors: FormErrors; action: CitizenAction }) {
   return <Alert className="w-full">{errors.formAction === action && errors.form}</Alert>;
@@ -276,11 +288,17 @@ export default function TrackView({
   serverNow,
   offsetMs,
   receipt,
+  questions,
+  askLimit,
 }: {
   data: Tracking;
   serverNow: string;
   offsetMs: number;
   receipt: Receipt;
+  /** Pertanyaan template Asisten Pantas yang relevan dengan status (lib/assist.ts). */
+  questions: { id: QuestionId; label: string }[];
+  /** Tanya bebas Asisten Pantas: null = tidak tersedia (AI belum diatur), selain itu batas per hari. */
+  askLimit: number | null;
 }) {
   const router = useRouter();
   const [last4, setLast4] = useState("");
@@ -323,6 +341,73 @@ export default function TrackView({
   const verified = Boolean(detail);
   const current = data.steps[data.currentStep];
   const bring = ["Bukti resi (QR di halaman ini)", "KTP-el atau KK asli pemohon", ...data.requirements];
+
+  /**
+   * Keperluan mendesak (sekali per permohonan): sinyal terstruktur untuk petugas & pimpinan,
+   * pengganti "hubungi petugas". Bukan jalur percepatan; tenggat semua warga tetap sama.
+   */
+  function urgentFlag() {
+    if (data.urgentNeededBy) {
+      return (
+        <p className="flex gap-2 rounded-lg border border-line bg-surface-2/60 px-3 py-2">
+          <Flag aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
+          <span>
+            Keperluan mendesak sudah ditandai: dokumen dibutuhkan{" "}
+            <span className="font-semibold">{formatDate(data.urgentNeededBy)}</span>. Petugas dan pimpinan
+            melihatnya saat mengatur urutan pengerjaan.
+          </span>
+        </p>
+      );
+    }
+    const today = new Date(serverNow).getTime();
+    return (
+      <details className="group rounded-lg border border-line bg-surface-2/60 px-3 py-2">
+        <summary className="flex cursor-pointer items-center gap-2 font-semibold">
+          <Flag aria-hidden className="size-4 text-warn" />
+          Dokumen dibutuhkan segera? Tandai keperluan mendesak
+        </summary>
+        <form
+          method="post"
+          className="mt-3 space-y-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
+            const ok = await send("urgent", {
+              reason: String(form.get("reason") ?? ""),
+              neededBy: String(form.get("neededBy") ?? ""),
+            });
+            if (ok) setNotice("Keperluan mendesak sudah ditandai dan terlihat oleh petugas.");
+          }}
+        >
+          <p className="text-muted">
+            Sekali per permohonan, tanpa perlu menghubungi petugas. Ini bukan jalur percepatan: petugas dan
+            pimpinan mempertimbangkannya bersama tenggat semua warga.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select label="Keperluan" name="reason" options={REASON_OPTIONS} error={errors.reason} />
+            <Field
+              label="Dokumen dibutuhkan tanggal"
+              name="neededBy"
+              type="date"
+              min={wibDate(today)}
+              max={wibDate(today + URGENCY_MAX_DAYS * 86_400_000)}
+              required
+              error={errors.neededBy}
+            />
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            {!verified && (
+              <Last4Field id="urgent-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
+            )}
+            <button type="submit" disabled={pending === "urgent"} className={buttonClass("secondary")}>
+              {pending === "urgent" ? "Menyimpan…" : "Tandai mendesak"}
+            </button>
+          </div>
+          <FormError errors={errors} action="urgent" />
+        </form>
+      </details>
+    );
+  }
 
   function nextStep() {
     switch (data.status) {
@@ -489,6 +574,24 @@ export default function TrackView({
                 . Anda tidak perlu melapor ulang atau datang ke kantor.
               </p>
             )}
+            {/* Sudah sampai Kabid (level 2): aduan resmi diarahkan ke kanal nasional, bukan ke loket. */}
+            {data.escalationLevel >= 2 && (
+              <p className="text-muted">
+                Sudah diteruskan sampai Kepala Bidang tetapi belum juga selesai? Anda dapat mengadu resmi
+                lewat{" "}
+                <a
+                  href="https://www.lapor.go.id"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-brand hover:underline"
+                >
+                  SP4N-LAPOR!
+                  <ExternalLink aria-hidden className="size-3.5" />
+                </a>{" "}
+                dengan menyertakan nomor resi <span className="font-mono">{data.resi}</span>.
+              </p>
+            )}
+            {urgentFlag()}
           </NextStep>
         ) : (
           <NextStep tone="brand" icon={Clock} title="Tidak ada yang perlu Anda lakukan sekarang">
@@ -509,6 +612,7 @@ export default function TrackView({
                 <Checklist items={bring} />
               </div>
             </details>
+            {urgentFlag()}
           </NextStep>
         );
     }
@@ -551,26 +655,10 @@ export default function TrackView({
   return (
     <div>
       <TrackHero>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/lacak"
-            transitionTypes={["nav-back"]}
-            className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pr-3.5 pl-2.5 text-sm text-hero-muted backdrop-blur transition-colors hover:border-hero-line-strong hover:text-hero-fg"
-          >
-            <ArrowLeft aria-hidden className="size-4" />
-            Lacak resi lain
-          </Link>
-          {isOpen && (
-            <span className="inline-flex items-center gap-2 text-xs text-hero-muted">
-              <span aria-hidden className="size-1.5 rounded-full bg-[#4ade80] motion-safe:animate-pulse" />
-              Diperbarui otomatis
-            </span>
-          )}
-        </div>
+        <DemoClockBanner offsetMs={offsetMs} className="mb-6" />
 
-        <DemoClockBanner offsetMs={offsetMs} className="mt-6" />
-
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:mt-10">
+        {/* Kiri: resi + layanan. Kanan: kembali ke cek resi, di bawahnya status + penanda pembaruan otomatis. */}
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-5">
           <div className="min-w-0">
             <p className="flex items-center gap-1 font-mono text-sm tracking-[0.18em] text-hero-muted">
               {data.resi}
@@ -580,8 +668,45 @@ export default function TrackView({
               {data.serviceName}
             </h1>
           </div>
-          <StatusBadge status={data.status} late={data.isLate} size="lg" onDark />
+          {/* HP: status langsung di bawah judul, tombol kembali sesudahnya. */}
+          <div className="flex flex-col-reverse items-start gap-3 sm:flex-col sm:items-end">
+            <Link
+              href="/lacak"
+              transitionTypes={["nav-back"]}
+              className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pr-3.5 pl-2.5 text-sm text-hero-muted backdrop-blur transition-colors hover:border-hero-line-strong hover:text-hero-fg"
+            >
+              <ArrowLeft aria-hidden className="size-4" />
+              Lacak resi lain
+            </Link>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
+              {isOpen && (
+                <span className="inline-flex items-center gap-2 text-xs text-hero-muted">
+                  <span
+                    aria-hidden
+                    className="size-1.5 rounded-full bg-[#4ade80] border-hero-line motion-safe:animate-pulse"
+                  />
+                  Diperbarui otomatis
+                </span>
+              )}
+              <StatusBadge status={data.status} late={data.isLate} size="lg" onDark />
+            </div>
+          </div>
         </div>
+
+        {/* Berganti status/tahap/tindak lanjut = asisten dimuat ulang (ringkasan baru). */}
+        <Assistant
+          key={[
+            data.status,
+            data.currentStep,
+            data.isLate,
+            data.isEscalated,
+            data.steps[data.currentStep]?.followUp?.note,
+          ].join("|")}
+          resi={data.resi}
+          questions={questions}
+          canAsk={askLimit !== null}
+          limit={askLimit ?? 0}
+        />
 
         {/* Kartu kaca ringkasan: fakta utama, bar tahap, janji terbit. */}
         <div className="mt-8 overflow-hidden rounded-2xl border border-hero-line bg-white/[0.04] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-md">

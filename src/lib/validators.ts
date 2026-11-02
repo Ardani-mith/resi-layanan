@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BLOOD_TYPES, MARITAL_STATUSES, normalizePhone, RELIGIONS } from "./present.ts";
 import { normalizeResi, RESI_PATTERN } from "./resi.ts";
 import { PASSWORD_MIN, ROLES } from "./roles.ts";
-import { ACTIONS, FOLLOW_UP_PROMISE_HOURS } from "./workflow.ts";
+import { ACTIONS, FOLLOW_UP_PROMISE_HOURS, URGENCY_REASONS, type UrgencyReason } from "./workflow.ts";
 
 // Pesan bawaan Zod (yang tidak kita tulis sendiri) dalam bahasa Indonesia.
 z.config(z.locales.id());
@@ -101,6 +101,37 @@ export const actionSchema = z.object({
   evidence: trimmed(120).optional(),
 });
 
+/** Asisten AI: rapikan catatan petugas untuk warga (lib/assist.ts). */
+export const assistSchema = z.object({
+  kind: z.enum(["request_fix", "reject"]),
+  draft: trimmed(500).min(3, "Tulis dulu inti catatannya, lalu rapikan."),
+});
+
+/** Pertanyaan template Asisten Pantas di halaman lacak, urut prioritas (lib/assist.ts). */
+export const QUESTION_IDS = [
+  "terlambat",
+  "perbaikan",
+  "ditolak",
+  "datang",
+  "kapan",
+  "percepat",
+  "bawa",
+  "wakil",
+  "biaya",
+] as const;
+export type QuestionId = (typeof QUESTION_IDS)[number];
+
+/** Asisten warga: tanpa `question` & `ask` = ringkasan status; `ask` = pertanyaan yang diketik warga. */
+export const assistantSchema = z.object({
+  question: z.enum(QUESTION_IDS).nullable().default(null),
+  ask: z
+    .string()
+    .trim()
+    .min(5, "Tulis pertanyaan Anda, minimal 5 huruf.")
+    .max(160, "Pertanyaan maksimal 160 karakter.")
+    .optional(),
+});
+
 /** Tindak lanjut eskalasi oleh pimpinan. */
 export const followUpSchema = z.object({
   publicNote: trimmed(500).min(10, "Tulis tanggapan untuk warga, minimal 10 huruf."),
@@ -113,6 +144,14 @@ const last4Schema = z.string().regex(/^\d{4}$/, "Masukkan 4 digit terakhir nomor
 export const trackActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("verify"), phoneLast4: last4Schema }),
   z.object({ action: z.literal("resubmit"), phoneLast4: last4Schema }),
+  z.object({
+    action: z.literal("urgent"),
+    phoneLast4: last4Schema,
+    reason: z.enum(Object.keys(URGENCY_REASONS) as [UrgencyReason, ...UrgencyReason[]], {
+      error: "Pilih keperluan.",
+    }),
+    neededBy: z.coerce.date({ error: "Pilih tanggal dokumen dibutuhkan." }),
+  }),
   z.object({
     action: z.literal("rate"),
     phoneLast4: last4Schema,

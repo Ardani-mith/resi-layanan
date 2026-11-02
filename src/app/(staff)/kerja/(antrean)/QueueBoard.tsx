@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Flag, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useDeferredValue, useState } from "react";
@@ -8,7 +8,7 @@ import { ChannelBadge } from "@/components/application/Badges";
 import { Alert, buttonClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Queue } from "@/lib/dal";
-import { formatDuration } from "@/lib/format";
+import { formatDayMonth, formatDuration } from "@/lib/format";
 import { useAutoRefresh, useNow } from "@/lib/hooks";
 import { isValidResi } from "@/lib/resi";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -80,6 +80,13 @@ function Row({ item, now, selected }: { item: Item; now: number; selected: boole
             <span className="inline-flex items-center gap-0.5 rounded-md border border-late/30 px-1.5 py-px text-xs font-medium text-late">
               <ArrowUpRight aria-hidden className="size-3" />
               {item.escalationLevel === 2 ? "Kabid" : "Kasi"}
+            </span>
+          )}
+          {/* Warga menandai keperluan mendesak (sinyal, bukan urutan otomatis). */}
+          {item.urgentNeededBy && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-warn/40 px-1.5 py-px text-xs font-medium text-warn">
+              <Flag aria-hidden className="size-3" />
+              Mendesak · {formatDayMonth(item.urgentNeededBy)}
             </span>
           )}
           {/* Bukan tugas peran ini (pimpinan/admin melihat semua): hanya dipantau. */}

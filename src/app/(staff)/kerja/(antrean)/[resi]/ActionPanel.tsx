@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { startNavProgress } from "@/components/layout/NavProgress";
@@ -8,6 +9,10 @@ import { cn } from "@/lib/cn";
 import { useResetOnHide } from "@/lib/hooks";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { Action, Status } from "@/lib/workflow";
+
+/** Aksi yang catatan untuk warganya bisa dirapikan asisten AI (lib/assist.ts). */
+const ASSISTED: Action[] = ["request_fix", "reject"];
+type Draft = { text: string; source: "ai" | "demo" };
 
 interface ActionSpec {
   label: string;
@@ -94,10 +99,37 @@ export default function ActionPanel({
   const ready = checked.length === checklist.length && (!evidenceLabel || evidence.trim() !== "");
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
+  // Catatan untuk warga (terkontrol, agar bisa diganti draf asisten AI dan dikembalikan).
+  const [note, setNote] = useState("");
+  const [assisting, setAssisting] = useState(false);
+  /** Hasil asisten terakhir + tulisan petugas sebelumnya (untuk "Kembalikan"). */
+  const [assisted, setAssisted] = useState<{ source: Draft["source"]; before: string } | null>(null);
   // Setelah aksi, halaman pindah tapi panel ini hanya disembunyikan: jangan kembali dalam keadaan "Menyimpan…".
-  useResetOnHide(() => setPending(false));
+  useResetOnHide(() => {
+    setPending(false);
+    setAssisting(false);
+  });
 
   const spec = action ? ACTIONS[action] : null;
+
+  /** Minta draf catatan yang lebih jelas untuk warga; petugas tetap memeriksa sebelum mengirim. */
+  async function assist() {
+    if (!action) return;
+    if (note.trim().length < 3) {
+      setErrors({ publicNote: 'Tulis dulu inti catatannya (mis. "KK lama, nama beda"), lalu rapikan.' });
+      return;
+    }
+    setAssisting(true);
+    setErrors({});
+    const res = await postJson<Draft>(`/api/applications/${resi}/assist`, { kind: action, draft: note });
+    setAssisting(false);
+    if (!res.ok) {
+      setErrors({ publicNote: res.error.fields?.draft ?? res.error.message });
+      return;
+    }
+    setAssisted({ source: res.data.source, before: note });
+    setNote(res.data.text);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,6 +186,8 @@ export default function ActionPanel({
             onClick={() => {
               setAction(action === key ? null : key);
               setErrors({});
+              setNote("");
+              setAssisted(null);
             }}
             className={buttonClass(
               ACTIONS[key].variant,
@@ -227,18 +261,65 @@ export default function ActionPanel({
           )}
           {spec.publicLabel && (
             <div>
-              <label htmlFor="publicNote" className="mb-1.5 block text-sm font-medium">
-                {spec.publicLabel}
-              </label>
+              <div className="mb-1.5 flex flex-wrap items-end justify-between gap-2">
+                <label htmlFor="publicNote" className="block text-sm font-medium">
+                  {spec.publicLabel}
+                </label>
+                {ASSISTED.includes(action!) && (
+                  <button
+                    type="button"
+                    onClick={assist}
+                    disabled={assisting}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-xs font-medium text-brand transition-colors hover:border-brand/40 hover:bg-brand-soft disabled:opacity-60"
+                  >
+                    <Sparkles
+                      aria-hidden
+                      className={cn("size-3.5", assisting && "motion-safe:animate-pulse")}
+                    />
+                    {assisting ? "Merapikan…" : "Rapikan untuk warga"}
+                  </button>
+                )}
+              </div>
               <textarea
                 id="publicNote"
                 name="publicNote"
-                rows={3}
+                rows={assisted ? 5 : 3}
                 maxLength={500}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                readOnly={assisting}
+                aria-busy={assisting}
                 aria-invalid={Boolean(errors.publicNote)}
-                aria-describedby={errors.publicNote ? "publicNote-error" : undefined}
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-brand aria-invalid:border-late"
+                aria-describedby={
+                  cn(errors.publicNote && "publicNote-error", assisted && "publicNote-assist") || undefined
+                }
+                className={cn(
+                  "w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-brand aria-invalid:border-late",
+                  assisting && "skeleton-shimmer text-muted",
+                )}
               />
+              {assisted && !assisting && (
+                <p
+                  id="publicNote-assist"
+                  className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-muted"
+                >
+                  <Sparkles aria-hidden className="size-3.5 text-brand" />
+                  {assisted.source === "ai"
+                    ? "Draf dari asisten AI. Periksa & sesuaikan sebelum mengirim."
+                    : "Templat demo (asisten AI belum diatur). Periksa sebelum mengirim."}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNote(assisted.before);
+                      setAssisted(null);
+                    }}
+                    className="inline-flex items-center gap-1 font-medium text-brand hover:underline"
+                  >
+                    <Undo2 aria-hidden className="size-3.5" />
+                    Kembalikan tulisan saya
+                  </button>
+                </p>
+              )}
               {errors.publicNote && (
                 <p id="publicNote-error" className="mt-1 text-sm text-late">
                   {errors.publicNote}

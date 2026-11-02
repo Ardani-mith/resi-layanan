@@ -21,13 +21,19 @@ export type ApiResult<T> =
  * `fields` selalu objek (boleh kosong) agar aman di-spread ke state error form.
  * `T` = bentuk `data` yang dijanjikan route (tidak divalidasi ulang di sini).
  */
-export async function postJson<T = unknown>(url: string, body?: unknown): Promise<ApiResult<T>> {
+export async function postJson<T = unknown>(
+  url: string,
+  body?: unknown,
+  /** untuk membatalkan request (mis. komponen dilepas sebelum jawaban tiba) */
+  signal?: AbortSignal,
+): Promise<ApiResult<T>> {
   let res: Response;
   try {
     res = await fetch(url, {
       method: "POST",
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     });
   } catch {
     return { ok: false, status: 0, error: { message: NETWORK_ERROR, fields: {} } };

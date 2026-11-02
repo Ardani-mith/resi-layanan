@@ -5,6 +5,7 @@ import { createHash, randomInt } from "node:crypto";
 import mongoose, { type Types } from "mongoose";
 import {
   Application,
+  AssistantQuota,
   Event,
   type EventData,
   Service,
@@ -25,6 +26,7 @@ import {
   applyAction,
   applyFollowUp,
   applyRating,
+  applyUrgency,
   type AuditEntry,
   buildApplication,
   canActOn,
@@ -32,6 +34,7 @@ import {
   OPEN_STATUSES,
   type ServiceData,
   STATUS_LABELS,
+  type UrgencyReason,
   WorkflowError,
 } from "./workflow.ts";
 
@@ -345,7 +348,10 @@ export async function performCitizenAction({
   clock,
 }: {
   resi: string;
-  input: { action: "resubmit" } | { action: "rate"; score: number; comment?: string };
+  input:
+    | { action: "resubmit" }
+    | { action: "rate"; score: number; comment?: string }
+    | { action: "urgent"; reason: UrgencyReason; neededBy: Date };
   clock: Ctx;
 }) {
   const citizen: Actor = { id: null, name: "Warga", role: "warga" };
@@ -353,7 +359,9 @@ export async function performCitizenAction({
     const result =
       input.action === "rate"
         ? applyRating(app, { score: input.score, comment: input.comment, now: clock.now })
-        : applyAction(app, { action: "resume", actor: citizen, now: clock.now, holidays: clock.holidays });
+        : input.action === "urgent"
+          ? applyUrgency(app, { reason: input.reason, neededBy: input.neededBy, now: clock.now })
+          : applyAction(app, { action: "resume", actor: citizen, now: clock.now, holidays: clock.holidays });
     return { ...result, actorName: citizen.name, actorRole: citizen.role };
   });
 }
@@ -388,6 +396,47 @@ export async function verifyApplicant(
       : { $set: { "verifyLock.fails": fails } };
   await Application.updateOne({ _id: app._id }, update);
   return fails >= MAX_FAILS ? "locked" : "wrong";
+}
+
+// --- Kuota tanya bebas Asisten Pantas -----------------------------------------------
+
+/** Pertanyaan bebas (diketik warga) per resi per hari WIB; pertanyaan template tidak dihitung. */
+export const ASSISTANT_DAILY_LIMIT = 3;
+
+/** Tanggal WIB hari ini (YYYY-MM-DD) & awal hari berikutnya (batas kedaluwarsa kuota). */
+function wibDay(now: Date) {
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(now);
+  return { day, end: new Date(`${day}T00:00:00+07:00`).getTime() + DAY_MS };
+}
+
+/**
+ * Ambil satu jatah tanya bebas untuk resi ini. Atomik: dua request bersamaan tidak bisa melewati
+ * batas. Mengembalikan sisa jatah, atau null bila sudah habis. Jam nyata (bukan jam mode demo).
+ */
+export async function takeAssistantQuota(resi: string): Promise<number | null> {
+  const { day, end } = wibDay(new Date());
+  // Bentrok _id (11000) berarti salah satu dari dua hal: request bersamaan berebut membuat dokumen
+  // hari ini (coba sekali lagi: dokumennya kini ada), atau jatah habis (filter count<batas tidak
+  // cocok sehingga upsert mencoba membuat dokumen baru dengan _id yang sama).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const doc = await AssistantQuota.findOneAndUpdate(
+        { _id: `${resi}|${day}`, count: { $lt: ASSISTANT_DAILY_LIMIT } },
+        { $inc: { count: 1 }, $setOnInsert: { expiresAt: new Date(end) } },
+        { upsert: true, returnDocument: "after" },
+      ).lean();
+      return ASSISTANT_DAILY_LIMIT - (doc?.count ?? ASSISTANT_DAILY_LIMIT);
+    } catch (error) {
+      if ((error as { code?: number }).code !== DUPLICATE_KEY) throw error;
+    }
+  }
+  return null;
+}
+
+/** Kembalikan jatah bila AI gagal menjawab (warga tidak dirugikan). */
+export async function refundAssistantQuota(resi: string) {
+  const { day } = wibDay(new Date());
+  await AssistantQuota.updateOne({ _id: `${resi}|${day}`, count: { $gt: 0 } }, { $inc: { count: -1 } });
 }
 
 export async function eventsFor(applicationId: Types.ObjectId | undefined): Promise<EventData[]> {

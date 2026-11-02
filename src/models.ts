@@ -13,6 +13,7 @@ import {
   STATUS,
   type Step,
   type StepTemplate,
+  URGENCY_REASONS,
 } from "./lib/workflow.ts";
 
 const { ObjectId } = Schema.Types;
@@ -127,6 +128,18 @@ const applicationSchema = new Schema<ApplicationData>(
       ),
       default: null,
     },
+    // Keperluan mendesak dari warga (sekali; lihat applyUrgency).
+    urgency: {
+      type: new Schema(
+        {
+          reason: { type: String, enum: Object.keys(URGENCY_REASONS), required: true },
+          neededBy: { type: Date, required: true },
+          createdAt: { type: Date, required: true },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
     // Pembatas tebakan 4 digit HP di halaman lacak.
     verifyLock: {
       fails: { type: Number, default: 0 },
@@ -179,6 +192,25 @@ verificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 3600 });
 verificationSchema.index({ phone: 1, createdAt: -1 });
 
 export const Verification = defineModel("Verification", verificationSchema);
+
+// --- Kuota tanya bebas Asisten Pantas -----------------------------------------------
+
+export interface AssistantQuotaData {
+  /** `${resi}|${tanggal WIB}`: satu dokumen per resi per hari. */
+  _id: string;
+  count: number;
+  expiresAt: Date;
+}
+
+const assistantQuotaSchema = new Schema<AssistantQuotaData>({
+  _id: { type: String, required: true },
+  count: { type: Number, default: 0 },
+  expiresAt: { type: Date, required: true },
+});
+// Dihapus otomatis oleh MongoDB setelah harinya lewat.
+assistantQuotaSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export const AssistantQuota = defineModel("AssistantQuota", assistantQuotaSchema);
 
 // --- Layanan ------------------------------------------------------------------------
 

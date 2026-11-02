@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Flag } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
@@ -10,7 +10,7 @@ import { Alert, Disclosure, Panel } from "@/components/ui";
 import { firstParam, type ParamsOf, type SearchParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { getQueue, getStaffApplication, requireStaffPage, type StaffApplication } from "@/lib/dal";
-import { formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { receiptFor } from "@/lib/qr";
 import { isValidResi } from "@/lib/resi";
 import { ROLE_LABELS, STAFF_ROLES } from "@/lib/roles";
@@ -32,6 +32,7 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 const CALLOUT_TONE = {
   late: "border-l-late",
   pause: "border-l-pause",
+  warn: "border-l-warn",
   muted: "border-l-line",
 };
 
@@ -263,6 +264,22 @@ async function StaffDetail({ params, searchParams }: Props) {
                   <span className="font-semibold">Janji selesai:</span> {formatDateTime(followUp.promisedAt)}
                 </p>
               )}
+            </Callout>
+          )}
+          {isOpen && app.urgentNeededBy && (
+            <Callout tone="warn" label="Keperluan mendesak">
+              <p className="flex items-center gap-1.5 font-semibold">
+                <Flag aria-hidden className="size-4 text-warn" />
+                Warga menandai keperluan mendesak
+              </p>
+              <p className="mt-1">
+                {app.urgencyReason} · dokumen dibutuhkan{" "}
+                <span className="font-semibold">{formatDate(app.urgentNeededBy)}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Sinyal dari warga, bukan perintah: pertimbangkan bersama tenggat berkas lain. Tenggat tahap
+                tidak berubah.
+              </p>
             </Callout>
           )}
           {app.status === "perlu_perbaikan" && app.fixDeadline && (

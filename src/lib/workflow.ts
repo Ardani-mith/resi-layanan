@@ -8,6 +8,7 @@ import {
   addWorkHours,
   computeDueAt,
   type DateLike,
+  DAY_MS,
   type Holidays,
   pauseStep,
   resumeStep,
@@ -49,6 +50,7 @@ export const EVENT_LABELS: Record<string, string> = {
   fix_expired: "Dibatalkan otomatis (perbaikan berkas tidak dilengkapi)",
   follow_up: "Pimpinan menindaklanjuti eskalasi",
   rated: "Warga memberi rating",
+  urgency_flagged: "Warga menandai keperluan mendesak",
 };
 
 /** Konfirmasi untuk petugas setelah aksi (antrean & panel detail, dari ?selesai=&aksi=). */
@@ -187,6 +189,27 @@ export interface ServiceData {
   order: number;
 }
 
+/**
+ * Keperluan mendesak yang ditandai warga (sekali per permohonan): alasan pilihan + tanggal dokumen
+ * dibutuhkan. Hanya sinyal untuk petugas/pimpinan, tidak mengubah tenggat atau urutan otomatis.
+ */
+export const URGENCY_REASONS = {
+  sekolah: "Pendaftaran sekolah atau kuliah",
+  kesehatan: "Berobat atau layanan kesehatan",
+  perjalanan: "Perjalanan, paspor, atau visa",
+  pekerjaan: "Melamar atau mulai bekerja",
+  bantuan: "Bantuan sosial atau program pemerintah",
+  lainnya: "Keperluan lain",
+} as const;
+export type UrgencyReason = keyof typeof URGENCY_REASONS;
+export const URGENCY_MAX_DAYS = 60;
+
+export interface Urgency {
+  reason: UrgencyReason;
+  neededBy: Date;
+  createdAt: Date;
+}
+
 export interface ApplicationData {
   _id?: Types.ObjectId;
   resi: string;
@@ -205,6 +228,7 @@ export interface ApplicationData {
   rejectionReason: string | null;
   completedAt: Date | null;
   rating: Rating | null;
+  urgency?: Urgency | null;
   verifyLock?: { fails: number; until: Date | null };
   createdAt: Date;
   updatedAt?: Date;
@@ -659,4 +683,33 @@ export function applyRating(
   }
   app.rating = { score, comment: comment?.trim() || null, createdAt: now };
   return { action: "rated", payload: { score } };
+}
+
+/** Status saat keperluan mendesak boleh ditandai: berkas sedang dikerjakan instansi. */
+export const URGENCY_STATUSES: Status[] = [STATUS.DIAJUKAN, STATUS.DIPROSES];
+
+/** Warga menandai keperluan mendesak (sekali). `neededBy` = hari ini s.d. URGENCY_MAX_DAYS ke depan. */
+export function applyUrgency(
+  app: Pick<ApplicationData, "status" | "urgency">,
+  { reason, neededBy, now }: { reason: UrgencyReason; neededBy: Date; now: Date },
+): AuditEntry {
+  if (!URGENCY_STATUSES.includes(app.status)) {
+    throw new WorkflowError(
+      "invalid_state",
+      "Keperluan mendesak hanya bisa ditandai selama berkas diproses.",
+    );
+  }
+  if (app.urgency) {
+    throw new WorkflowError("already_flagged", "Keperluan mendesak untuk permohonan ini sudah ditandai.");
+  }
+  const today = new Date(
+    `${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(now)}T00:00:00+07:00`,
+  );
+  if (neededBy < today || neededBy.getTime() > now.getTime() + URGENCY_MAX_DAYS * DAY_MS) {
+    throw new AppError(422, "Periksa tanggal dokumen dibutuhkan.", {
+      neededBy: `Pilih tanggal dari hari ini sampai ${URGENCY_MAX_DAYS} hari ke depan.`,
+    });
+  }
+  app.urgency = { reason, neededBy, createdAt: now };
+  return { action: "urgency_flagged", payload: { reason, neededBy } };
 }

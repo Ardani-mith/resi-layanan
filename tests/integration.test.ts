@@ -4,13 +4,16 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  ASSISTANT_DAILY_LIMIT,
   createApplication,
   DAILY_ONLINE_LIMIT,
   followUpEscalation,
   performAction,
   performCitizenAction,
   recoverResi,
+  refundAssistantQuota,
   startVerification,
+  takeAssistantQuota,
   verifyApplicant,
 } from "@/lib/applications";
 import { advanceClock, getSystem, resetClock } from "@/lib/clock";
@@ -620,5 +623,33 @@ describe("batas perbaikan berkas", () => {
         clock: { now: later, holidays: new Set() },
       }),
     ).rejects.toMatchObject({ code: "invalid_state" });
+  });
+});
+
+describe("kuota tanya bebas Asisten Pantas", () => {
+  it(`maks. ${ASSISTANT_DAILY_LIMIT} per resi per hari, atomik, dan bisa dikembalikan`, async () => {
+    const resi = "RL-KUOT-A234";
+    const taken = await Promise.all([1, 2, 3, 4].map(() => takeAssistantQuota(resi)));
+    expect(taken.filter((n) => n === null)).toHaveLength(1);
+    expect(taken.filter((n) => n !== null).sort()).toEqual([0, 1, 2]);
+    await refundAssistantQuota(resi);
+    await expect(takeAssistantQuota(resi)).resolves.toBe(0);
+    await expect(takeAssistantQuota("RL-KUOT-B234")).resolves.toBe(ASSISTANT_DAILY_LIMIT - 1);
+  });
+});
+
+describe("keperluan mendesak", () => {
+  it("warga menandai sekali; tersimpan, tercatat di audit log, terlihat petugas", async () => {
+    const app = await newApplication();
+    const neededBy = new Date(clockAt().now.getTime() + 3 * DAY_MS);
+    const input = { action: "urgent" as const, reason: "kesehatan" as const, neededBy };
+    const saved = await performCitizenAction({ resi: app.resi, input, clock: clockAt() });
+    expect(saved.urgency).toMatchObject({ reason: "kesehatan", neededBy });
+    expect(publicView(saved, clockAt())).toMatchObject({ urgentNeededBy: neededBy });
+    expect(publicView(saved, clockAt())).not.toHaveProperty("urgencyReason");
+    expect(await Event.countDocuments({ applicationId: saved._id, action: "urgency_flagged" })).toBe(1);
+    await expect(performCitizenAction({ resi: app.resi, input, clock: clockAt() })).rejects.toMatchObject({
+      code: "already_flagged",
+    });
   });
 });

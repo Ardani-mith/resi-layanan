@@ -9,6 +9,7 @@ import {
   applyAction,
   applyFollowUp,
   applyRating,
+  applyUrgency,
   arrivalDeadline,
   buildApplication,
   canActOn,
@@ -18,7 +19,9 @@ import {
   FIX_EXPIRED_REASON,
   fixDeadline,
   type ServiceData,
+  type Status,
   statusForStep,
+  URGENCY_MAX_DAYS,
   WorkflowError,
 } from "@/lib/workflow";
 
@@ -456,5 +459,31 @@ describe("tindak lanjut eskalasi", () => {
     expect(app.escalations.map((e) => e.level)).toEqual([1, 2]);
     expect(followUp(app, pimpinan).payload).toMatchObject({ levels: [2] });
     expect(publicView(app, { now: T1 }).steps[0].followUp?.target).toBe("Kepala Bidang");
+  });
+});
+
+describe("keperluan mendesak dari warga", () => {
+  const now = new Date("2026-11-02T03:00:00Z"); // Senin 10.00 WIB
+  const flag = (app: { status: Status; urgency?: null }, neededBy: Date) =>
+    applyUrgency(app, { reason: "sekolah", neededBy, now });
+
+  it("hanya selama berkas diproses, sekali saja", () => {
+    const app = { status: "diproses" as Status, urgency: null };
+    expect(flag(app, new Date("2026-11-05"))).toEqual({
+      action: "urgency_flagged",
+      payload: { reason: "sekolah", neededBy: new Date("2026-11-05") },
+    });
+    expect(() => flag(app, new Date("2026-11-06"))).toThrow(/sudah ditandai/);
+    expect(() => flag({ status: "siap_diambil", urgency: null }, new Date("2026-11-05"))).toThrow(
+      /selama berkas diproses/,
+    );
+  });
+
+  it(`tanggal: hari ini (WIB) sampai ${URGENCY_MAX_DAYS} hari ke depan`, () => {
+    expect(() => flag({ status: "diajukan", urgency: null }, new Date("2026-11-02"))).not.toThrow();
+    expect(() => flag({ status: "diajukan", urgency: null }, new Date("2026-11-01"))).toThrow();
+    expect(() =>
+      flag({ status: "diajukan", urgency: null }, new Date(now.getTime() + (URGENCY_MAX_DAYS + 1) * DAY_MS)),
+    ).toThrow();
   });
 });

@@ -76,6 +76,7 @@ const WORKFLOW_STATUS: Record<string, number> = {
   forbidden: 403,
   invalid_state: 409,
   already_rated: 409,
+  already_flagged: 409,
   unknown_action: 400,
 };
 

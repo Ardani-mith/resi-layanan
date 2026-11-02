@@ -1,11 +1,23 @@
 // Logika murni (tanpa database): resi & privasi, cn, animasi angka, sesi petugas, perlindungan NIK,
-// dan mesin kantor pixel-art.
+// asisten catatan AI, dan mesin kantor pixel-art.
 import { decodeJwt } from "jose";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { countUpFrame } from "@/components/landing/CountUp";
 import { blockedTiles, createActors, findPath, spriteFrame, updateActor } from "@/components/office/engine";
 import { WAITING_SEATS, WALKERS } from "@/components/office/layout";
 import { distanceKm, OFFICE_TYPES, OFFICES } from "@/config/offices";
+import {
+  askAssistant,
+  assistMessages,
+  cleanDraft,
+  demoDraft,
+  factsOf,
+  maskNumbers,
+  NOTE_MAX,
+  questionsFor,
+  summaryOf,
+  type TrackingFacts,
+} from "@/lib/assist";
 import { cn } from "@/lib/cn";
 import { signSession, verifySession } from "@/lib/jwt";
 import { applicantEmail, notificationFor, sendEmail } from "@/lib/notify";
@@ -252,6 +264,100 @@ describe("perlindungan NIK", () => {
     const stored = protectNik(nik);
     expect(stored.nikMasked).toBe("3374 07•• •••• 0002");
     expect(JSON.stringify(stored)).not.toContain(nik);
+  });
+});
+
+describe("asisten catatan AI", () => {
+  const input = {
+    kind: "request_fix" as const,
+    draft: "KK lama, nama beda. NIK 3171 0123 4567 8901, hp 081234567890",
+    serviceName: "Akta Kelahiran",
+    stepName: "Verifikasi berkas",
+    requirements: ["Kartu Keluarga orang tua"],
+  };
+
+  it("NIK & nomor HP tidak pernah ikut terkirim ke model", () => {
+    expect(maskNumbers("tahun 2024, RT 007")).toBe("tahun 2024, RT 007");
+    const sent = JSON.stringify(assistMessages(input));
+    expect(sent).not.toMatch(/3171|081234567890/);
+    expect(sent).toContain("[angka disamarkan]");
+    expect(sent).toContain("Kartu Keluarga orang tua");
+  });
+
+  it("mode demo & jawaban model dirapikan dalam batas catatan", () => {
+    expect(demoDraft({ ...input, draft: "KK lama." })).toMatch(
+      /^Berkas permohonan Akta Kelahiran .*: KK lama\. /,
+    );
+    expect(demoDraft({ ...input, kind: "reject", draft: "x".repeat(600) })).toHaveLength(NOTE_MAX);
+    expect(demoDraft(input)).not.toMatch(/3171|081234567890/);
+    expect(cleanDraft('"**Mohon** bawa KK asli.\n\nTerima kasih."')).toBe(
+      "Mohon bawa KK asli. Terima kasih.",
+    );
+  });
+});
+
+describe("asisten warga", () => {
+  const late = {
+    resi: "RL-HJ26-AKTA",
+    serviceName: "Akta Kelahiran",
+    status: "diproses",
+    statusLabel: "Diproses",
+    currentStep: 1,
+    currentStepName: "Entri & validasi data",
+    isLate: true,
+    isEscalated: true,
+    escalationLevel: 1,
+    urgentNeededBy: null,
+    estimatedCompletion: "2026-11-02T06:10:00.000Z",
+    completedAt: null,
+    issuePromise: null,
+    arrivalDeadline: null,
+    fixNote: null,
+    fixDeadline: null,
+    rejectionReason: null,
+    requirements: ["Kartu Keluarga orang tua"],
+    steps: [
+      { name: "Verifikasi berkas", state: "selesai", dueAt: null, followUp: null },
+      {
+        name: "Entri & validasi data",
+        state: "terlambat",
+        dueAt: "2026-11-02T03:58:00.000Z",
+        followUp: null,
+      },
+    ],
+  } as unknown as TrackingFacts;
+
+  it("pertanyaan template mengikuti status, maksimal empat", () => {
+    expect(questionsFor(late).map((q) => q.id)).toEqual(["terlambat", "kapan", "percepat", "bawa"]);
+    const rejected = {
+      ...late,
+      status: "ditolak",
+      isLate: false,
+      rejectionReason: "KK tidak sesuai",
+    } as TrackingFacts;
+    expect(questionsFor(rejected).map((q) => q.id)).toEqual(["ditolak", "biaya"]);
+  });
+
+  it("jawaban dasar dari data, tanpa AI saat API key kosong; nama pemohon tidak ikut", async () => {
+    expect(summaryOf(late)).toMatch(/tahap Entri & validasi data dan sudah melewati tenggat/);
+    // "Dipercepat?": tegas tanpa jalur khusus, arahkan ke penanda keperluan mendesak, bukan ke loket.
+    vi.stubEnv("DEEPSEEK_API_KEY", "");
+    const speed = await askAssistant(late, "percepat");
+    expect(speed.text).toMatch(/calo/);
+    expect(speed.text).toMatch(/Tandai keperluan mendesak/);
+    const flagged = await askAssistant(
+      { ...late, urgentNeededBy: new Date("2026-11-05") } as TrackingFacts,
+      "percepat",
+    );
+    expect(flagged.text).toMatch(/sudah ditandai \(dokumen dibutuhkan/);
+    vi.unstubAllEnvs();
+    vi.stubEnv("DEEPSEEK_API_KEY", "");
+    await expect(askAssistant(late, "terlambat")).resolves.toEqual({
+      text: expect.stringMatching(/sudah diteruskan otomatis ke atasan petugas/),
+      source: "auto",
+    });
+    vi.unstubAllEnvs();
+    expect(factsOf({ ...late, applicantMasked: "Si*** R***" } as TrackingFacts)).not.toContain("Si***");
   });
 });
 

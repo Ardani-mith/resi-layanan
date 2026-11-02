@@ -21,6 +21,7 @@ import {
   STATUS,
   STATUS_LABELS,
   type Step,
+  URGENCY_REASONS,
 } from "./workflow.ts";
 
 // --- Penyamaran data pribadi --------------------------------------------------------
@@ -255,6 +256,10 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     currentStepName: current?.name ?? null,
     isLate: current?.state === "terlambat",
     isEscalated: (app.escalations ?? []).some((e) => !e.resolvedAt),
+    /** Level eskalasi terbuka tertinggi (1 = Kasi, 2 = Kabid); 0 = tidak ada. */
+    escalationLevel: Math.max(0, ...(app.escalations ?? []).filter((e) => !e.resolvedAt).map((e) => e.level)),
+    /** Keperluan mendesak sudah ditandai: tanggal dibutuhkan saja (alasannya setelah verifikasi HP). */
+    urgentNeededBy: app.urgency?.neededBy ?? null,
     estimatedCompletion:
       // Belum datang: tenggat belum berjalan, jadi perkiraan baru ada setelah warga hadir.
       app.status === STATUS.SELESAI ||
@@ -287,6 +292,7 @@ export function verifiedView(app: ApplicationData, ctx: Ctx) {
     },
     requirementsChecked: app.requirementsChecked ?? [],
     rating: app.rating ?? null,
+    urgencyReason: app.urgency ? URGENCY_REASONS[app.urgency.reason] : null,
   };
 }
 
@@ -340,6 +346,7 @@ export function queueItem(app: ApplicationData, now: DateLike) {
     dueAt: step?.dueAt ?? null,
     remainingMs: step ? remainingMs(step, now) : null,
     escalationLevel: Math.max(0, ...(app.escalations ?? []).filter((e) => !e.resolvedAt).map((e) => e.level)),
+    urgentNeededBy: app.urgency?.neededBy ?? null,
     createdAt: app.createdAt,
   };
 }

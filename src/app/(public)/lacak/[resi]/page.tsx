@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import TrackHero, { TrackSearchHero } from "@/components/application/TrackHero";
 import { PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
+import { ASSISTANT_DAILY_LIMIT } from "@/lib/applications";
+import { questionsFor } from "@/lib/assist";
 import { cn } from "@/lib/cn";
 import { getClockInfo, getTracking } from "@/lib/dal";
 import { receiptFor } from "@/lib/qr";
@@ -21,9 +23,9 @@ function TrackSkeleton() {
   return (
     <div aria-busy="true" aria-label="Memuat status permohonan">
       <TrackHero>
-        <div className={cn(bar, "h-7 w-36")} />
-        <div className={cn(bar, "mt-10 h-4 w-40")} />
+        <div className={cn(bar, "h-4 w-40")} />
         <div className={cn(bar, "mt-4 h-11 w-full max-w-md")} />
+        <div className="mt-8 h-36 rounded-2xl border border-hero-line bg-hero-chip" />
         <div className="mt-8 h-44 rounded-2xl border border-hero-line bg-hero-chip" />
       </TrackHero>
       <div className="relative -mt-14 grid gap-5 px-page pb-16 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -59,7 +61,16 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
     );
   }
 
-  return <TrackView data={data} serverNow={clock.now} offsetMs={clock.offsetMs} receipt={receipt} />;
+  return (
+    <TrackView
+      data={data}
+      serverNow={clock.now}
+      offsetMs={clock.offsetMs}
+      receipt={receipt}
+      questions={questionsFor(data)}
+      askLimit={process.env.DEEPSEEK_API_KEY ? ASSISTANT_DAILY_LIMIT : null}
+    />
+  );
 }
 
 export default function TrackPage({ params }: ParamsOf<{ resi: string }>) {

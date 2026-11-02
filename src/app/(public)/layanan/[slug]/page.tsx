@@ -113,7 +113,7 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
         <section aria-labelledby="biaya" className="rounded-card border border-line bg-surface p-5">
           <h2 id="biaya" className="flex items-center gap-2 text-lg font-bold">
             <HandCoins aria-hidden className="size-5 text-ok" />
-            Biaya: gratis
+            Biaya: Gratis
           </h2>
           <p className="mt-2 text-sm">
             Pengurusan dan penerbitan dokumen kependudukan tidak dipungut biaya (UU 24/2013 tentang
