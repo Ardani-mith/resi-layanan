@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { Panel, Skeleton, StaffHeader } from "@/components/ui";
 import { getAdminEvents, getAdminServices, requireStaffPage } from "@/lib/dal";
 import AdminLog from "../AdminLog";
 import { NewService, ServiceRow } from "./ServiceEditor";
@@ -12,16 +12,20 @@ async function ServicesPanel() {
   return (
     <>
       <NewService />
-      <section className="rounded-card border border-line bg-surface" aria-labelledby="daftar-layanan">
-        <h2 id="daftar-layanan" className="border-b border-line p-5 text-lg font-bold">
-          Daftar layanan <span className="text-sm font-normal text-muted">({services.length})</span>
-        </h2>
+      <Panel
+        title={
+          <>
+            Daftar layanan <span className="ml-1 font-normal text-muted tabular-nums">{services.length}</span>
+          </>
+        }
+        flush
+      >
         <ul className="divide-y divide-line">
           {services.map((service) => (
             <ServiceRow key={service.id} service={service} />
           ))}
         </ul>
-      </section>
+      </Panel>
       <AdminLog events={events} />
     </>
   );
@@ -29,14 +33,11 @@ async function ServicesPanel() {
 
 export default function AdminServicesPage() {
   return (
-    <div className="mx-auto max-w-5xl space-y-5 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Layanan & SLA</h1>
-        <p className="mt-1 text-muted">
-          Atur persyaratan, tahapan, peran penanggung jawab, dan tenggat tiap tahap. Permohonan yang sudah
-          berjalan tetap memakai tahapan saat diajukan, jadi perubahan aman dilakukan kapan saja.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <StaffHeader
+        title="Layanan & SLA"
+        description="Atur persyaratan, tahapan, peran penanggung jawab, dan tenggat tiap tahap. Permohonan yang sudah berjalan tetap memakai tahapan saat diajukan, jadi perubahan aman dilakukan kapan saja."
+      />
       <Suspense fallback={<Skeleton />}>
         <ServicesPanel />
       </Suspense>

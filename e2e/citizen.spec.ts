@@ -187,16 +187,24 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
 
   await page.getByLabel("Nomor HP", { exact: true }).fill("081234560002");
   await page.getByLabel("Tempat lahir").fill("Harapan Jaya");
-  await page.getByLabel("Golongan darah").selectOption("O");
+  await page.getByRole("combobox", { name: /Golongan darah/ }).click();
+  await page.getByRole("option", { name: "O", exact: true }).click();
   await page.getByLabel("Alamat").fill("Jl. Melati No. 12");
-  await page.getByLabel("RT/RW").fill("3/5");
+  await page.getByLabel("RT", { exact: true }).fill("3");
+  await page.getByLabel("RW", { exact: true }).fill("5");
   await page.getByLabel("Kelurahan/Desa").fill("Sukamaju");
   await page.getByLabel("Kecamatan").fill("Harapan Baru");
-  await page.getByLabel("Agama/Kepercayaan").selectOption("ISLAM");
-  await page.getByLabel("Status perkawinan").selectOption("BELUM KAWIN");
+  await page.getByRole("combobox", { name: /Agama/ }).click();
+  await page.getByRole("option", { name: "Islam" }).click();
+  // Dropdown kustom juga bisa dipakai dengan keyboard: huruf awal lalu Enter.
+  await page.getByRole("combobox", { name: /Status perkawinan/ }).focus();
+  await page.keyboard.press("b");
+  await page.keyboard.press("Enter");
   await page.getByLabel("Pekerjaan").fill("PELAJAR/MAHASISWA");
   await shows("HARAPAN JAYA, 15-08-2008");
   await shows("JL. MELATI NO. 12");
+  await shows("003/005"); // RT/RW diisi "3" & "5": nol di depan ditambahkan otomatis
+  await shows("BELUM KAWIN");
 
   for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
   await page.getByLabel(/Saya menyatakan/).check();

@@ -1,5 +1,5 @@
 import { type ReactNode, Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { QueueSkeleton } from "@/components/skeletons";
 import { getQueue, requireStaffPage } from "@/lib/dal";
 import { STAFF_ROLES } from "@/lib/roles";
 import QueueBoard from "./QueueBoard";
@@ -16,9 +16,9 @@ async function Queue() {
  */
 export default function QueueLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="group/split lg:grid lg:h-[calc(100dvh-3.5rem)] lg:grid-cols-[minmax(22rem,26rem)_1fr]">
+    <div className="group/split lg:grid lg:h-full lg:grid-cols-[minmax(22rem,26rem)_1fr]">
       <div className="border-line group-has-[[data-detail]]/split:hidden lg:block! lg:overflow-y-auto lg:border-r lg:bg-surface">
-        <Suspense fallback={<Skeleton className="m-4 h-96" />}>
+        <Suspense fallback={<QueueSkeleton />}>
           <Queue />
         </Suspense>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { ArrowUpRight, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useDeferredValue, useState } from "react";
@@ -29,55 +29,66 @@ function urgency(item: Item, now: number): { tone: keyof typeof TONE; text: stri
   return { tone: "run", text: `Sisa ${formatDuration(left)}` };
 }
 
+/** Warna teks & titik hitung mundur. Hanya yang terlambat/hampir yang berwarna kuat. */
 const TONE = {
-  late: "bg-late-soft text-late",
-  warn: "bg-warn-soft text-warn",
-  run: "bg-run-soft text-run",
-  pause: "bg-pause-soft text-pause",
-  muted: "bg-surface-2 text-muted",
+  late: { text: "text-late", dot: "bg-late" },
+  warn: { text: "text-warn", dot: "bg-warn" },
+  run: { text: "text-muted", dot: "bg-run" },
+  pause: { text: "text-pause", dot: "bg-pause" },
+  muted: { text: "text-muted", dot: "bg-line" },
 };
 
 function Row({ item, now, selected }: { item: Item; now: number; selected: boolean }) {
   const u = urgency(item, now);
+  const tone = TONE[u.tone];
   return (
     <li>
       <Link
         href={`/kerja/${item.resi}`}
         aria-current={selected ? "page" : undefined}
         className={cn(
-          "relative block px-4 py-3 transition-colors hover:bg-surface-2",
-          selected && "bg-brand-soft hover:bg-brand-soft",
+          "relative block px-4 py-3 transition-colors hover:bg-surface-2/70",
+          selected && "bg-brand-soft/70 hover:bg-brand-soft/70",
         )}
       >
-        {selected && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-brand" />}
-        <span className="flex items-center justify-between gap-2">
-          <span className="font-mono text-xs tracking-wide text-muted">{item.resi}</span>
-          <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold", TONE[u.tone])}>
+        {/* Garis kiri: biru = sedang dibuka, merah = terlambat. */}
+        {(selected || u.tone === "late") && (
+          <span
+            aria-hidden
+            className={cn("absolute inset-y-2 left-0 w-0.5 rounded-r", selected ? "bg-brand" : "bg-late")}
+          />
+        )}
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate text-sm font-semibold">{item.applicantName}</span>
+          <span
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 font-mono text-xs font-medium tabular-nums",
+              tone.text,
+            )}
+          >
+            <span aria-hidden className={cn("size-1.5 rounded-full", tone.dot)} />
             {u.text}
           </span>
         </span>
-        <span className="mt-1 flex items-center gap-2">
-          <span className="min-w-0 truncate font-semibold">{item.applicantName}</span>
-          <ChannelBadge channel={item.channel} className="shrink-0" />
-        </span>
-        <span className="block truncate text-sm text-muted">
+        <span className="mt-0.5 block truncate text-[13px] text-muted">
           {item.serviceName} · {item.stepName}
         </span>
-        {(item.escalationLevel > 0 || (!item.mine && item.stepRole)) && (
-          <span className="mt-1.5 flex flex-wrap gap-1.5 text-xs font-semibold">
-            {item.escalationLevel > 0 && (
-              <span className="rounded-full bg-late px-2 py-0.5 text-surface">
-                Eskalasi {item.escalationLevel === 2 ? "Kabid" : "Kasi"}
-              </span>
-            )}
-            {/* Bukan tugas peran ini (pimpinan/admin melihat semua): hanya dipantau. */}
-            {!item.mine && item.stepRole && (
-              <span className="rounded-full border border-line px-2 py-0.5 text-muted">
-                Dipantau · {ROLE_LABELS[item.stepRole]}
-              </span>
-            )}
-          </span>
-        )}
+        <span className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="mr-0.5 font-mono text-xs text-muted">{item.resi}</span>
+          <ChannelBadge channel={item.channel} />
+          {item.escalationLevel > 0 && (
+            <span className="inline-flex items-center gap-0.5 rounded-md border border-late/30 px-1.5 py-px text-xs font-medium text-late">
+              <ArrowUpRight aria-hidden className="size-3" />
+              {item.escalationLevel === 2 ? "Kabid" : "Kasi"}
+            </span>
+          )}
+          {/* Bukan tugas peran ini (pimpinan/admin melihat semua): hanya dipantau. */}
+          {!item.mine && item.stepRole && (
+            <span className="rounded-md border border-dashed border-line px-1.5 py-px text-xs text-muted">
+              Dipantau · {ROLE_LABELS[item.stepRole]}
+            </span>
+          )}
+        </span>
       </Link>
     </li>
   );
@@ -148,48 +159,69 @@ function Board({ queue, initialQuery, done }: { queue: Queue; initialQuery: stri
 
   return (
     <section aria-labelledby="queue-title">
-      <div className="sticky top-0 z-10 space-y-3 border-b border-line bg-surface px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-10 border-b border-line bg-surface">
+        <div className="flex items-center justify-between gap-2 px-4 pt-4">
           <div>
-            <h1 id="queue-title" className="text-lg font-bold tracking-tight">
+            <h1 id="queue-title" className="text-base font-semibold tracking-[-0.01em]">
               Antrean
             </h1>
             <p className="text-xs text-muted">{ROLE_LABELS[role]} · paling mendesak di atas</p>
           </div>
           {canInput && (
-            <Link href="/kerja/baru" className={buttonClass("primary", "min-h-9 px-3")}>
+            <Link href="/kerja/baru" className={buttonClass("primary", "min-h-8 gap-1.5 px-2.5 text-[13px]")}>
               <Plus aria-hidden className="size-4" />
               Input loket
             </Link>
           )}
         </div>
-        <Alert tone="success">{done}</Alert>
-        <div role="group" aria-label="Filter antrean" className="-mx-1 flex gap-1 overflow-x-auto px-1">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              aria-pressed={t.key === active.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap",
-                t.key === active.key ? "bg-brand-soft text-brand" : "text-muted hover:bg-surface-2",
-              )}
-            >
-              {t.label} <span className="ml-0.5 tabular-nums opacity-80">{t.count}</span>
-            </button>
-          ))}
-        </div>
-        <label className="block">
+        <Alert tone="success" className="mx-4 mt-3">
+          {done}
+        </Alert>
+        <label className="relative mx-4 mt-3 block">
           <span className="sr-only">Saring antrean</span>
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted"
+          />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Saring resi atau nama…"
-            className="min-h-9 w-full rounded-lg border border-line bg-surface-2 px-3 text-sm outline-none focus:border-brand focus:bg-surface"
+            className="h-8 w-full rounded-md border border-line bg-surface-2 pr-3 pl-8 text-sm outline-none placeholder:text-muted focus:border-brand focus:bg-surface"
           />
         </label>
+        {/* Filter sebagai tab bergaris bawah, jumlah di kapsul kecil. */}
+        <div role="group" aria-label="Filter antrean" className="mt-2 flex gap-4 overflow-x-auto px-4">
+          {tabs.map((t) => {
+            const on = t.key === active.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  "relative flex shrink-0 items-center gap-1.5 py-2.5 text-[13px] font-medium whitespace-nowrap transition-colors",
+                  on ? "text-text" : "text-muted hover:text-text",
+                )}
+              >
+                {t.label}
+                <span
+                  className={cn(
+                    "rounded px-1 text-xs tabular-nums",
+                    on ? "bg-brand-soft text-brand" : "bg-surface-2 text-muted",
+                  )}
+                >
+                  {t.count}
+                </span>
+                {on && (
+                  <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-brand" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {visible.length ? (

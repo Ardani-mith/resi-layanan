@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { Panel, Skeleton, StaffHeader } from "@/components/ui";
 import { getAdminEvents, getStaffAccounts, requireStaffPage } from "@/lib/dal";
 import AdminLog from "../AdminLog";
 import { StaffCreateForm, StaffRow } from "./StaffManager";
@@ -13,30 +13,30 @@ async function StaffPanel() {
 
   return (
     <>
-      <section className="rounded-card border border-line bg-surface p-5" aria-labelledby="tambah-petugas">
-        <h2 id="tambah-petugas" className="text-lg font-bold">
-          Tambah petugas
-        </h2>
-        <p className="mt-1 mb-4 text-sm text-muted">
-          Sistem membuat kata sandi sementara. Serahkan ke petugas; mereka wajib menggantinya saat login
-          pertama.
-        </p>
+      <Panel
+        title="Tambah petugas"
+        description="Sistem membuat kata sandi sementara. Serahkan ke petugas; mereka wajib menggantinya saat login pertama."
+      >
         <StaffCreateForm />
-      </section>
+      </Panel>
 
-      <section className="rounded-card border border-line bg-surface" aria-labelledby="daftar-petugas">
-        <h2 id="daftar-petugas" className="border-b border-line p-5 text-lg font-bold">
-          Daftar akun{" "}
-          <span className="text-sm font-normal text-muted">
-            ({active} aktif dari {accounts.length})
-          </span>
-        </h2>
+      <Panel
+        title={
+          <>
+            Daftar akun{" "}
+            <span className="ml-1 font-normal text-muted tabular-nums">
+              {active} aktif dari {accounts.length}
+            </span>
+          </>
+        }
+        flush
+      >
         <ul className="divide-y divide-line">
           {accounts.map((account) => (
             <StaffRow key={account.id} account={account} isSelf={account.id === user.id} />
           ))}
         </ul>
-      </section>
+      </Panel>
 
       <AdminLog events={events} />
     </>
@@ -45,14 +45,11 @@ async function StaffPanel() {
 
 export default function StaffPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-5 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Kelola petugas</h1>
-        <p className="mt-1 text-muted">
-          Akun dinonaktifkan, bukan dihapus, agar audit log tetap menunjuk ke orang yang menindak. Petugas
-          yang dinonaktifkan atau diganti perannya langsung keluar dari semua perangkat.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <StaffHeader
+        title="Kelola petugas"
+        description="Akun dinonaktifkan, bukan dihapus, agar audit log tetap menunjuk ke orang yang menindak. Petugas yang dinonaktifkan atau diganti perannya langsung keluar dari semua perangkat."
+      />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <StaffPanel />
       </Suspense>

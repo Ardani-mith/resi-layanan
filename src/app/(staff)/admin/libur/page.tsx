@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { Skeleton, StaffHeader } from "@/components/ui";
 import { getAdminEvents, getAdminHolidays, getClockInfo, requireStaffPage } from "@/lib/dal";
 import { wibDateKey } from "@/lib/sla";
 import AdminLog from "../AdminLog";
@@ -26,18 +26,15 @@ async function HolidaysPanel() {
 
 export default function AdminHolidaysPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Hari libur</h1>
-        <p className="mt-1 text-muted">
-          Tanggal di sini tidak dihitung sebagai hari kerja, jadi tenggat yang jatuh di hari libur bergeser ke
-          hari kerja berikutnya. Masukkan libur nasional & cuti bersama sesuai SKB 3 Menteri.
-        </p>
-        <p className="mt-3 rounded-xl border-l-4 border-warn bg-warn-soft px-3 py-2 text-sm">
-          Hari libur baru hanya berlaku untuk tahap yang <strong>dimulai setelah disimpan</strong>. Tenggat
-          tahap yang sedang berjalan tidak ikut bergeser.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <StaffHeader
+        title="Hari libur"
+        description="Tanggal di sini tidak dihitung sebagai hari kerja, jadi tenggat yang jatuh di hari libur bergeser ke hari kerja berikutnya. Masukkan libur nasional & cuti bersama sesuai SKB 3 Menteri."
+      />
+      <p className="rounded-card border border-l-[3px] border-line border-l-warn bg-surface px-4 py-3 text-sm">
+        Hari libur baru hanya berlaku untuk tahap yang <strong>dimulai setelah disimpan</strong>. Tenggat
+        tahap yang sedang berjalan tidak ikut bergeser.
+      </p>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <HolidaysPanel />
       </Suspense>

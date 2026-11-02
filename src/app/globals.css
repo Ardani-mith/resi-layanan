@@ -134,6 +134,11 @@
   color-scheme: dark;
 }
 
+/* Area petugas: sudut kartu lebih kecil (nuansa alat kerja). rounded-card mengikuti --radius. */
+.staff-ui {
+  --radius: 10px;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -186,6 +191,21 @@ body {
   :focus-visible {
     outline: none;
   }
+}
+
+/* Daftar pilihan dropdown kustom (Select) membuka dengan sedikit membesar dari atas. */
+@keyframes select-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 -4px;
+  }
+}
+
+/* Kolom dengan daftar saran (datalist): sembunyikan segitiga bawaan Chrome yang tidak serasi;
+   saran tetap muncul saat kolom diketik/difokus. */
+input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
 }
 
 /* --- Landing page --------------------------------------------------------------
@@ -364,6 +384,67 @@ body:has([data-header-dark]) .site-header:not([data-on-dark]) {
     color-mix(in srgb, var(--hero-g3) 45%, transparent),
     transparent 70%
   );
+}
+
+/* Kerangka loading berkilau: sapuan cahaya dari kiri ke kanan. "Kurangi gerakan": diam. */
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@utility skeleton-shimmer {
+  background-color: var(--surface-2);
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--surface) 75%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+/* Loading kaca (LoadingGlass): kilau diagonal melintas & bar progres berjalan. */
+@keyframes glass-sweep {
+  from {
+    translate: -120% 0;
+  }
+  to {
+    translate: 420% 0;
+  }
+}
+@utility animate-glass-sweep {
+  animation: glass-sweep 2.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+@keyframes indeterminate {
+  from {
+    translate: -110% 0;
+  }
+  to {
+    translate: 320% 0;
+  }
+}
+@utility animate-indeterminate {
+  animation: indeterminate 1.3s ease-in-out infinite;
+}
+
+/* Bar progres navigasi (NavProgress): cepat di awal, melambat mendekati 90% sampai halaman tiba. */
+@keyframes nav-progress {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 0.9 1;
+  }
+}
+@utility animate-nav-progress {
+  animation: nav-progress 8s cubic-bezier(0.08, 0.7, 0.2, 1) forwards;
 }
 
 /* Sorot cahaya di hero (diadaptasi dari "Spotlight", Aceternity UI): muncul sekali dari kiri atas. */

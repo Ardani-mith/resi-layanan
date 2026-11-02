@@ -57,7 +57,7 @@ export default function HolidayEditor({ holidays, today }: { holidays: string[];
           {upcoming.map((day) => (
             <li
               key={day}
-              className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 py-1 pr-1 pl-3 text-sm"
+              className="flex items-center gap-1 rounded-lg border border-line bg-surface-2 py-1 pr-1 pl-3 text-sm"
             >
               <time dateTime={day}>{formatDate(asDate(day))}</time>
               <button

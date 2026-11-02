@@ -69,7 +69,7 @@ test("admin tidak bisa mengubah akunnya sendiri dari daftar petugas", async ({ o
   await expect(self.getByRole("button")).toHaveCount(0);
 });
 
-test("top bar petugas: menu sesuai peran, antrean dua panel, cari resi, dan tab bar di HP", async ({
+test("sidebar petugas: menu sesuai peran, antrean dua panel, cari resi, dan tab bar di HP", async ({
   openPage,
 }) => {
   const loket = await openPage();
@@ -79,7 +79,7 @@ test("top bar petugas: menu sesuai peran, antrean dua panel, cari resi, dan tab 
   const nav = loket.getByRole("navigation", { name: "Menu utama" });
   await expect(nav.getByRole("link", { name: "Antrean" })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Input loket" })).toBeVisible();
-  await expect(nav.getByRole("button", { name: "Admin" })).toHaveCount(0); // khusus admin
+  await expect(nav.getByRole("link", { name: "Petugas" })).toHaveCount(0); // bagian Admin khusus admin
 
   // Dua panel: daftar antrean & detail tampil bersamaan, baris terpilih ditandai.
   await expect(loket.getByRole("heading", { name: "Antrean", exact: true })).toBeVisible();

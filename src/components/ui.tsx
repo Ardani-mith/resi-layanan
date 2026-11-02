@@ -1,6 +1,7 @@
 // Komponen UI dasar yang dipakai di banyak halaman. Semuanya aman untuk Server
 // Component (tanpa state); form client cukup mengimpornya.
 
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import {
   type ComponentProps,
@@ -10,6 +11,7 @@ import {
   useId,
   ViewTransition,
 } from "react";
+import LoadingGlass from "@/components/LoadingGlass";
 import { cn } from "@/lib/cn";
 import { DAY_MS } from "@/lib/sla";
 
@@ -105,6 +107,20 @@ type FieldProps = {
   children?: ReactNode;
 } & Omit<ComponentPropsWithoutRef<"input">, "className" | "children">;
 
+/** Kelas dasar kotak isian (dipakai Field & isian khusus seperti RT/RW). */
+export const inputClass =
+  "min-h-11 w-full rounded-card border border-line bg-surface px-3 text-base outline-none transition-colors placeholder:text-muted/70 hover:border-muted/40 focus:border-brand focus:ring-3 focus:ring-brand/15 aria-invalid:border-late";
+
+/** Pesan bantuan/error di bawah isian. */
+export function FieldMessage({ id, error, hint }: { id: string; error?: string | null; hint?: string }) {
+  if (!error && !hint) return null;
+  return (
+    <p id={id} className={cn("mt-1.5 text-sm", error ? "text-late" : "text-muted")}>
+      {error || hint}
+    </p>
+  );
+}
+
 /** Input berlabel dengan pesan error yang terhubung lewat aria-describedby. */
 export function Field({ label, error, hint, className = "", as = "input", ...props }: FieldProps) {
   const id = useId();
@@ -113,8 +129,7 @@ export function Field({ label, error, hint, className = "", as = "input", ...pro
     id,
     "aria-invalid": Boolean(error),
     "aria-describedby": error || hint ? messageId : undefined,
-    className:
-      "min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-base outline-none focus:border-brand aria-invalid:border-late",
+    className: inputClass,
   };
   return (
     <div className={className}>
@@ -122,7 +137,18 @@ export function Field({ label, error, hint, className = "", as = "input", ...pro
         {label}
       </label>
       {as === "select" ? (
-        <select {...control} {...(props as ComponentPropsWithoutRef<"select">)} />
+        // Panah sendiri (appearance-none) supaya sama di semua browser/OS.
+        <div className="relative">
+          <select
+            {...control}
+            className={cn(control.className, "cursor-pointer appearance-none pr-10")}
+            {...(props as ComponentPropsWithoutRef<"select">)}
+          />
+          <ChevronDown
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted"
+          />
+        </div>
       ) : as === "textarea" ? (
         <textarea
           {...control}
@@ -132,25 +158,72 @@ export function Field({ label, error, hint, className = "", as = "input", ...pro
       ) : (
         <input {...control} {...props} />
       )}
-      {(error || hint) && (
-        <p id={messageId} className={cn("mt-1 text-sm", error ? "text-late" : "text-muted")}>
-          {error || hint}
-        </p>
-      )}
+      <FieldMessage id={messageId} error={error} hint={hint} />
     </div>
   );
 }
 
 // --- Keadaan halaman ----------------------------------------------------------------
 
-/** Placeholder fallback <Suspense> selama data request-time di-stream. */
-export function Skeleton({ className }: { className?: string }) {
+/**
+ * Placeholder fallback <Suspense>/loading.tsx. Berkilau (sapuan cahaya) alih-alih berkedip;
+ * `delay` (ms) menggeser kilauan sehingga beberapa blok tampak bergelombang berurutan.
+ */
+export function Skeleton({ className, delay = 0 }: { className?: string; delay?: number }) {
   return (
     <div
-      className={cn("h-96 animate-pulse rounded-card bg-surface", className)}
       aria-busy="true"
       aria-label="Memuat"
+      className={cn("h-96 skeleton-shimmer rounded-card", className)}
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
     />
+  );
+}
+
+/**
+ * Pembungkus kerangka: diumumkan ke pembaca layar, dengan lapisan kaca interaktif (LoadingGlass)
+ * di atasnya. `glassPosition` = kelas posisi absolute kartu kaca di dalam kerangka.
+ */
+export function LoadingFrame({
+  label,
+  glassPosition,
+  className,
+  children,
+}: {
+  label: string;
+  glassPosition?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div role="status" aria-label={label} className={cn("relative", className)}>
+      {children}
+      <LoadingGlass label={label} position={glassPosition} />
+    </div>
+  );
+}
+
+/**
+ * Bagian yang bisa dibuka-tutup (details/summary, tanpa JavaScript): untuk isi sekunder yang
+ * jarang dibutuhkan, supaya halaman tidak panjang. `summary` = teks tautan pembuka.
+ */
+export function Disclosure({
+  summary,
+  className,
+  children,
+}: {
+  summary: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <details className={cn("group/disc", className)}>
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand select-none hover:underline [&::-webkit-details-marker]:hidden">
+        {summary}
+        <ChevronDown aria-hidden className="size-3.5 transition-transform group-open/disc:rotate-180" />
+      </summary>
+      <div className="mt-2">{children}</div>
+    </details>
   );
 }
 
@@ -222,6 +295,77 @@ export function PageHeader({
       </h1>
       {children && <p className="mt-3 max-w-2xl text-lg text-muted">{children}</p>}
     </header>
+  );
+}
+
+// --- Area petugas: kepala halaman & panel -----------------------------------------------
+
+/** Kepala halaman petugas: judul ringkas + keterangan, aksi di kanan; garis bawah tipis. */
+export function StaffHeader({
+  title,
+  description,
+  actions,
+  className,
+}: {
+  title: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <header
+      className={cn(
+        "flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-line pb-5",
+        className,
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className="text-xl font-semibold tracking-[-0.02em]">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>}
+      </div>
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+    </header>
+  );
+}
+
+/**
+ * Panel berjudul (area petugas): baris kepala tipis berisi judul + keterangan + aksi, lalu isi.
+ * `flush` = isi tanpa padding (untuk tabel/daftar yang menempel ke tepi panel).
+ */
+export function Panel({
+  title,
+  description,
+  actions,
+  flush = false,
+  className,
+  children,
+  ...props
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  flush?: boolean;
+  className?: string;
+  children?: ReactNode;
+} & Omit<ComponentPropsWithoutRef<"section">, "title" | "className" | "children">) {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={id}
+      className={cn("rounded-card border border-line bg-surface", className)}
+      {...props}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-3.5">
+        <div className="min-w-0">
+          <h2 id={id} className="text-sm font-semibold">
+            {title}
+          </h2>
+          {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
+        </div>
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      </div>
+      {children && <div className={flush ? undefined : "p-5"}>{children}</div>}
+    </section>
   );
 }
 

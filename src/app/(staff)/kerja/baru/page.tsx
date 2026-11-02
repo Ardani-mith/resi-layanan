@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import ApplyForm from "@/components/application/ApplyForm";
 import { ChannelBadge } from "@/components/application/Badges";
-import { Skeleton } from "@/components/ui";
+import { Skeleton, StaffHeader } from "@/components/ui";
 import { getActiveServices, requireStaffPage } from "@/lib/dal";
 
 export const metadata = { title: "Input warga di loket" };
@@ -14,14 +14,14 @@ async function LoketForm() {
 
 export default function LoketPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <ChannelBadge channel="loket" long />
-      <h1 className="mt-2 text-2xl font-bold tracking-tight">Input warga di loket</h1>
-      <p className="mt-1 text-muted">
-        Untuk warga yang datang langsung. Tahap verifikasi berkas langsung masuk antrean loket.
-      </p>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <StaffHeader
+        title="Input warga di loket"
+        description="Untuk warga yang datang langsung. Tahap verifikasi berkas langsung masuk antrean loket."
+        actions={<ChannelBadge channel="loket" long />}
+      />
       {/* Beda dengan pengajuan online: tanpa OTP, identitas & persyaratan diperiksa langsung. */}
-      <ul className="mt-4 grid gap-2 rounded-card border-l-4 border-warn bg-warn-soft/60 p-4 text-sm sm:grid-cols-3">
+      <ul className="grid gap-px overflow-hidden rounded-card border border-line bg-line text-sm sm:grid-cols-3 [&>li]:bg-surface [&>li]:p-4">
         <li>
           <span className="font-semibold">Cocokkan identitas</span>
           <span className="block text-muted">NIK & nama dari KTP-el/KK asli yang dibawa warga.</span>
@@ -35,11 +35,9 @@ export default function LoketPage() {
           <span className="block text-muted">Berkas ditandai &ldquo;Loket&rdquo; dan masuk audit log.</span>
         </li>
       </ul>
-      <div className="mt-6">
-        <Suspense fallback={<Skeleton />}>
-          <LoketForm />
-        </Suspense>
-      </div>
+      <Suspense fallback={<Skeleton />}>
+        <LoketForm />
+      </Suspense>
     </div>
   );
 }

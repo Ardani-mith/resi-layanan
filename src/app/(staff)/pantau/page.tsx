@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Meter, StatTile, weeklyOnTime } from "@/components/charts";
+import { Meter, StatStrip, StatTile, weeklyOnTime } from "@/components/charts";
 import ColumnChart from "@/components/charts/ColumnChart";
-import { Skeleton } from "@/components/ui";
+import { DashboardSkeleton } from "@/components/skeletons";
+import { Panel, StaffHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getStats, requireStaffPage } from "@/lib/dal";
 import { formatDateTime, formatDuration, formatPercent, formatWorkHours } from "@/lib/format";
@@ -30,54 +31,64 @@ async function Dashboard() {
 
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pantau kinerja layanan</h1>
-        <p className="text-muted">Keterlambatan dan eskalasi dihitung ulang setiap halaman dibuka.</p>
-      </div>
+      <StaffHeader
+        title="Pantau kinerja layanan"
+        description="Keterlambatan dan eskalasi dihitung ulang setiap halaman dibuka."
+        actions={
+          <Link href="/rapor" className="text-sm font-medium text-brand hover:underline">
+            Lihat rapor publik →
+          </Link>
+        }
+      />
 
-      <section aria-label="Ringkasan" className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <StatStrip aria-label="Ringkasan" className="grid-cols-2 lg:grid-cols-5">
         <StatTile
+          bare
           label="Sedang berjalan"
           value={overall.open}
           note={`${overall.waitingFix} menunggu perbaikan warga`}
         />
         <StatTile
+          bare
           label="Terlambat sekarang"
           value={overall.overdueNow}
           note={`${escalations.length} eskalasi terbuka, ${unanswered} belum ditanggapi`}
           tone={overall.overdueNow > 0 ? "late" : undefined}
         />
         <StatTile
+          bare
           label="Selesai tepat waktu"
           value={formatPercent(overall.onTimeRate)}
           note={`dari ${overall.completed} permohonan selesai`}
         />
         <StatTile
+          bare
           label="Terbit ≤ 24 jam"
           value={formatPercent(overall.promiseRate)}
           note={`rata-rata ${formatWorkHours(overall.avgIssueHours)} setelah berkas lengkap`}
         />
         <StatTile
+          bare
           label="Kepuasan warga"
           value={overall.ratingAvg === null ? "—" : `${overall.ratingAvg.toLocaleString("id-ID")}/5`}
           note={`${overall.ratingCount} penilaian`}
         />
-      </section>
+      </StatStrip>
 
-      <section className="rounded-card border border-line bg-surface" aria-labelledby="esc-title">
-        <div className="border-b border-line p-5">
-          <h2 id="esc-title" className="text-lg font-bold">
-            Eskalasi terbuka
-          </h2>
-          <p className="text-sm text-muted">
-            Level 1 diteruskan ke Kepala Seksi; lewat 1 hari kerja dari tenggat naik ke Kepala Bidang. Buka
-            resinya untuk menindaklanjuti: tanggapan Anda tampil di halaman lacak warga.
-          </p>
-        </div>
+      <Panel
+        title={
+          <>
+            Eskalasi terbuka{" "}
+            <span className="ml-1 font-normal text-muted tabular-nums">{escalations.length}</span>
+          </>
+        }
+        description="Level 1 diteruskan ke Kepala Seksi; lewat 1 hari kerja dari tenggat naik ke Kepala Bidang. Tanggapan Anda tampil di halaman lacak warga."
+        flush
+      >
         {escalations.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[48rem] text-left text-sm">
-              <thead className="text-muted">
+              <thead className="bg-surface-2/60 text-xs text-muted">
                 <tr>
                   <th scope="col" className="px-5 py-2 font-medium">
                     Resi
@@ -103,7 +114,10 @@ async function Dashboard() {
                 {escalations.map((e) => (
                   <tr key={`${e.resi}-${e.stepName}-${e.level}`} className="border-t border-line">
                     <td className="px-5 py-2.5">
-                      <Link href={`/kerja/${e.resi}`} className="font-mono text-brand hover:underline">
+                      <Link
+                        href={`/kerja/${e.resi}`}
+                        className="font-mono text-xs whitespace-nowrap text-brand hover:underline"
+                      >
                         {e.resi}
                       </Link>
                     </td>
@@ -115,10 +129,14 @@ async function Dashboard() {
                     <td className="px-5 py-2.5">
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
-                          e.level === 2 ? "bg-late text-surface" : "bg-late-soft text-late",
+                          "inline-flex items-center gap-1.5 rounded-md border px-1.5 py-px text-xs font-medium whitespace-nowrap",
+                          e.level === 2 ? "border-late/40 text-late" : "border-line text-muted",
                         )}
                       >
+                        <span
+                          aria-hidden
+                          className={cn("size-1.5 rounded-full", e.level === 2 ? "bg-late" : "bg-warn")}
+                        />
                         {e.level} · {e.target}
                       </span>
                     </td>
@@ -136,7 +154,7 @@ async function Dashboard() {
                           )}
                         </>
                       ) : (
-                        <Link href={`/kerja/${e.resi}`} className="font-semibold text-late hover:underline">
+                        <Link href={`/kerja/${e.resi}`} className="font-medium text-late hover:underline">
                           Belum ditanggapi →
                         </Link>
                       )}
@@ -147,9 +165,9 @@ async function Dashboard() {
             </table>
           </div>
         ) : (
-          <p className="p-5 text-muted">Tidak ada eskalasi terbuka.</p>
+          <p className="p-5 text-sm text-muted">Tidak ada eskalasi terbuka.</p>
         )}
-      </section>
+      </Panel>
 
       <ColumnChart
         title="Selesai tepat waktu per minggu"
@@ -159,8 +177,8 @@ async function Dashboard() {
       />
 
       <section aria-labelledby="bottleneck-title" className="space-y-3">
-        <div>
-          <h2 id="bottleneck-title" className="text-lg font-bold">
+        <div className="pt-2">
+          <h2 id="bottleneck-title" className="text-base font-semibold">
             Analisis bottleneck per tahap
           </h2>
           <p className="text-sm text-muted">
@@ -172,29 +190,26 @@ async function Dashboard() {
           {services.map((service) => {
             const worst = bottleneckKey(service.steps);
             return (
-              <article key={service.slug} className="rounded-card border border-line bg-surface p-5">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <h3 className="font-bold">{service.name}</h3>
-                  <p className="text-sm text-muted">
-                    {formatPercent(service.onTimeRate)} tepat waktu · {formatPercent(service.promiseRate)}{" "}
-                    terbit ≤ 24 jam · target terbit {formatWorkHours(service.issueTargetHours)} ·{" "}
-                    {service.open} berjalan
-                  </p>
-                </div>
+              <Panel
+                key={service.slug}
+                title={service.name}
+                description={`${formatPercent(service.onTimeRate)} tepat waktu · ${formatPercent(service.promiseRate)} terbit ≤ 24 jam · target terbit ${formatWorkHours(service.issueTargetHours)} · ${service.open} berjalan`}
+                flush
+              >
                 <div className="overflow-x-auto">
-                  <table className="mt-3 w-full min-w-[34rem] table-fixed text-left text-sm">
-                    <thead className="text-muted">
+                  <table className="w-full min-w-[34rem] table-fixed text-left text-sm [&_td:first-child]:pl-5 [&_td:last-child]:pr-5 [&_th:first-child]:pl-5 [&_th:last-child]:pr-5">
+                    <thead className="bg-surface-2/60 text-xs text-muted">
                       <tr>
-                        <th scope="col" className="pb-2 font-medium">
+                        <th scope="col" className="py-2 font-medium">
                           Tahap
                         </th>
-                        <th scope="col" className="w-32 pb-2 font-medium">
+                        <th scope="col" className="w-32 py-2 font-medium">
                           Target
                         </th>
-                        <th scope="col" className="w-44 pb-2 font-medium">
+                        <th scope="col" className="w-44 py-2 font-medium">
                           Rata-rata pengerjaan
                         </th>
-                        <th scope="col" className="w-52 pb-2 font-medium">
+                        <th scope="col" className="w-52 py-2 font-medium">
                           Selesai terlambat
                         </th>
                       </tr>
@@ -205,7 +220,7 @@ async function Dashboard() {
                           <td className="py-2.5 pr-3">
                             {step.name}
                             {step.key === worst && (
-                              <span className="ml-2 rounded bg-late-soft px-1.5 py-0.5 text-xs font-semibold text-late">
+                              <span className="ml-2 rounded-md border border-late/40 px-1.5 py-px text-xs font-medium text-late">
                                 bottleneck
                               </span>
                             )}
@@ -231,7 +246,7 @@ async function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-              </article>
+              </Panel>
             );
           })}
         </div>
@@ -242,8 +257,8 @@ async function Dashboard() {
 
 export default function MonitorPage() {
   return (
-    <div className="space-y-6 px-page py-8">
-      <Suspense fallback={<Skeleton />}>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+      <Suspense fallback={<DashboardSkeleton />}>
         <Dashboard />
       </Suspense>
     </div>

@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useId, useState } from "react";
+import { startNavProgress } from "@/components/layout/NavProgress";
 import { cn } from "@/lib/cn";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 
@@ -53,6 +54,7 @@ export default function ResiSearch({
       return;
     }
     // Maju ke halaman lacak: konten bergeser ke kiri (PageSlide + view-transitions.css).
+    startNavProgress();
     router.push(`/lacak/${resi}`, { transitionTypes: ["nav-forward"] });
   }
 

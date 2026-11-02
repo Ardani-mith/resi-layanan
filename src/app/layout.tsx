@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
+import NavProgress from "@/components/layout/NavProgress";
 import { site } from "@/config/site";
 import { themeScript } from "@/lib/theme";
 
@@ -36,7 +37,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       {/* Kerangka halaman ada di route group: (public) navbar atas, (staff) top bar. */}
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {/* Loading global: bar progres saat pindah halaman. usePathname/useSearchParams = data request. */}
+        <Suspense>
+          <NavProgress />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

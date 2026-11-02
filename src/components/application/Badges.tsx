@@ -4,15 +4,19 @@ import { cn } from "@/lib/cn";
 import type { StepViewState } from "@/lib/present";
 import { type Channel, type Status, STATUS_LABELS } from "@/lib/workflow";
 
-const STATUS_STYLE: Record<Status, string> = {
-  diajukan: "bg-run-soft text-run",
-  diproses: "bg-run-soft text-run",
-  siap_diambil: "bg-ok-soft text-ok",
-  selesai: "bg-ok-soft text-ok",
-  perlu_perbaikan: "bg-pause-soft text-pause",
-  menunggu_kedatangan: "bg-warn-soft text-warn",
-  ditolak: "bg-late-soft text-late",
+/** Warna titik status (badge "tenang": titik berwarna + teks, bingkai tipis). */
+const STATUS_DOT: Record<Status, string> = {
+  diajukan: "bg-run",
+  diproses: "bg-run",
+  siap_diambil: "bg-ok",
+  selesai: "bg-ok",
+  perlu_perbaikan: "bg-pause",
+  menunggu_kedatangan: "bg-warn",
+  ditolak: "bg-late",
 };
+
+const chip =
+  "inline-flex items-center gap-1.5 rounded-md border border-line bg-surface font-medium whitespace-nowrap";
 
 export const STEP_STATE: Record<StepViewState, { label: string; dot: string; text: string }> = {
   selesai: { label: "Selesai", dot: "bg-ok border-ok", text: "text-ok" },
@@ -33,20 +37,18 @@ export function StatusBadge({
   late?: boolean;
   size?: "md" | "lg";
 }) {
-  const sizing = size === "lg" ? "px-3 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
+  const sizing = size === "lg" ? "px-2.5 py-1 text-sm" : "px-2 py-0.5 text-xs";
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <span
-        className={cn(
-          "rounded-full font-semibold",
-          sizing,
-          STATUS_STYLE[status] ?? "bg-surface-2 text-muted",
-        )}
-      >
+      <span className={cn(chip, sizing)}>
+        <span aria-hidden className={cn("size-1.5 rounded-full", STATUS_DOT[status] ?? "bg-muted")} />
         {STATUS_LABELS[status] ?? status}
       </span>
       {late && (
-        <span className={cn("rounded-full bg-late font-semibold text-surface", sizing)}>Terlambat</span>
+        <span className={cn(chip, sizing, "border-late/30 bg-late-soft text-late")}>
+          <span aria-hidden className="size-1.5 rounded-full bg-late" />
+          Terlambat
+        </span>
       )}
     </span>
   );
@@ -54,16 +56,16 @@ export function StatusBadge({
 
 /**
  * Pembeda kanal pengajuan, dipakai konsisten di antrean, detail, dan form loket:
- * Online (biru, globe) = diisi sendiri oleh warga; Loket (amber, toko) = diinput petugas.
+ * Online (ikon globe biru) = diisi sendiri oleh warga; Loket (ikon toko amber) = diinput petugas.
  */
 const CHANNELS = {
   online: {
     label: "Online",
     long: "Diajukan online oleh warga",
     icon: Globe,
-    tone: "bg-brand-soft text-brand",
+    tone: "text-brand",
   },
-  loket: { label: "Loket", long: "Input petugas di loket", icon: Store, tone: "bg-warn-soft text-warn" },
+  loket: { label: "Loket", long: "Input petugas di loket", icon: Store, tone: "text-warn" },
 } as const;
 
 export function ChannelBadge({
@@ -81,13 +83,12 @@ export function ChannelBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md font-semibold whitespace-nowrap",
-        long ? "px-2 py-1 text-xs" : "px-1.5 py-0.5 text-xs",
-        info.tone,
+        "inline-flex items-center gap-1 rounded-md border border-line bg-surface font-medium whitespace-nowrap text-muted",
+        long ? "px-2 py-0.5 text-xs" : "px-1.5 py-px text-xs",
         className,
       )}
     >
-      <Icon aria-hidden className={long ? "size-3.5" : "size-3"} />
+      <Icon aria-hidden className={cn(long ? "size-3.5" : "size-3", info.tone)} />
       {long ? info.long : info.label}
     </span>
   );

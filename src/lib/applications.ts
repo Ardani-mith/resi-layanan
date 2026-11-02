@@ -86,7 +86,8 @@ async function prepare(input: ApplicationInput, clock: Ctx) {
     throw new WorkflowError("unknown_service", "Layanan tidak ditemukan atau sedang tidak dibuka.");
   }
   const { nik, phone } = input.applicant;
-  if (input.channel === "online" && !input.consent) {
+  // Wajib di kedua kanal: online dicentang warga, loket dicentang petugas atas pernyataan pemohon.
+  if (!input.consent) {
     throw new AppError(422, "Centang pernyataan kebenaran data.", {
       consent: "Centang pernyataan ini untuk melanjutkan.",
     });

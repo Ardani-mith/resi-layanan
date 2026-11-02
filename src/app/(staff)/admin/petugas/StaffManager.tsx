@@ -74,7 +74,7 @@ function TempPassword({
   }
 
   return (
-    <div role="status" className="rounded-xl border border-ok bg-ok-soft p-4 text-sm">
+    <div role="status" className="rounded-lg border border-ok bg-ok-soft p-4 text-sm">
       <p className="font-semibold text-ok">Kata sandi sementara untuk {account.name}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <code className="rounded-lg bg-surface px-3 py-1.5 font-mono text-lg font-bold tracking-wider select-all">

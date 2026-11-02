@@ -2,6 +2,7 @@
 // (client) ada di ColumnChart.tsx.
 
 import { TriangleAlert } from "lucide-react";
+import type React from "react";
 import { cn } from "@/lib/cn";
 import { formatDayMonth } from "@/lib/format";
 import type { Stats } from "@/lib/stats";
@@ -13,14 +14,17 @@ export function StatTile({
   value,
   note,
   tone,
+  bare = false,
 }: {
   label: string;
   value: string | number;
   note?: string;
   tone?: "late";
+  /** Tanpa bingkai sendiri (dipakai di dalam StatStrip). */
+  bare?: boolean;
 }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-4">
+    <div className={bare ? "bg-surface p-4" : "rounded-card border border-line bg-surface p-4"}>
       <p className="text-sm text-muted">{label}</p>
       <p
         className={cn(
@@ -33,6 +37,22 @@ export function StatTile({
       </p>
       {note && <p className="mt-1 text-xs text-muted">{note}</p>}
     </div>
+  );
+}
+
+/** Deretan stat tile dalam satu bingkai, dipisah garis rambut (bukan kotak-kotak terpisah). */
+export function StatStrip({ className, children, ...props }: React.ComponentProps<"section">) {
+  return (
+    <section
+      className={cn(
+        // Jumlah ganjil di grid 2 kolom: kotak terakhir melebar penuh (tanpa sel kosong abu-abu).
+        "grid gap-px overflow-hidden rounded-card border border-line bg-line [&>:last-child:nth-child(odd)]:col-span-2 lg:[&>:last-child:nth-child(odd)]:col-span-1",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </section>
   );
 }
 

@@ -48,8 +48,11 @@ export default function FollowUpPanel({
   }
 
   return (
-    <section className="rounded-card border-2 border-late bg-surface p-5" aria-labelledby="follow-up-title">
-      <h2 id="follow-up-title" className="text-lg font-bold">
+    <section
+      className="rounded-card border border-late/40 bg-surface p-5 shadow-[0_0_0_4px_var(--late-soft)]"
+      aria-labelledby="follow-up-title"
+    >
+      <h2 id="follow-up-title" className="text-base font-semibold">
         Tindak lanjuti eskalasi
       </h2>
       <p className="text-sm text-muted">
@@ -84,7 +87,7 @@ export default function FollowUpPanel({
                 aria-pressed={promiseHours === hours}
                 onClick={() => setPromiseHours(hours)}
                 className={cn(
-                  "rounded-xl border px-3 py-2 text-sm font-medium",
+                  "rounded-lg border px-3 py-2 text-sm font-medium",
                   promiseHours === hours
                     ? "border-brand bg-brand-soft text-brand"
                     : "border-line hover:bg-surface-2",

@@ -1,3 +1,4 @@
+import { Panel } from "@/components/ui";
 import { ADMIN_EVENT_LABELS } from "@/lib/admin";
 import type { getAdminEvents } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
@@ -11,14 +12,14 @@ export default function AdminLog({
   title?: string;
 }) {
   return (
-    <section className="rounded-card border border-line bg-surface p-5" aria-labelledby="riwayat-admin">
-      <h2 id="riwayat-admin" className="text-lg font-bold">
-        {title}
-      </h2>
+    <Panel title={title} description="Catatan ini tidak bisa diubah atau dihapus.">
       {events.length ? (
-        <ol className="mt-3 space-y-3 border-l-2 border-line pl-4 text-sm">
+        <ol className="space-y-3 text-sm">
           {events.map((e) => (
-            <li key={e.id}>
+            <li
+              key={e.id}
+              className="relative pl-4 before:absolute before:top-1.5 before:left-0 before:size-1.5 before:rounded-full before:bg-line"
+            >
               <span className="font-semibold">{ADMIN_EVENT_LABELS[e.action] ?? e.action}</span>
               <span className="text-muted"> · {e.target}</span>
               <span className="block text-xs text-muted">
@@ -28,9 +29,8 @@ export default function AdminLog({
           ))}
         </ol>
       ) : (
-        <p className="mt-2 text-sm text-muted">Belum ada perubahan tercatat.</p>
+        <p className="text-sm text-muted">Belum ada perubahan tercatat.</p>
       )}
-      <p className="mt-3 text-xs text-muted">Catatan ini tidak bisa diubah atau dihapus.</p>
-    </section>
+    </Panel>
   );
 }

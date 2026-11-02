@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { startNavProgress } from "@/components/layout/NavProgress";
 import { Alert, buttonClass, type ButtonVariant, Field } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useResetOnHide } from "@/lib/hooks";
@@ -126,13 +127,18 @@ export default function ActionPanel({
     }
     // Lanjut ke tugas berikutnya (atau kembali ke antrean) dengan konfirmasi di atas daftar:
     // panel ini bisa hilang setelah aksi karena tahap pindah ke peran lain.
+    startNavProgress();
     router.push(`/kerja${nextResi ? `/${nextResi}` : ""}?selesai=${resi}&aksi=${action}`);
     router.refresh();
   }
 
   return (
-    <section className="rounded-card border-2 border-brand bg-surface p-5" aria-labelledby="action-title">
-      <h2 id="action-title" className="text-lg font-bold">
+    // Satu-satunya panel beraksen di halaman: tepi biru + cincin lembut.
+    <section
+      className="rounded-card border border-brand/40 bg-surface p-5 shadow-[0_0_0_4px_var(--brand-soft)]"
+      aria-labelledby="action-title"
+    >
+      <h2 id="action-title" className="text-base font-semibold">
         Tindak lanjut
       </h2>
       <p className="text-sm text-muted">
@@ -151,6 +157,7 @@ export default function ActionPanel({
             }}
             className={buttonClass(
               ACTIONS[key].variant,
+              "min-h-9 px-3.5",
               action === key && "ring-2 ring-brand ring-offset-2 ring-offset-surface",
             )}
           >
@@ -207,7 +214,7 @@ export default function ActionPanel({
             />
           )}
           {action === "complete" && (
-            <p className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
+            <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm">
               {next ? (
                 <>
                   Setelah ini berkas diteruskan ke <span className="font-semibold">{next}</span>. Anda tidak
@@ -230,7 +237,7 @@ export default function ActionPanel({
                 maxLength={500}
                 aria-invalid={Boolean(errors.publicNote)}
                 aria-describedby={errors.publicNote ? "publicNote-error" : undefined}
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand aria-invalid:border-late"
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-brand aria-invalid:border-late"
               />
               {errors.publicNote && (
                 <p id="publicNote-error" className="mt-1 text-sm text-late">
@@ -248,7 +255,7 @@ export default function ActionPanel({
               name="internalNote"
               rows={2}
               maxLength={1000}
-              className="w-full rounded-xl border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-brand"
             />
           </div>
           {action === "reject" && (

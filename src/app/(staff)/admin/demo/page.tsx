@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Button, DemoClockBanner, Skeleton } from "@/components/ui";
+import { Button, DemoClockBanner, Panel, Skeleton, StaffHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { getClockInfo, requireStaffPage } from "@/lib/dal";
 import { formatDateTime } from "@/lib/format";
@@ -15,7 +15,7 @@ async function DemoPanel() {
   return (
     <>
       <DemoClockBanner offsetMs={clock.offsetMs} />
-      <section className="rounded-card border border-line bg-surface p-5">
+      <Panel title="Jam sistem">
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
             <dt className="text-sm text-muted">Waktu nyata</dt>
@@ -31,10 +31,9 @@ async function DemoPanel() {
         <div className="mt-6">
           <DemoControls hasOffset={clock.offsetMs !== 0} />
         </div>
-      </section>
-      <section className="rounded-card border border-line bg-surface p-5 text-sm">
-        <h2 className="font-bold">Alur demo yang disarankan</h2>
-        <ol className="mt-2 list-inside list-decimal space-y-1 text-muted">
+      </Panel>
+      <Panel title="Alur demo yang disarankan">
+        <ol className="list-inside list-decimal space-y-1 text-sm text-muted">
           <li>
             Warga mengajukan akta kelahiran di <span className="font-mono">/ajukan</span>, lalu menyimpan
             resinya.
@@ -55,23 +54,25 @@ async function DemoPanel() {
             Buka antrean
           </Button>
         </div>
-      </section>
+      </Panel>
     </>
   );
 }
 
 export default function DemoPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mode demo: simulasi waktu</h1>
-        <p className="mt-1 text-muted">
-          Menggeser jam sistem agar keterlambatan & eskalasi bisa diperlihatkan tanpa menunggu berhari-hari.
-          Tanggal permohonan tidak diubah, hanya &ldquo;sekarang&rdquo; yang bergeser. Saat kembali ke waktu
-          nyata, eskalasi hasil simulasi dibatalkan; audit log tetap mencatatnya. Untuk data yang benar-benar
-          bersih, jalankan <span className="font-mono">npm run seed</span>.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <StaffHeader
+        title="Mode demo: simulasi waktu"
+        description={
+          <>
+            Menggeser jam sistem agar keterlambatan & eskalasi bisa diperlihatkan tanpa menunggu berhari-hari.
+            Tanggal permohonan tidak diubah, hanya &ldquo;sekarang&rdquo; yang bergeser. Saat kembali ke waktu
+            nyata, eskalasi hasil simulasi dibatalkan; audit log tetap mencatatnya. Untuk data yang
+            benar-benar bersih, jalankan <span className="font-mono">npm run seed</span>.
+          </>
+        }
+      />
       <Suspense fallback={<Skeleton className="h-64" />}>
         <DemoPanel />
       </Suspense>

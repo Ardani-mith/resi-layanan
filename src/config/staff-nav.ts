@@ -1,6 +1,6 @@
-// Menu area petugas (top bar desktop + tab bar bawah di HP). Tambah/ubah menu cukup di sini;
-// components/layout/StaffShell.tsx hanya merender. `roles` = peran yang melihat menu itu.
-// Bagian "Admin" dirender sebagai satu dropdown agar top bar tetap ringkas.
+// Menu area petugas (sidebar di layar lebar + tab bar bawah di layar kecil). Tambah/ubah menu
+// cukup di sini; components/layout/StaffShell.tsx hanya merender. `roles` = peran yang melihat
+// menu itu; tiap bagian tampil dengan judulnya di sidebar.
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarOff,
@@ -66,9 +66,6 @@ export function navFor(role: Role): NavSection[] {
     items: section.items.filter((item) => item.roles.includes(role)),
   })).filter((section) => section.items.length > 0);
 }
-
-/** Judul bagian menu yang dirender sebagai dropdown (bukan tab). */
-export const ADMIN_SECTION = "Admin";
 
 /**
  * Menu yang aktif untuk `pathname`: href terpanjang yang cocok, supaya /kerja/baru

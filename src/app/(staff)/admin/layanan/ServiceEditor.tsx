@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { Alert, buttonClass, Field } from "@/components/ui";
+import { Alert, buttonClass, Field, Panel } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { AdminService } from "@/lib/dal";
 import { formatWorkHours } from "@/lib/format";
@@ -157,7 +157,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
         />
       </div>
 
-      <fieldset className="rounded-xl border border-line p-4">
+      <fieldset className="rounded-lg border border-line p-4">
         <legend className="px-1 text-sm font-semibold">
           Tahapan <span className="font-normal text-muted">· total target {formatWorkHours(totalSla)}</span>
         </legend>
@@ -171,7 +171,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
           {steps.map((step, i) => (
             <li
               key={i}
-              className="grid gap-2 rounded-xl bg-surface-2 p-3 sm:grid-cols-[2rem_1fr_11rem_7rem_auto]"
+              className="grid gap-2 rounded-lg bg-surface-2 p-3 sm:grid-cols-[2rem_1fr_11rem_7rem_auto]"
             >
               <span className="grid size-8 place-items-center rounded-full bg-surface text-sm font-bold">
                 {i + 1}
@@ -329,10 +329,9 @@ export function NewService() {
     );
   }
   return (
-    <section className="rounded-card border border-line bg-surface p-5" aria-label="Layanan baru">
-      <h2 className="mb-4 text-lg font-bold">Layanan baru</h2>
+    <Panel title="Layanan baru">
       <ServiceForm onDone={() => setOpen(false)} />
-    </section>
+    </Panel>
   );
 }
 

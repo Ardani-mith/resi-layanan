@@ -2,8 +2,10 @@
 
 import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState } from "react";
-import { Alert, buttonClass, Field } from "@/components/ui";
+import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from "react";
+import { startNavProgress } from "@/components/layout/NavProgress";
+import Select from "@/components/Select";
+import { Alert, buttonClass, Field, FieldMessage, inputClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ActiveService } from "@/lib/dal";
 import { formatDate, formatWorkHours } from "@/lib/format";
@@ -93,16 +95,107 @@ function KtpPreview({ person, className }: { person: Person; className?: string 
   );
 }
 
+/** "KEPERCAYAAN TERHADAP TUHAN YME" → "Kepercayaan terhadap Tuhan YME" (label pilihan). */
+const choiceLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/^\p{L}/u, (c) => c.toUpperCase())
+    .replace("tuhan yme", "Tuhan YME");
+
+const digits = (value: string) => value.replace(/\D/g, "").slice(0, 3);
+const pad3 = (value: string) => (value ? value.padStart(3, "0") : "");
+
+/**
+ * RT/RW sebagai dua kotak angka (warga tidak perlu tahu format "003/005"): maks. 3 digit,
+ * pindah otomatis ke RW setelah 3 digit, nol di depan ditambahkan saat kotak ditinggalkan,
+ * Backspace di RW yang kosong kembali ke RT. Nilai gabungan dikirim lewat input tersembunyi
+ * `rtRw`, dan dilaporkan ke `onValue` untuk pratinjau KTP.
+ */
+function RtRwField({ error, onValue }: { error?: string | null; onValue: (value: string) => void }) {
+  const id = useId();
+  const messageId = `${id}-message`;
+  const [rt, setRt] = useState("");
+  const [rw, setRw] = useState("");
+  const rwInput = useRef<HTMLInputElement>(null);
+  const rtInput = useRef<HTMLInputElement>(null);
+  const value = rt || rw ? `${rt}/${rw}` : "";
+
+  const update = (nextRt: string, nextRw: string) => {
+    setRt(nextRt);
+    setRw(nextRw);
+    onValue(nextRt || nextRw ? `${nextRt}/${nextRw}` : "");
+  };
+  const box = (label: "RT" | "RW") =>
+    cn(inputClass, "pl-11 font-mono tracking-wider tabular-nums", label === "RW" && "pl-12");
+
+  return (
+    <fieldset aria-describedby={error ? messageId : undefined}>
+      <legend className="mb-1.5 text-sm font-medium">RT/RW</legend>
+      <input type="hidden" name="rtRw" value={value} />
+      <div className="flex items-center gap-2">
+        <label className="relative flex-1">
+          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs font-semibold text-muted">
+            RT
+          </span>
+          <input
+            ref={rtInput}
+            value={rt}
+            onChange={(e) => {
+              const next = digits(e.target.value);
+              update(next, rw);
+              if (next.length === 3) rwInput.current?.focus();
+            }}
+            onBlur={() => update(pad3(rt), rw)}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="003"
+            aria-label="RT"
+            aria-invalid={Boolean(error)}
+            className={box("RT")}
+          />
+        </label>
+        <span aria-hidden className="text-lg text-muted">
+          /
+        </span>
+        <label className="relative flex-1">
+          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs font-semibold text-muted">
+            RW
+          </span>
+          <input
+            ref={rwInput}
+            value={rw}
+            onChange={(e) => update(rt, digits(e.target.value))}
+            onBlur={() => update(rt, pad3(rw))}
+            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Backspace" && !rw) rtInput.current?.focus();
+            }}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="005"
+            aria-label="RW"
+            aria-invalid={Boolean(error)}
+            className={box("RW")}
+          />
+        </label>
+      </div>
+      <FieldMessage id={messageId} error={error} />
+    </fieldset>
+  );
+}
+
 /** Isian khusus KTP-el (dicetak di kartu). */
 function KtpFields({
   person,
   errors,
   marriedOnly,
+  onValue,
 }: {
   person: Person;
   errors: FormErrors;
   /** Pemohon di bawah 17 tahun yang sudah menjawab "sudah/pernah kawin". */
   marriedOnly: boolean;
+  /** Isian kustom (dropdown, RT/RW) tidak memicu onChange form, jadi dilaporkan lewat sini. */
+  onValue: (name: keyof Person, value: string) => void;
 }) {
   const info = nikInfo(person.nik ?? "");
   const tooYoung = info && person.marital && !ktpAgeAllowed(info.birthDate, person.marital);
@@ -110,23 +203,13 @@ function KtpFields({
   return (
     <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
       <Field label="Tempat lahir" name="birthPlace" required error={err("birthPlace")} />
-      <Field
-        as="select"
+      <Select
         label="Golongan darah"
         name="bloodType"
-        defaultValue=""
-        required
+        options={BLOOD_TYPES.map((b) => ({ value: b, label: b === "-" ? "Tidak tahu" : b }))}
         error={err("bloodType")}
-      >
-        <option value="" disabled>
-          Pilih
-        </option>
-        {BLOOD_TYPES.map((b) => (
-          <option key={b} value={b}>
-            {b === "-" ? "Tidak tahu" : b}
-          </option>
-        ))}
-      </Field>
+        onValueChange={(v) => onValue("bloodType", v)}
+      />
       <Field
         className="sm:col-span-2"
         label="Alamat"
@@ -136,59 +219,42 @@ function KtpFields({
         required
         error={err("address")}
       />
-      <Field
-        label="RT/RW"
-        name="rtRw"
-        placeholder="003/005"
-        inputMode="numeric"
-        required
-        error={err("rtRw")}
-      />
+      <RtRwField error={err("rtRw")} onValue={(v) => onValue("rtRw", v)} />
       <Field label="Kelurahan/Desa" name="village" required error={err("village")} />
       <Field label="Kecamatan" name="district" required error={err("district")} />
       <Field
-        as="select"
-        label="Agama/Kepercayaan"
-        name="religion"
-        defaultValue=""
+        label="Pekerjaan"
+        name="job"
+        list="ktp-jobs"
+        hint="Ketik, lalu pilih dari saran."
         required
-        error={err("religion")}
-      >
-        <option value="" disabled>
-          Pilih
-        </option>
-        {RELIGIONS.map((r) => (
-          <option key={r} value={r}>
-            {r.charAt(0) + r.slice(1).toLowerCase()}
-          </option>
-        ))}
-      </Field>
-      <Field
-        as="select"
-        label="Status perkawinan"
-        name="marital"
-        defaultValue=""
-        required
-        error={
-          err("marital") ??
-          (tooYoung ? `Menurut NIK, pemohon belum ${KTP_MIN_AGE} tahun dan belum kawin.` : null)
-        }
-      >
-        <option value="" disabled>
-          Pilih
-        </option>
-        {MARITAL_STATUSES.filter((m) => !marriedOnly || m !== "BELUM KAWIN").map((m) => (
-          <option key={m} value={m}>
-            {m.charAt(0) + m.slice(1).toLowerCase()}
-          </option>
-        ))}
-      </Field>
-      <Field label="Pekerjaan" name="job" list="ktp-jobs" required error={err("job")} />
+        error={err("job")}
+      />
       <datalist id="ktp-jobs">
         {JOBS.map((j) => (
           <option key={j} value={j} />
         ))}
       </datalist>
+      <Select
+        label="Agama/Kepercayaan"
+        name="religion"
+        options={RELIGIONS.map((r) => ({ value: r, label: choiceLabel(r) }))}
+        error={err("religion")}
+        onValueChange={(v) => onValue("religion", v)}
+      />
+      <Select
+        label="Status perkawinan"
+        name="marital"
+        options={MARITAL_STATUSES.filter((m) => !marriedOnly || m !== "BELUM KAWIN").map((m) => ({
+          value: m,
+          label: choiceLabel(m),
+        }))}
+        onValueChange={(v) => onValue("marital", v)}
+        error={
+          err("marital") ??
+          (tooYoung ? `Menurut NIK, pemohon belum ${KTP_MIN_AGE} tahun dan belum kawin.` : null)
+        }
+      />
     </div>
   );
 }
@@ -363,7 +429,11 @@ function ApplyFormBody({
             ? "Jawab pertanyaan status perkawinan di bawah."
             : "Isi NIK pemohon dulu.";
     }
-    if (!isLoket && !form.get("consent")) local.consent = "Centang pernyataan ini untuk melanjutkan.";
+    if (!form.get("consent")) {
+      local.consent = isLoket
+        ? "Konfirmasi pernyataan pemohon untuk melanjutkan."
+        : "Centang pernyataan ini untuk melanjutkan.";
+    }
     if (Object.keys(local).length) {
       setErrors(local);
       return;
@@ -426,6 +496,7 @@ function ApplyFormBody({
     }
     // pending tetap true sampai halaman sukses terbuka, mencegah pengajuan ganda.
     onSubmitted();
+    startNavProgress();
     router.push(`/ajukan/sukses?resi=${res.data.resi}${isLoket ? "&loket=1" : ""}`, {
       transitionTypes: ["nav-forward"],
     });
@@ -595,7 +666,14 @@ function ApplyFormBody({
                 }
                 error={errors["applicant.phone"]}
               />
-              {showKtp && <KtpFields person={person} errors={errors} marriedOnly={married === true} />}
+              {showKtp && (
+                <KtpFields
+                  person={person}
+                  errors={errors}
+                  marriedOnly={married === true}
+                  onValue={(name, value) => setPerson((p) => ({ ...p, [name]: value }))}
+                />
+              )}
               <Field
                 className="sm:col-span-2"
                 label="Email (opsional)"
@@ -608,27 +686,26 @@ function ApplyFormBody({
             </div>
           </fieldset>
 
-          {!isLoket && (
-            <div>
-              <label className="flex cursor-pointer gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  name="consent"
-                  className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
-                />
-                <span>
-                  Saya menyatakan data dan dokumen yang saya ajukan benar dan sah, serta bersedia dihubungi
-                  petugas. Saya memahami bahwa memalsukan data dalam permohonan dokumen kependudukan dapat
-                  dipidana{" "}
-                  <span className="text-muted">
-                    (Pasal 93 UU No. 23 Tahun 2006 tentang Administrasi Kependudukan)
-                  </span>
-                  .
+          <div>
+            <label className="flex cursor-pointer gap-3 text-sm">
+              <input
+                type="checkbox"
+                name="consent"
+                className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
+              />
+              {/* Loket: petugas mencentang setelah pemohon menyatakannya secara lisan di depan loket. */}
+              <span>
+                {isLoket
+                  ? "Pemohon telah menyatakan data dan dokumen yang diajukan benar dan sah, serta bersedia dihubungi petugas. Pemohon sudah diberi tahu bahwa memalsukan data dalam permohonan dokumen kependudukan dapat dipidana"
+                  : "Saya menyatakan data dan dokumen yang saya ajukan benar dan sah, serta bersedia dihubungi petugas. Saya memahami bahwa memalsukan data dalam permohonan dokumen kependudukan dapat dipidana"}{" "}
+                <span className="text-muted">
+                  (Pasal 93 UU No. 23 Tahun 2006 tentang Administrasi Kependudukan)
                 </span>
-              </label>
-              {errors.consent && <p className="mt-1 text-sm text-late">{errors.consent}</p>}
-            </div>
-          )}
+                .
+              </span>
+            </label>
+            {errors.consent && <p className="mt-1 text-sm text-late">{errors.consent}</p>}
+          </div>
         </div>
       </div>
 

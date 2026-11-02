@@ -5,7 +5,8 @@ import { type ReactNode, Suspense } from "react";
 import { ChannelBadge, StatusBadge } from "@/components/application/Badges";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import Timeline from "@/components/application/Timeline";
-import { Alert, Skeleton } from "@/components/ui";
+import { DetailSkeleton } from "@/components/skeletons";
+import { Alert, Disclosure, Panel } from "@/components/ui";
 import { firstParam, type ParamsOf, type SearchParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { getQueue, getStaffApplication, requireStaffPage, type StaffApplication } from "@/lib/dal";
@@ -19,21 +20,41 @@ import FollowUpPanel from "./FollowUpPanel";
 
 export const metadata = { title: "Detail permohonan" };
 
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="rounded-card border border-line bg-surface p-5">
-      <h2 className="mb-3 text-lg font-bold">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className="font-medium">{children}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium">{children}</dd>
     </div>
+  );
+}
+
+const CALLOUT_TONE = {
+  late: "border-l-late",
+  pause: "border-l-pause",
+  muted: "border-l-line",
+};
+
+/** Catatan penting di atas detail: kotak putih bertepi tipis + aksen warna di kiri. */
+function Callout({
+  tone,
+  label,
+  children,
+}: {
+  tone: keyof typeof CALLOUT_TONE;
+  label?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-label={label}
+      className={cn(
+        "rounded-card border border-l-[3px] border-line bg-surface px-4 py-3 text-sm",
+        CALLOUT_TONE[tone],
+      )}
+    >
+      {children}
+    </section>
   );
 }
 
@@ -58,13 +79,8 @@ function ChannelOrigin({ app }: { app: StaffApplication }) {
         "Tanpa OTP: nomor HP dikonfirmasi langsung ke warga",
       ];
   return (
-    <div
-      className={cn(
-        "rounded-xl border-l-4 px-3 py-2.5",
-        online ? "border-brand bg-brand-soft/60" : "border-warn bg-warn-soft/60",
-      )}
-    >
-      <ChannelBadge channel={app.channel} long className="bg-surface" />
+    <div className="rounded-lg border border-line bg-surface-2/60 px-3 py-2.5">
+      <ChannelBadge channel={app.channel} long />
       <ul className="mt-2 space-y-1 text-sm font-normal">
         {points.map((p) => (
           <li key={p} className="flex gap-1.5">
@@ -105,26 +121,21 @@ function KtpData({ app }: { app: StaffApplication }) {
     ["Kewarganegaraan", "WNI"],
   ];
   return (
-    <section className="rounded-card border border-line bg-surface p-5">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-bold">Isi KTP-el</h2>
-        <p className="text-xs text-muted">
-          Yang akan dicetak di kartu · cocokkan dengan dokumen asli · NIK tersamar
-        </p>
-      </div>
-      <table className="w-full overflow-hidden rounded-xl border border-line text-sm">
-        <tbody className="divide-y divide-line">
+    <Panel
+      title="Isi KTP-el"
+      description="Yang akan dicetak di kartu · cocokkan dengan dokumen asli · NIK tersamar"
+      flush
+    >
+      <table className="w-full text-sm">
+        <tbody>
           {rows.map(([label, value]) => (
-            <tr key={label} className="even:bg-surface-2/60">
-              <th
-                scope="row"
-                className="w-40 px-3 py-1.5 text-left align-top font-mono text-xs font-medium tracking-wide text-muted uppercase"
-              >
+            <tr key={label} className="border-t border-line first:border-t-0">
+              <th scope="row" className="w-40 px-5 py-2 text-left align-top text-xs font-medium text-muted">
                 {label}
               </th>
               <td
                 className={cn(
-                  "px-3 py-1.5 font-semibold",
+                  "px-5 py-2 font-medium",
                   label === "NIK" && "font-mono tracking-wide whitespace-nowrap",
                 )}
               >
@@ -134,7 +145,37 @@ function KtpData({ app }: { app: StaffApplication }) {
           ))}
         </tbody>
       </table>
-    </section>
+    </Panel>
+  );
+}
+
+/** Jumlah catatan audit log terbaru yang langsung terlihat. */
+const AUDIT_VISIBLE = 4;
+
+function AuditList({ events }: { events: StaffApplication["events"] }) {
+  return (
+    <ol className="space-y-3 text-sm">
+      {events.map((e, i) => (
+        <li
+          key={`${e.action}-${String(e.at)}-${i}`}
+          className="relative pl-4 before:absolute before:top-1.5 before:left-0 before:size-1.5 before:rounded-full before:bg-line"
+        >
+          <span className="block font-medium">{EVENT_LABELS[e.action] ?? e.action}</span>
+          <span className="block text-xs text-muted">
+            {e.actorName ?? "—"}
+            {e.actorRole && e.actorRole !== "sistem" && e.actorRole !== "warga"
+              ? ` (${ROLE_LABELS[e.actorRole]})`
+              : ""}{" "}
+            · {formatDateTime(e.at)}
+          </span>
+          {typeof e.payload?.publicNote === "string" && (
+            <span className="mt-0.5 block text-xs text-muted italic">
+              &ldquo;{e.payload.publicNote}&rdquo;
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -172,28 +213,29 @@ async function StaffDetail({ params, searchParams }: Props) {
       <Alert tone="success" className="lg:hidden">
         {isValidResi(doneResi) && doneAction ? `${doneResi}: ${doneAction}.` : null}
       </Alert>
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-5">
         <div className="min-w-0">
-          <Link
-            href="/kerja"
-            className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline lg:hidden"
-          >
-            <ArrowLeft aria-hidden className="size-4" /> Antrean
-          </Link>
-          <p className="font-mono text-sm tracking-wider text-muted">{app.resi}</p>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{app.serviceName}</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+          {/* Jejak: kembali ke antrean (di HP daftar antrean tersembunyi). */}
+          <p className="mb-1.5 flex items-center gap-1.5 text-xs text-muted">
+            <Link href="/kerja" className="inline-flex items-center gap-1 hover:text-text">
+              <ArrowLeft aria-hidden className="size-3.5 lg:hidden" /> Antrean
+            </Link>
+            <span aria-hidden>/</span>
+            <span className="font-mono">{app.resi}</span>
+          </p>
+          <h1 className="text-xl font-semibold tracking-[-0.02em]">{app.serviceName}</h1>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
             <ChannelBadge channel={app.channel} long />
             <span>
               {app.applicant.name} · {formatDateTime(app.createdAt)}
             </span>
           </p>
         </div>
-        <StatusBadge status={app.status} late={app.isLate} size="lg" />
+        <StatusBadge status={app.status} late={app.isLate} />
       </header>
 
       {/* Container query: panel detail sempit (di samping antrean) atau lebar (HP/tablet). */}
-      <div className="grid gap-5 @4xl:grid-cols-[1fr_20rem] @4xl:items-start">
+      <div className="grid gap-5 @4xl:grid-cols-[1fr_19rem] @4xl:items-start">
         <div className="min-w-0 space-y-5">
           {user.role === "pimpinan" && awaiting && (
             <FollowUpPanel
@@ -203,10 +245,7 @@ async function StaffDetail({ params, searchParams }: Props) {
             />
           )}
           {followUp && (
-            <section
-              aria-label="Tindak lanjut pimpinan"
-              className="rounded-card border-l-4 border-late bg-late-soft/60 px-4 py-3 text-sm"
-            >
+            <Callout tone="late" label="Tindak lanjut pimpinan">
               <p className="font-semibold">
                 Tindak lanjut {followUp.target} · {followUp.byName}
               </p>
@@ -224,14 +263,14 @@ async function StaffDetail({ params, searchParams }: Props) {
                   <span className="font-semibold">Janji selesai:</span> {formatDateTime(followUp.promisedAt)}
                 </p>
               )}
-            </section>
+            </Callout>
           )}
           {app.status === "perlu_perbaikan" && app.fixDeadline && (
-            <p className="rounded-card bg-pause-soft px-4 py-3 text-sm">
+            <Callout tone="pause">
               Menunggu warga melengkapi berkas, paling lambat{" "}
               <span className="font-semibold">{formatDateTime(app.fixDeadline)}</span>. Lewat dari itu
               permohonan dibatalkan otomatis.
-            </p>
+            </Callout>
           )}
           {app.canAct ? (
             <ActionPanel
@@ -247,12 +286,7 @@ async function StaffDetail({ params, searchParams }: Props) {
             />
           ) : (
             isOpen && (
-              <p
-                className={cn(
-                  "rounded-card px-4 py-3 text-sm",
-                  app.isLate ? "border-l-4 border-late bg-late-soft" : "bg-surface-2 text-muted",
-                )}
-              >
+              <Callout tone={app.isLate ? "late" : "muted"}>
                 Tahap &ldquo;{current?.name}&rdquo; ditangani {ROLE_LABELS[current?.role] ?? "peran lain"}.
                 Anda hanya bisa melihat.
                 {app.isLate && (
@@ -265,26 +299,27 @@ async function StaffDetail({ params, searchParams }: Props) {
                       : "; tindak lanjuti dengan menghubungi petugasnya."}
                   </span>
                 )}
-              </p>
+              </Callout>
             )
           )}
 
           {app.status === "ditolak" && (
-            <p className="rounded-card border-l-4 border-late bg-late-soft p-4 text-sm">
+            <Callout tone="late">
               <span className="font-semibold">Ditolak:</span> {app.rejectionReason}
-            </p>
+            </Callout>
           )}
 
           <KtpData app={app} />
 
-          <Card title="Perjalanan permohonan">
+          <Panel title="Perjalanan permohonan">
             <Timeline steps={app.steps} serverNow={app.now} offsetMs={app.offsetMs} staff />
-          </Card>
+          </Panel>
         </div>
 
-        <aside className="min-w-0 space-y-5">
+        {/* Kolom ringkas yang menempel saat timeline digulir; isi sekunder dilipat. */}
+        <aside className="min-w-0 space-y-4 @4xl:sticky @4xl:top-6">
           <ReceiptCard {...receipt} title="Bukti resi untuk warga" />
-          <Card title="Pemohon">
+          <Panel title="Pemohon">
             <dl className="grid gap-3">
               <Detail label="Nama">{app.applicant.name}</Detail>
               {app.applicant.nikMasked && (
@@ -297,29 +332,33 @@ async function StaffDetail({ params, searchParams }: Props) {
                   {app.applicant.phone}
                 </a>
               </Detail>
-              {app.applicant.email && <Detail label="Email">{app.applicant.email}</Detail>}
-              <Detail label="Asal data">
-                <ChannelOrigin app={app} />
-              </Detail>
-              <Detail label="Persyaratan dinyatakan lengkap">
-                {app.requirementsChecked.length ? (
-                  <ul className="mt-1 list-inside list-disc text-sm font-normal">
-                    {app.requirementsChecked.map((r) => (
-                      <li key={r}>{r}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  "—"
-                )}
-              </Detail>
             </dl>
-          </Card>
+            <Disclosure summary="Lihat detail" className="mt-3 border-t border-line pt-3">
+              <dl className="grid gap-3">
+                {app.applicant.email && <Detail label="Email">{app.applicant.email}</Detail>}
+                <Detail label="Asal data">
+                  <ChannelOrigin app={app} />
+                </Detail>
+                <Detail label="Persyaratan dinyatakan lengkap">
+                  {app.requirementsChecked.length ? (
+                    <ul className="mt-1 list-inside list-disc text-sm font-normal">
+                      {app.requirementsChecked.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "—"
+                  )}
+                </Detail>
+              </dl>
+            </Disclosure>
+          </Panel>
 
           {app.escalations.length > 0 && (
-            <Card title="Eskalasi">
-              <ul className="space-y-2 text-sm">
+            <Panel title="Eskalasi" flush>
+              <ul className="divide-y divide-line text-sm">
                 {app.escalations.map((e) => (
-                  <li key={`${e.stepKey}-${e.level}`} className="rounded-xl bg-surface-2 px-3 py-2">
+                  <li key={`${e.stepKey}-${e.level}`} className="px-5 py-3">
                     <span className="font-semibold">
                       Level {e.level} → {e.target}
                     </span>
@@ -337,31 +376,21 @@ async function StaffDetail({ params, searchParams }: Props) {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </Panel>
           )}
 
-          <Card title="Audit log">
-            <ol className="space-y-3 text-sm">
-              {app.events.map((e, i) => (
-                <li key={i} className="border-l-2 border-line pl-3">
-                  <span className="block font-medium">{EVENT_LABELS[e.action] ?? e.action}</span>
-                  <span className="block text-muted">
-                    {e.actorName ?? "—"}
-                    {e.actorRole && e.actorRole !== "sistem" && e.actorRole !== "warga"
-                      ? ` (${ROLE_LABELS[e.actorRole]})`
-                      : ""}{" "}
-                    · {formatDateTime(e.at)}
-                  </span>
-                  {typeof e.payload?.publicNote === "string" && (
-                    <span className="mt-0.5 block text-muted italic">
-                      &ldquo;{e.payload.publicNote}&rdquo;
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-            <p className="mt-3 text-xs text-muted">Catatan ini tidak bisa diubah atau dihapus.</p>
-          </Card>
+          <Panel title="Audit log" description="Tidak bisa diubah atau dihapus.">
+            {/* Ringkas: catatan terbaru saja; yang lebih lama dilipat di atasnya. */}
+            {app.events.length > AUDIT_VISIBLE && (
+              <Disclosure
+                summary={`Tampilkan ${app.events.length - AUDIT_VISIBLE} catatan sebelumnya`}
+                className="mb-3"
+              >
+                <AuditList events={app.events.slice(0, -AUDIT_VISIBLE)} />
+              </Disclosure>
+            )}
+            <AuditList events={app.events.slice(-AUDIT_VISIBLE)} />
+          </Panel>
         </aside>
       </div>
     </>
@@ -371,8 +400,8 @@ async function StaffDetail({ params, searchParams }: Props) {
 export default function StaffDetailPage({ params, searchParams }: Props) {
   return (
     // data-detail: penanda untuk layout dua panel (di HP, daftar antrean disembunyikan).
-    <div data-detail className="@container space-y-5 p-4 sm:p-6">
-      <Suspense fallback={<Skeleton className="h-96" />}>
+    <div data-detail className="@container space-y-5 p-4 sm:p-6 lg:p-8">
+      <Suspense fallback={<DetailSkeleton />}>
         <StaffDetail params={params} searchParams={searchParams} />
       </Suspense>
     </div>

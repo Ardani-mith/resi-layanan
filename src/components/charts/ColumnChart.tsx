@@ -41,10 +41,10 @@ export default function ColumnChart({
   return (
     <figure className="rounded-card border border-line bg-surface p-5" aria-labelledby={`${id}-title`}>
       <figcaption>
-        <h2 id={`${id}-title`} className="text-lg font-bold">
+        <h2 id={`${id}-title`} className="text-base font-semibold">
           {title}
         </h2>
-        {description && <p className="text-sm text-muted">{description}</p>}
+        {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
       </figcaption>
 
       <div className="relative mt-6 h-48 pl-10">

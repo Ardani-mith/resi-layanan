@@ -9,11 +9,11 @@ export default function QueueEmptyPage() {
       <div className="max-w-xs">
         <span
           aria-hidden
-          className="mx-auto grid size-14 place-items-center rounded-2xl bg-surface text-muted"
+          className="mx-auto grid size-12 place-items-center rounded-lg border border-line bg-surface text-muted"
         >
-          <Inbox className="size-7" />
+          <Inbox className="size-5" />
         </span>
-        <h1 className="mt-4 text-lg font-bold">Pilih permohonan</h1>
+        <h1 className="mt-4 text-base font-semibold">Pilih permohonan</h1>
         <p className="mt-1 text-sm text-muted">
           Detail, tindak lanjut, dan timeline tampil di sini. Paling mendesak ada di urutan teratas antrean.
         </p>
