@@ -212,6 +212,36 @@ assistantQuotaSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const AssistantQuota = defineModel("AssistantQuota", assistantQuotaSchema);
 
+// --- Langganan notifikasi push (Web Push) -------------------------------------------
+
+export interface PushSubscriberData {
+  _id: Types.ObjectId;
+  resi: string;
+  /** Alamat push dari browser (unik per perangkat/browser). */
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  createdAt: Date;
+  /** Dihapus otomatis setelah ini (permohonan biasanya selesai jauh sebelumnya). */
+  expiresAt: Date;
+}
+
+const pushSubscriberSchema = new Schema<PushSubscriberData>(
+  {
+    resi: { type: String, required: true },
+    endpoint: { type: String, required: true },
+    keys: {
+      p256dh: { type: String, required: true },
+      auth: { type: String, required: true },
+    },
+    expiresAt: { type: Date, required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+pushSubscriberSchema.index({ resi: 1, endpoint: 1 }, { unique: true });
+pushSubscriberSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export const PushSubscriber = defineModel("PushSubscriber", pushSubscriberSchema);
+
 // --- Layanan ------------------------------------------------------------------------
 
 const stepTemplateSchema = new Schema<StepTemplate>(

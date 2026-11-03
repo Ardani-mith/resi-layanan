@@ -60,7 +60,7 @@ npm run dev                  # http://localhost:3000
 
 ## Akun & resi demo
 
-Kata sandi semua akun = `DEMO_PASSWORD`.
+Kata sandi semua akun = `DEMO_PASSWORD` untuk tes vercel "dani1234".
 
 | Peran | Email |
 |---|---|

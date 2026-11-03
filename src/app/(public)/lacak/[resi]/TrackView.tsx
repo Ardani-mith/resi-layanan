@@ -38,6 +38,7 @@ import type { Receipt } from "@/lib/qr";
 import type { QuestionId } from "@/lib/validators";
 import { OPEN_STATUSES, URGENCY_MAX_DAYS, URGENCY_REASONS } from "@/lib/workflow";
 import Assistant from "./Assistant";
+import PushToggle from "./PushToggle";
 
 const REFRESH_MS = 20_000;
 
@@ -290,6 +291,7 @@ export default function TrackView({
   receipt,
   questions,
   askLimit,
+  pushKey,
 }: {
   data: Tracking;
   serverNow: string;
@@ -299,6 +301,8 @@ export default function TrackView({
   questions: { id: QuestionId; label: string }[];
   /** Tanya bebas Asisten Pantas: null = tidak tersedia (AI belum diatur), selain itu batas per hari. */
   askLimit: number | null;
+  /** Kunci publik VAPID untuk "Kabari saya"; null = notifikasi push tidak diatur. */
+  pushKey: string | null;
 }) {
   const router = useRouter();
   const [last4, setLast4] = useState("");
@@ -670,20 +674,23 @@ export default function TrackView({
           </div>
           {/* HP: status langsung di bawah judul, tombol kembali sesudahnya. */}
           <div className="flex flex-col-reverse items-start gap-3 sm:flex-col sm:items-end">
-            <Link
-              href="/lacak"
-              transitionTypes={["nav-back"]}
-              className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pr-3.5 pl-2.5 text-sm text-hero-muted backdrop-blur transition-colors hover:border-hero-line-strong hover:text-hero-fg"
-            >
-              <ArrowLeft aria-hidden className="size-4" />
-              Lacak resi lain
-            </Link>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              {isOpen && pushKey && <PushToggle resi={data.resi} publicKey={pushKey} />}
+              <Link
+                href="/lacak"
+                transitionTypes={["nav-back"]}
+                className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pr-3.5 pl-2.5 text-sm text-hero-muted backdrop-blur transition-colors hover:border-hero-line-strong hover:text-hero-fg"
+              >
+                <ArrowLeft aria-hidden className="size-4" />
+                Lacak resi lain
+              </Link>
+            </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
               {isOpen && (
                 <span className="inline-flex items-center gap-2 text-xs text-hero-muted">
                   <span
                     aria-hidden
-                    className="size-1.5 rounded-full bg-[#4ade80] border-hero-line motion-safe:animate-pulse"
+                    className="size-1.5 rounded-full border-hero-line bg-[#4ade80] motion-safe:animate-pulse"
                   />
                   Diperbarui otomatis
                 </span>

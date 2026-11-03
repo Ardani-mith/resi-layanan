@@ -132,6 +132,18 @@ export const assistantSchema = z.object({
     .optional(),
 });
 
+/** Langganan notifikasi push dari halaman lacak (bentuk PushSubscription.toJSON() browser). */
+export const pushSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("subscribe"),
+    subscription: z.object({
+      endpoint: z.url({ protocol: /^https$/ }).max(1000),
+      keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+    }),
+  }),
+  z.object({ action: z.literal("unsubscribe"), endpoint: z.string().max(1000) }),
+]);
+
 /** Tindak lanjut eskalasi oleh pimpinan. */
 export const followUpSchema = z.object({
   publicNote: trimmed(500).min(10, "Tulis tanggapan untuk warga, minimal 10 huruf."),

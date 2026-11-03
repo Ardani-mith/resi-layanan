@@ -1,8 +1,10 @@
 // Notifikasi email ke warga saat permohonannya berubah. Dikirim lewat Resend (HTTP API)
 // bila RESEND_API_KEY & EMAIL_FROM diisi; tanpa itu hanya dicatat di log server, jadi
-// demo tetap jalan. Hanya untuk pemohon yang mengisi email (opsional di form).
+// demo tetap jalan. Hanya untuk pemohon yang mengisi email (opsional di form). Ditambah
+// notifikasi push ke perangkat yang berlangganan resi (lib/push.ts), termasuk tiap tahap selesai.
 
 import { formatDateTime } from "./format.ts";
+import { type PushMessage, sendPush } from "./push.ts";
 import { type Action, type ApplicationData, followUpFor, STATUS } from "./workflow.ts";
 
 export type NotifyKind = "created" | "request_fix" | "ready" | "completed" | "rejected" | "follow_up";
@@ -137,12 +139,55 @@ export async function sendEmail(message: EmailMessage): Promise<boolean> {
 }
 
 /** Beri tau pemohon tentang `action` yang baru terjadi (dipanggil lewat after() di route). */
+/**
+ * Isi notifikasi push setelah sebuah aksi (layar kunci: tanpa nama/catatan, cukup status), atau
+ * null bila tidak perlu. Lebih sering dari email: tiap tahap yang selesai juga dikabarkan.
+ */
+export function pushMessage(
+  action: Action | "created" | "follow_up",
+  app: Pick<ApplicationData, "resi" | "serviceName" | "status" | "steps" | "currentStep">,
+  origin: string,
+): PushMessage | null {
+  const url = `${origin}/lacak/${app.resi}`;
+  const svc = `${app.serviceName} (${app.resi})`;
+  const step = app.steps[app.currentStep]?.name;
+  const done = app.steps[app.currentStep - 1]?.name;
+  const make = (title: string, body: string) => ({ title, body, url });
+  switch (action) {
+    case "arrive":
+      return make(
+        "Kedatangan Anda tercatat",
+        `${svc}: verifikasi berkas dimulai. Pantau tahapnya di Pantas.`,
+      );
+    case "complete":
+      if (app.status === STATUS.SIAP_DIAMBIL)
+        return make("Dokumen siap diambil", `${svc} sudah bisa diambil di lokasi layanan pada jam kerja.`);
+      if (app.status === STATUS.SELESAI)
+        return make("Permohonan selesai", `${svc} selesai. Beri penilaian untuk layanan kami.`);
+      return make(`Tahap ${done ?? "sebelumnya"} selesai`, `${svc} lanjut ke tahap ${step ?? "berikutnya"}.`);
+    case "request_fix":
+      return make(
+        "Berkas perlu dilengkapi",
+        `${svc}: buka untuk melihat catatan petugas dan batas waktunya.`,
+      );
+    case "resume":
+      return make("Proses dilanjutkan", `${svc}: berkas lengkap, hitung mundur berjalan lagi.`);
+    case "reject":
+      return make("Permohonan ditolak", `${svc}: buka untuk melihat alasannya dan langkah selanjutnya.`);
+    case "follow_up":
+      return make("Pimpinan menanggapi keterlambatan", `${svc}: buka untuk melihat tanggapannya.`);
+    default:
+      return null;
+  }
+}
+
 export async function notifyApplicant(
   action: Action | "created" | "follow_up",
-  app: Parameters<typeof applicantEmail>[1] & Pick<ApplicationData, "status">,
+  app: Parameters<typeof applicantEmail>[1],
   origin: string,
 ): Promise<void> {
   const kind = notificationFor(action, app);
   const message = kind && applicantEmail(kind, app, origin);
-  if (message) await sendEmail(message);
+  const push = pushMessage(action, app, origin);
+  await Promise.all([message && sendEmail(message), push && sendPush(app.resi, push)]);
 }

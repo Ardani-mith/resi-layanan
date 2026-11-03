@@ -6,6 +6,7 @@ import { ASSISTANT_DAILY_LIMIT } from "@/lib/applications";
 import { questionsFor } from "@/lib/assist";
 import { cn } from "@/lib/cn";
 import { getClockInfo, getTracking } from "@/lib/dal";
+import { pushPublicKey } from "@/lib/push";
 import { receiptFor } from "@/lib/qr";
 import { isValidResi, normalizeResi } from "@/lib/resi";
 import TrackView from "./TrackView";
@@ -69,6 +70,7 @@ async function Tracking({ params }: ParamsOf<{ resi: string }>) {
       receipt={receipt}
       questions={questionsFor(data)}
       askLimit={process.env.DEEPSEEK_API_KEY ? ASSISTANT_DAILY_LIMIT : null}
+      pushKey={pushPublicKey()}
     />
   );
 }

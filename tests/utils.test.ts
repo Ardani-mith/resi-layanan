@@ -20,7 +20,7 @@ import {
 } from "@/lib/assist";
 import { cn } from "@/lib/cn";
 import { signSession, verifySession } from "@/lib/jwt";
-import { applicantEmail, notificationFor, sendEmail } from "@/lib/notify";
+import { applicantEmail, notificationFor, pushMessage, sendEmail } from "@/lib/notify";
 import { decryptNik, encryptNik, hashNik, protectNik } from "@/lib/pii";
 import { emptyOffice, maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
 import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
@@ -264,6 +264,29 @@ describe("perlindungan NIK", () => {
     const stored = protectNik(nik);
     expect(stored.nikMasked).toBe("3374 07•• •••• 0002");
     expect(JSON.stringify(stored)).not.toContain(nik);
+  });
+});
+
+describe("notifikasi push", () => {
+  const app = {
+    resi: "RL-HJ26-AKTA",
+    serviceName: "Akta Kelahiran",
+    status: "diproses" as const,
+    currentStep: 1,
+    steps: [{ name: "Verifikasi berkas" }, { name: "Entri & validasi data", publicNote: "Nama ibu beda" }],
+  } as unknown as Parameters<typeof pushMessage>[1];
+
+  it("tiap tahap selesai dikabarkan; isi tanpa nama/catatan (terbaca di layar kunci)", () => {
+    expect(pushMessage("complete", app, "https://x.id")).toEqual({
+      title: "Tahap Verifikasi berkas selesai",
+      body: "Akta Kelahiran (RL-HJ26-AKTA) lanjut ke tahap Entri & validasi data.",
+      url: "https://x.id/lacak/RL-HJ26-AKTA",
+    });
+    expect(JSON.stringify(pushMessage("request_fix", app, "https://x.id"))).not.toContain("Nama ibu");
+    expect(pushMessage("complete", { ...app, status: "siap_diambil" }, "")?.title).toBe(
+      "Dokumen siap diambil",
+    );
+    expect(pushMessage("created", app, "")).toBeNull();
   });
 });
 
