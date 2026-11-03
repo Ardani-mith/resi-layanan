@@ -1,5 +1,5 @@
 // SEMUA teks landing page ada di sini. Urutan bagian mengikuti pitch deck:
-// hero (cek resi) → rapor ringkas → masalah → cara kerja → fitur → penutup.
+// hero (cek resi) → rapor ringkas → masalah → cara kerja → fitur → asisten & kabar → penutup.
 
 export const site = {
   name: "Pantas",
@@ -30,7 +30,7 @@ export const site = {
     kickerCta: "Lihat rapor",
     // Dua kalimat sejajar; baris terakhir diberi warna aksen.
     titleLines: ["Tau berkas Anda di mana.", "Tau kapan selesai."],
-    body: "Masukkan nomor resi dari loket atau pengajuan online. Lihat tahap aktif, tenggatnya, dan siapa yang menangani. Tanpa login, tanpa antre bertanya.",
+    body: "Masukkan nomor resi dari loket atau pengajuan online. Lihat tahap aktif dan tenggatnya, tanya Asisten Pantas, dan dikabari di HP saat ada perubahan. Tanpa login, tanpa antre bertanya.",
     exampleResi: "RL-HJ26-AKTA",
     // Strip di dasar hero: dasar aturan alur & tenggat (bukan klaim kerja sama/dukungan).
     basis: {
@@ -92,6 +92,16 @@ export const site = {
         pantas: "Catatan tertulis, jam instansi dijeda",
       },
       {
+        topic: "Bertanya status",
+        today: "Telepon atau datang ke loket, menunggu dijawab",
+        pantas: "Asisten menjawab dari data resi; HP dikabari tiap tahap berubah",
+      },
+      {
+        topic: "Butuh segera",
+        today: 'Mencari "orang dalam" atau calo',
+        pantas: "Tandai keperluan mendesak, tanpa jalur berbayar",
+      },
+      {
         topic: "Kalau molor",
         today: "Mengadu setelah terjadi (SP4N-LAPOR!)",
         pantas: "Naik otomatis ke Kepala Seksi, lalu Kabid",
@@ -120,7 +130,7 @@ export const site = {
       {
         time: "≤ 24 jam",
         title: "Dokumen terbit",
-        body: "Entri, tanda tangan, cetak: tiap tahap punya tenggat jam kerja. Lewat? Naik ke atasan otomatis.",
+        body: "Entri, tanda tangan, cetak: tiap tahap punya tenggat jam kerja dan HP Anda dikabari saat selesai. Lewat? Naik ke atasan otomatis.",
       },
       {
         time: "Saat diambil",
@@ -142,8 +152,8 @@ export const site = {
         cta: { label: "Coba lacak resi demo", href: "/lacak/RL-HJ26-AKTA" },
         points: [
           "Tahap aktif & tenggatnya, dihitung dalam jam kerja",
-          "Diberi tahu bila berkas kurang; batas melengkapi 10 hari kerja",
-          "Terlambat? Tanggapan pimpinan tampil di halaman lacak",
+          "Notifikasi di HP saat tahap selesai atau berkas kurang",
+          "Asisten Pantas menjawab dari data resi Anda sendiri",
         ],
       },
       {
@@ -155,7 +165,7 @@ export const site = {
         points: [
           "Antrean urut sisa waktu, yang paling mendesak di atas",
           "Syarat dicentang dulu sebelum tahap bisa diselesaikan",
-          "Jam instansi dijeda otomatis saat berkas perlu perbaikan",
+          "Catatan untuk warga dirapikan AI, petugas yang mengirim",
         ],
       },
       {
@@ -183,6 +193,56 @@ export const site = {
         ],
       },
     ],
+  },
+
+  // Asisten AI + notifikasi push (section gelap di tengah beranda). Isi demo = ilustrasi yang
+  // meniru tampilan asli di /lacak; teksnya mengikuti jawaban dasar di lib/assist.ts.
+  assistant: {
+    label: "Asisten & kabar",
+    title: "Tidak perlu bertanya. Pantas yang mengabari.",
+    intro:
+      "Asisten Pantas menjawab dari data resi Anda sendiri, dan HP Anda diberi kabar setiap tahap berubah. Waktu petugas loket kembali untuk memproses berkas, bukan menjawab status.",
+    demo: {
+      summary:
+        "Berkas Akta Kelahiran Anda sedang di tahap Entri & validasi data. Tidak ada yang perlu Anda lakukan sekarang; perkiraan selesai Selasa pukul 09.15 WIB.",
+      chips: ["Kapan permohonan saya selesai?", "Apa yang harus saya bawa?", "Bisa dipercepat?"],
+      question: "Bisa dipercepat?",
+      answer:
+        "Urutan dan tenggat sama untuk semua warga, tanpa jalur berbayar. Jika dokumen dibutuhkan untuk keperluan mendesak, tandai di halaman lacak agar terlihat oleh petugas.",
+    },
+    phone: { time: "14.40", date: "Selasa, 3 November" },
+    notifications: [
+      {
+        title: "Tahap Verifikasi berkas selesai",
+        body: "Akta Kelahiran (RL-HJ26-AKTA) lanjut ke tahap Entri & validasi data.",
+        when: "09.12",
+      },
+      {
+        title: "Tahap Entri & validasi data selesai",
+        body: "Akta Kelahiran (RL-HJ26-AKTA) lanjut ke tahap Persetujuan & tanda tangan elektronik.",
+        when: "11.05",
+      },
+      {
+        title: "Dokumen siap diambil",
+        body: "Akta Kelahiran (RL-HJ26-AKTA) sudah bisa diambil di lokasi layanan pada jam kerja.",
+        when: "baru saja",
+      },
+    ],
+    guards: [
+      {
+        title: "Menjawab dari data, bukan menebak",
+        body: "Setiap jawaban berangkat dari data resi. Di luar itu, asisten jujur bilang belum tahu.",
+      },
+      {
+        title: "Tanpa CS, tanpa calo",
+        body: "Keperluan mendesak masuk sebagai penanda di antrean petugas, bukan antrean chat.",
+      },
+      {
+        title: "Privasi di layar kunci",
+        body: "Notifikasi hanya berisi status. Nama dan catatan petugas tetap di halaman lacak.",
+      },
+    ],
+    cta: { label: "Coba di resi demo", href: "/lacak/RL-HJ26-AKTA" },
   },
 
   // Kutipan wawancara. SEMENTARA: data contoh (mock: true) dan label "Data contoh" tampil di
@@ -227,6 +287,8 @@ export const site = {
       "Nama pemohon disamarkan",
       "Terlambat? Naik ke Kasi, lalu Kabid",
       "Berkas kurang langsung diberi tahu",
+      "Notifikasi di HP tiap tahap",
+      "Asisten AI dari data resi",
       "Hari libur tidak dihitung",
       "Gratis · Rp0",
       "Rapor SLA terbuka untuk publik",

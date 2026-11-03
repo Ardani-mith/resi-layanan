@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
@@ -11,6 +11,7 @@ import Spotlight from "@/components/landing/Spotlight";
 import SpotlightCard from "@/components/landing/SpotlightCard";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
 import Testimonials from "@/components/landing/Testimonials";
+import { maskStyle } from "@/components/Logo";
 import SectionError from "@/components/SectionError";
 import { Button, PageSlide, SectionLabel } from "@/components/ui";
 import { site } from "@/config/site";
@@ -263,6 +264,153 @@ function Marquee({ items }: { items: readonly string[] }) {
   );
 }
 
+// --- Asisten & kabar: tiruan kartu Asisten Pantas + layar kunci HP (ilustrasi, aria-hidden) ---
+
+/** Kartu kaca yang meniru Asisten Pantas di halaman lacak (lacak/[resi]/Assistant.tsx). */
+function AssistantMock() {
+  const { demo } = site.assistant;
+  return (
+    <div
+      aria-hidden
+      className="reveal relative overflow-hidden rounded-3xl border border-hero-line bg-white/[0.05] p-6 shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_30px_70px_-30px_rgb(0_0_0/0.7)] backdrop-blur-md sm:p-7"
+    >
+      <div className="absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-[#b4a3ff] to-transparent" />
+      <div className="absolute -top-24 -right-16 size-64 rounded-full bg-[#8b7bff]/20 blur-3xl" />
+      <div className="relative">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2.5 text-sm font-semibold text-hero-fg">
+            <span className="grid size-7 place-items-center rounded-lg bg-linear-to-br from-[#7c9cff] to-[#b07cff] shadow-[0_6px_18px_-6px_#8b7bff]">
+              <Sparkles className="size-4 text-white" />
+            </span>
+            Asisten Pantas
+          </p>
+          <span className="font-mono text-xs text-hero-muted">{site.hero.exampleResi}</span>
+        </div>
+        <p className="mt-4 text-base leading-relaxed text-hero-fg sm:text-lg">{demo.summary}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {demo.chips.map((chip) => (
+            <span
+              key={chip}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-sm",
+                chip === demo.question
+                  ? "border-white bg-white font-medium text-[#0c1f5c]"
+                  : "border-hero-line bg-hero-chip text-hero-muted",
+              )}
+            >
+              {chip}
+            </span>
+          ))}
+        </div>
+        <div className="mt-4 rounded-xl border border-hero-line bg-black/20 px-4 py-3.5 text-sm leading-relaxed text-hero-fg sm:text-base">
+          <p className="mb-1.5 text-xs text-hero-muted">“{demo.question}”</p>
+          {demo.answer}
+          <span className="ml-0.5 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] bg-hero-accent motion-safe:animate-pulse" />
+        </div>
+        <p className="mt-4 text-xs text-hero-muted">Dibantu AI · acuan resmi tetap data di halaman lacak</p>
+      </div>
+    </div>
+  );
+}
+
+/** Layar kunci HP berisi notifikasi Pantas yang masuk berurutan saat digulir ke layar. */
+function PhoneMock() {
+  const { phone, notifications } = site.assistant;
+  return (
+    <div aria-hidden className="reveal mx-auto w-full max-w-[19rem]">
+      <div className="relative overflow-hidden rounded-[2.75rem] border border-white/15 bg-[linear-gradient(160deg,#1a2a6c_0%,#0c1f5c_45%,#040a1a_100%)] p-3 shadow-[0_40px_80px_-30px_rgb(0_0_0/0.8),inset_0_0_0_6px_rgb(0_0_0/0.35)]">
+        <div className="mx-auto h-6 w-24 rounded-full bg-black/70" />
+        <div className="mt-6 text-center text-white">
+          <p className="text-xs text-white/70">{phone.date}</p>
+          <p className="text-6xl font-light tracking-[-0.02em] tabular-nums">{phone.time}</p>
+        </div>
+        <ul className="mt-8 space-y-2.5 pb-16">
+          {notifications.map((n, i) => (
+            <li
+              key={n.title}
+              className="reveal flex gap-2.5 rounded-2xl border border-white/10 bg-white/[0.12] p-3 text-white backdrop-blur-xl"
+              style={{ animationRange: `entry ${10 + i * 12}% entry ${50 + i * 12}%` }}
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#0f1b2d]">
+                <span className="aspect-[293/358] h-4 bg-white" style={maskStyle("/brand/pantas-p.png")} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-2 text-xs">
+                  <span className="font-semibold">Pantas</span>
+                  <span className="shrink-0 text-white/60">{n.when}</span>
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-snug font-semibold">{n.title}</span>
+                <span className="block text-xs leading-snug text-white/75">{n.body}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="absolute inset-x-0 bottom-3 mx-auto h-1 w-28 rounded-full bg-white/60" />
+      </div>
+    </div>
+  );
+}
+
+/** Section gelap "Asisten & kabar": dua tiruan produk + tiga pagar pengaman. */
+function AssistantSection() {
+  const { assistant } = site;
+  return (
+    <section
+      id="asisten"
+      data-header-dark
+      aria-labelledby="asisten-title"
+      className="relative isolate overflow-hidden bg-(--hero-g1) px-page py-16 text-hero-fg sm:py-24"
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_60%_at_20%_0%,color-mix(in_srgb,var(--hero-g3)_55%,transparent),transparent_70%)]"
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_70%_60%_at_30%_0%,#000_30%,transparent_100%)] bg-[size:56px_56px]"
+      />
+      <Spotlight className="top-0 left-[5%] -z-10" />
+
+      <p className="reveal inline-flex items-center gap-2 rounded-full border border-hero-line bg-hero-chip px-3 py-1 font-mono text-xs tracking-[0.12em] text-hero-muted uppercase backdrop-blur">
+        <span className="text-hero-accent">04</span>
+        <span aria-hidden className="h-3 w-px bg-hero-line" />
+        {assistant.label}
+      </p>
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
+        <div className="max-w-3xl">
+          <h2
+            id="asisten-title"
+            className="reveal text-[clamp(1.9rem,5vw,2.75rem)] leading-[1.06] font-semibold tracking-[-0.04em] text-balance"
+          >
+            {assistant.title}
+          </h2>
+          <p className="reveal mt-4 max-w-2xl text-lg text-hero-muted">{assistant.intro}</p>
+        </div>
+        <Button href={assistant.cta.href} transitionTypes={["nav-forward"]} variant="hero" className="reveal">
+          {assistant.cta.label} <ArrowRight aria-hidden className="size-4" />
+        </Button>
+      </div>
+
+      <div className="mt-12 grid items-center gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-14">
+        <AssistantMock />
+        <PhoneMock />
+      </div>
+
+      <ul className="mt-14 grid gap-6 border-t border-hero-line pt-10 sm:grid-cols-3">
+        {assistant.guards.map((g) => (
+          <li key={g.title} className="reveal">
+            <p className="flex items-center gap-2 font-semibold">
+              <Check aria-hidden className="size-4 text-[#4ade80]" />
+              {g.title}
+            </p>
+            <p className="mt-1.5 text-sm text-hero-muted">{g.body}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default function Home() {
   const { hero, summary, problem, howItWorks, perspectives, testimonials, closing } = site;
   return (
@@ -407,11 +555,14 @@ export default function Home() {
         />
       </Section>
 
+      {/* Asisten AI & notifikasi push: pita gelap di tengah halaman. */}
+      <AssistantSection />
+
       {/* Suara lapangan: kutipan wawancara tiga orang (Testimonials). */}
-      <div className="border-t border-line bg-surface">
+      <div className="bg-surface">
         <Section
           id="suara-lapangan"
-          index="04"
+          index="05"
           label={testimonials.label}
           title={testimonials.title}
           intro={testimonials.intro}
