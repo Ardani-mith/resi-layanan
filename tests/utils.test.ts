@@ -25,6 +25,7 @@ import { decryptNik, encryptNik, hashNik, protectNik } from "@/lib/pii";
 import { emptyOffice, maskName, maskPhone, nikInfo, normalizePhone } from "@/lib/present";
 import { generateResi, isValidResi, normalizeResi, RESI_ALPHABET } from "@/lib/resi";
 import { SESSION_IDLE_SECONDS, SESSION_MAX_AGE_SECONDS } from "@/lib/roles";
+import { bottleneckCsv, type Bottlenecks, filterBottlenecks } from "@/lib/stats";
 import { applicationSchema, resiSchema } from "@/lib/validators";
 
 describe("resi", () => {
@@ -256,7 +257,9 @@ describe("perlindungan NIK", () => {
 
   it("sandi yang diubah ditolak (AES-GCM)", () => {
     const [v, iv, tag, data] = encryptNik(nik).split(".");
-    const tampered = [v, iv, tag, `${data.slice(0, -2)}AA`].join(".");
+    // Karakter terakhir selalu diganti dengan yang BERBEDA (ciphertext acak; "AA" bisa kebetulan sama).
+    const last = data.at(-1) === "A" ? "B" : "A";
+    const tampered = [v, iv, tag, `${data.slice(0, -1)}${last}`].join(".");
     expect(() => decryptNik(tampered)).toThrow();
   });
 
@@ -264,6 +267,49 @@ describe("perlindungan NIK", () => {
     const stored = protectNik(nik);
     expect(stored.nikMasked).toBe("3374 07•• •••• 0002");
     expect(JSON.stringify(stored)).not.toContain(nik);
+  });
+});
+
+describe("tren bottleneck bulanan", () => {
+  const data: Bottlenecks = {
+    months: ["2026-09", "2026-10", "2026-11"],
+    services: [
+      {
+        slug: "akta-kelahiran",
+        name: "Akta Kelahiran",
+        steps: [
+          {
+            key: "cetak",
+            name: 'Pencetakan akta, "cepat"',
+            cells: [
+              { completed: 4, late: 2 },
+              { completed: 0, late: 0 },
+              { completed: 3, late: 0 },
+            ],
+          },
+        ],
+      },
+      { slug: "perubahan-kk", name: "Perubahan KK", steps: [] },
+    ],
+  };
+
+  it("filter layanan & periode memotong bulan terakhir", () => {
+    const view = filterBottlenecks(data, "akta-kelahiran", 2);
+    expect(view.months).toEqual(["2026-10", "2026-11"]);
+    expect(view.services.map((s) => s.slug)).toEqual(["akta-kelahiran"]);
+    expect(view.services[0].steps[0].cells).toEqual([
+      { completed: 0, late: 0 },
+      { completed: 3, late: 0 },
+    ]);
+  });
+
+  it("CSV: BOM UTF-8, kutip untuk koma/kutip, persen dibulatkan, kosong bila belum ada data", () => {
+    const csv = bottleneckCsv(data);
+    expect(
+      csv.startsWith("\uFEFFbulan,layanan,tahap,tahap_selesai,melewati_tenggat,persen_terlambat\r\n"),
+    ).toBe(true);
+    expect(csv).toContain('2026-09,Akta Kelahiran,"Pencetakan akta, ""cepat""",4,2,50\r\n');
+    expect(csv).toContain('2026-10,Akta Kelahiran,"Pencetakan akta, ""cepat""",0,0,\r\n');
   });
 });
 

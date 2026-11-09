@@ -128,6 +128,8 @@ const applicationSchema = new Schema<ApplicationData>(
       ),
       default: null,
     },
+    // Pengingat push batas perbaikan yang sudah terkirim (remindFixDeadlines, idempoten).
+    remindersSent: { type: [String], default: [] },
     // Keperluan mendesak dari warga (sekali; lihat applyUrgency).
     urgency: {
       type: new Schema(

@@ -2,7 +2,7 @@
 // petugas, audit log append-only, dan pembatas verifikasi HP.
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   ASSISTANT_DAILY_LIMIT,
   createApplication,
@@ -21,13 +21,19 @@ import { dbConnect } from "@/lib/db";
 import { syncEscalations, syncOverdue } from "@/lib/escalation";
 import { decryptNik, hashNik } from "@/lib/pii";
 import { checkNik, publicView } from "@/lib/present";
+import { remindFixDeadlines } from "@/lib/push";
 import type { Role } from "@/lib/roles";
-import { DAY_MS } from "@/lib/sla";
+import { DAY_MS, workdaysUntil } from "@/lib/sla";
 import { computeStats, openEscalations } from "@/lib/stats";
 import type { ActionInput, ApplicationInput } from "@/lib/validators";
-import type { Actor, ApplicationData } from "@/lib/workflow";
-import { Application, Event, Service } from "@/models";
+import { type Actor, type ApplicationData, fixDeadline } from "@/lib/workflow";
+import { Application, Event, PushSubscriber, Service } from "@/models";
+import { DEMO_HISTORY } from "../scripts/demo-data.ts";
 import { seed } from "../scripts/seed.ts";
+
+// Push ditiru: tes tidak memanggil layanan push sungguhan.
+const webpush = vi.hoisted(() => ({ setVapidDetails: vi.fn(), sendNotification: vi.fn(async () => ({})) }));
+vi.mock("web-push", () => ({ default: webpush }));
 
 const NOW = new Date("2026-10-19T03:00:00Z"); // Senin 10.00 WIB
 const clockAt = (offsetDays = 0) => ({
@@ -102,14 +108,14 @@ describe("seed", () => {
 
   it("membuat data dengan status beragam dan tanggal mundur yang dipertahankan", async () => {
     const apps = await Application.find().lean();
-    expect(apps).toHaveLength(60);
+    expect(apps).toHaveLength(60 + DEMO_HISTORY);
 
     const statuses = new Set(apps.map((a) => a.status));
     for (const s of ["diajukan", "diproses", "selesai", "perlu_perbaikan", "ditolak"])
       expect(statuses).toContain(s);
 
     const oldest = Math.min(...apps.map((a) => new Date(a.createdAt).getTime()));
-    expect(NOW.getTime() - oldest).toBeGreaterThan(20 * DAY_MS);
+    expect(NOW.getTime() - oldest).toBeGreaterThan(300 * DAY_MS); // riwayat tren bottleneck 12 bulan
     expect(apps.every((a) => new Date(a.createdAt) <= NOW)).toBe(true);
 
     expect(apps.some((a) => a.rating?.score)).toBe(true);
@@ -155,7 +161,7 @@ describe("seed", () => {
 
   it("setiap permohonan punya event 'created' di audit log", async () => {
     const created = await Event.countDocuments({ action: "created" });
-    expect(created).toBe(60);
+    expect(created).toBe(60 + DEMO_HISTORY);
   });
 });
 
@@ -651,5 +657,48 @@ describe("keperluan mendesak", () => {
     await expect(performCitizenAction({ resi: app.resi, input, clock: clockAt() })).rejects.toMatchObject({
       code: "already_flagged",
     });
+  });
+});
+
+describe("pengingat batas perbaikan", () => {
+  it("H-3 & H-1 hanya ke resi yang berlangganan, tepat sekali per batas", async () => {
+    process.env.VAPID_PUBLIC_KEY = "kunci-publik-uji";
+    process.env.VAPID_PRIVATE_KEY = "kunci-privat-uji";
+    const app = await newApplication();
+    await performAction({
+      resi: app.resi,
+      input: { action: "request_fix", publicNote: "Lengkapi KK asli.", checked: [] },
+      actor: actor("petugas_loket"),
+      clock: clockAt(),
+    });
+    await PushSubscriber.create({
+      resi: app.resi,
+      endpoint: "https://push.contoh/abc",
+      keys: { p256dh: "p", auth: "a" },
+      expiresAt: new Date(NOW.getTime() + 30 * DAY_MS),
+    });
+    const saved = await stored(app.resi);
+    const deadline = fixDeadline(saved.steps[saved.currentStep].pausedAt!);
+    /** Jam saat sisa hari kerja = n (mundur per hari kalender dari batas). */
+    const left = (n: number) => {
+      for (let d = 0; d < 30; d++) {
+        const now = new Date(deadline.getTime() - d * DAY_MS);
+        if (workdaysUntil(now, deadline) === n) return { now, holidays: new Set<string>() };
+      }
+      throw new Error(`tidak ada hari dengan sisa ${n}`);
+    };
+    const origin = "https://pantas.contoh";
+
+    expect(await remindFixDeadlines(left(5), origin)).toBe(0);
+    expect(await remindFixDeadlines(left(3), origin)).toBe(1);
+    expect(await remindFixDeadlines(left(3), origin)).toBe(0); // cron terpanggil dua kali
+    expect(await remindFixDeadlines(left(1), origin)).toBe(1);
+    expect(webpush.sendNotification).toHaveBeenCalledTimes(2);
+    expect(JSON.parse((webpush.sendNotification.mock.calls[1] as unknown[])[1] as string)).toMatchObject({
+      title: "Hari kerja terakhir untuk melengkapi berkas",
+      url: `${origin}/lacak/${app.resi}`,
+    });
+    delete process.env.VAPID_PUBLIC_KEY;
+    delete process.env.VAPID_PRIVATE_KEY;
   });
 });

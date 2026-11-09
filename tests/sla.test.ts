@@ -15,6 +15,7 @@ import {
   resumeStep,
   stepState,
   wibDateKey,
+  workdaysUntil,
   workedMs,
   workMsBetween,
 } from "@/lib/sla";
@@ -46,6 +47,15 @@ describe("hari kerja (WIB)", () => {
     expect(isWorkday(christmas)).toBe(true);
     expect(isWorkday(christmas, ["2026-12-25"])).toBe(false);
     expect(isWorkday(christmas, new Set(["2026-12-25"]))).toBe(false);
+  });
+});
+
+describe("workdaysUntil", () => {
+  it("sisa hari kerja dibulatkan ke atas, akhir pekan tidak dihitung", () => {
+    const friday3pm = new Date("2026-10-23T08:00:00Z"); // Jumat 15.00 WIB
+    expect(workdaysUntil(friday3pm, new Date("2026-10-26T03:00:00Z"))).toBe(1); // Senin 10.00: 3 jam kerja
+    expect(workdaysUntil(friday3pm, addWorkHours(friday3pm, 80))).toBe(10);
+    expect(workdaysUntil(friday3pm, new Date("2026-10-22T03:00:00Z"))).toBe(0);
   });
 });
 

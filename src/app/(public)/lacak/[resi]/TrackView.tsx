@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   ArrowLeft,
+  Bell,
   Check,
   CheckCircle2,
   Clock,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { StatusBadge } from "@/components/application/Badges";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
@@ -36,7 +37,7 @@ import { type FormErrors, postJson } from "@/lib/http";
 import type { VerifiedView } from "@/lib/present";
 import type { Receipt } from "@/lib/qr";
 import type { QuestionId } from "@/lib/validators";
-import { OPEN_STATUSES, URGENCY_MAX_DAYS, URGENCY_REASONS } from "@/lib/workflow";
+import { OPEN_STATUSES, URGENCY_MAX_DAYS, URGENCY_REASONS, WAIT_WINDOW_WORKDAYS } from "@/lib/workflow";
 import Assistant from "./Assistant";
 import PushToggle from "./PushToggle";
 
@@ -78,30 +79,71 @@ function Last4Field({
   onChange,
   error,
   id,
+  show = true,
+  children,
 }: {
   value: string;
   onChange: (value: string) => void;
   error?: string | null;
   id: string;
+  /** false = sudah terverifikasi: hanya tombol aksinya yang tampil. */
+  show?: boolean;
+  /** Tombol kirim, sebaris dengan kotak isian. */
+  children: ReactNode;
 }) {
+  const boxes = useRef<(HTMLInputElement | null)[]>([]);
+  if (!show) return <div>{children}</div>;
+
+  /** Ketik/tempel di kotak ke-i: angka mengisi dari kotak itu ke kanan, kursor ikut maju. */
+  function type(i: number, raw: string) {
+    const digits = raw.replace(/\D/g, "");
+    const next = (value.slice(0, i) + digits).slice(0, 4);
+    onChange(next);
+    boxes.current[Math.min(next.length, 3)]?.focus();
+  }
+
+  // Satu aturan di semua tempat: kotak di atas, tombol di bawahnya (selebar penuh bila wadahnya
+  // sempit: kolom samping, HP).
   return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+    <div className="@container">
+      <label htmlFor={id} id={`${id}-label`} className="mb-1.5 block text-sm font-medium">
         4 digit terakhir nomor HP pemohon
       </label>
-      <input
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-        inputMode="numeric"
-        autoComplete="off"
-        placeholder="••••"
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(inputClass, "w-32 text-center font-mono text-lg tracking-[0.4em]")}
-      />
+      <div className="flex flex-col items-start gap-3">
+        <div role="group" aria-labelledby={`${id}-label`} className="flex gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <input
+              key={i}
+              ref={(el) => {
+                boxes.current[i] = el;
+              }}
+              id={i === 0 ? id : undefined}
+              aria-label={i === 0 ? undefined : `Digit ke-${i + 1}`}
+              value={value[i] ?? ""}
+              onChange={(e) => type(i, e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Backspace" && !value[i] && i > 0) {
+                  e.preventDefault();
+                  onChange(value.slice(0, i - 1));
+                  boxes.current[i - 1]?.focus();
+                }
+              }}
+              onFocus={(e) => e.currentTarget.select()}
+              inputMode="numeric"
+              autoComplete="off"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? `${id}-error` : undefined}
+              className={cn(
+                "size-11 rounded-card border bg-surface text-center font-mono text-lg font-semibold transition-colors outline-none focus:border-brand focus:ring-3 focus:ring-brand/15",
+                error ? "border-late" : value[i] ? "border-muted/50" : "border-line hover:border-muted/40",
+              )}
+            />
+          ))}
+        </div>
+        <div className="w-full *:w-full @sm:w-auto @sm:*:w-auto">{children}</div>
+      </div>
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-late">
+        <p id={`${id}-error`} className="mt-2 text-sm text-late">
           {error}
         </p>
       )}
@@ -197,6 +239,65 @@ function barTone(data: Tracking, step: Tracking["steps"][number], i: number) {
   if (step.state === "terlambat" || step.state === "ditolak") return "bg-hero-alert";
   if (step.state === "dijeda") return "bg-[#fbbf24]";
   return "bg-hero-accent";
+}
+
+/** Sisa hari kerja di bawah ini = mendesak (merah); sama dengan pengingat push H-3. */
+const FIX_URGENT_DAYS = 3;
+
+/** Satu langkah bernomor di panduan perbaikan berkas (garis penghubung ke langkah berikutnya). */
+function FixStep({
+  n,
+  title,
+  last = false,
+  children,
+}: {
+  n: number;
+  title: string;
+  last?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <li className="relative flex gap-3.5">
+      {!last && <span aria-hidden className="absolute top-8 bottom-0 left-[13.5px] w-px bg-line" />}
+      <span
+        aria-hidden
+        className="relative grid size-7 shrink-0 place-items-center rounded-full bg-pause-soft font-mono text-xs font-semibold text-pause ring-1 ring-pause/20"
+      >
+        {n}
+      </span>
+      <div className={cn("min-w-0 flex-1", !last && "pb-5")}>
+        <h3 className="leading-7 font-semibold">
+          <span className="sr-only">Langkah {n}: </span>
+          {title}
+        </h3>
+        <div className="mt-1 space-y-2">{children}</div>
+      </div>
+    </li>
+  );
+}
+
+/** Daftar bawaan yang bisa dicentang warga sebagai pengingat pribadi (tidak dikirim ke server). */
+function FixChecklist({ items }: { items: string[] }) {
+  const [done, setDone] = useState<string[]>([]);
+  return (
+    <ul className="grid gap-1 sm:grid-cols-2">
+      {items.map((item) => (
+        <li key={item}>
+          <label className="flex cursor-pointer gap-2.5 rounded-lg p-1.5 hover:bg-surface-2">
+            <input
+              type="checkbox"
+              checked={done.includes(item)}
+              onChange={() =>
+                setDone((list) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]))
+              }
+              className="mt-0.5 size-4 shrink-0 accent-[var(--brand)]"
+            />
+            <span className={cn(done.includes(item) && "text-muted line-through")}>{item}</span>
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /** Tahap ke berapa dari berapa: bar bersegmen berlabel nama tahap (label disembunyikan di HP). */
@@ -320,7 +421,7 @@ export default function TrackView({
 
   async function send(action: CitizenAction, extra: Record<string, unknown> = {}) {
     if (!/^\d{4}$/.test(last4)) {
-      setErrors({ phoneLast4: "Masukkan 4 digit terakhir nomor HP." });
+      setErrors({ phoneLast4: "Masukkan 4 digit terakhir nomor HP.", formAction: action });
       return false;
     }
     setPending(action);
@@ -343,6 +444,8 @@ export default function TrackView({
   }
 
   const verified = Boolean(detail);
+  // Isian 4 digit HP dipakai bersama beberapa form; error-nya hanya tampil di form yang mengirim.
+  const phoneError = (action: CitizenAction) => (errors.formAction === action ? errors.phoneLast4 : null);
   const current = data.steps[data.currentStep];
   const bring = ["Bukti resi (QR di halaman ini)", "KTP-el atau KK asli pemohon", ...data.requirements];
 
@@ -399,14 +502,17 @@ export default function TrackView({
               error={errors.neededBy}
             />
           </div>
-          <div className="flex flex-wrap items-end gap-3">
-            {!verified && (
-              <Last4Field id="urgent-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-            )}
+          <Last4Field
+            id="urgent-last4"
+            show={!verified}
+            value={last4}
+            onChange={setLast4}
+            error={phoneError("urgent")}
+          >
             <button type="submit" disabled={pending === "urgent"} className={buttonClass("secondary")}>
               {pending === "urgent" ? "Menyimpan…" : "Tandai mendesak"}
             </button>
-          </div>
+          </Last4Field>
           <FormError errors={errors} action="urgent" />
         </form>
       </details>
@@ -436,39 +542,120 @@ export default function TrackView({
             </p>
           </NextStep>
         );
-      case "perlu_perbaikan":
+      case "perlu_perbaikan": {
+        // Panduan saat dijeda: sisa waktu yang jelas, lalu tiga langkah sampai proses berlanjut.
+        const left = data.fixWorkdaysLeft;
+        const urgent = left !== null && left <= FIX_URGENT_DAYS;
         return (
           <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
-            <blockquote className="rounded-lg bg-pause-soft px-3 py-2 font-medium">{data.fixNote}</blockquote>
-            {data.fixDeadline && (
-              <p className="font-medium">
-                Lengkapi paling lambat {formatDateTime(data.fixDeadline)}. Lewat dari itu permohonan
-                dibatalkan otomatis dan Anda perlu mengajukan ulang.
+            {left !== null && data.fixDeadline && (
+              <div
+                className={cn(
+                  "rounded-xl border p-4",
+                  urgent ? "border-late/30 bg-late-soft/50" : "border-pause/25 bg-pause-soft/40",
+                )}
+              >
+                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+                  <p className="leading-tight">
+                    <span
+                      className={cn(
+                        "font-mono text-4xl font-semibold tabular-nums",
+                        urgent ? "text-late" : "text-pause",
+                      )}
+                    >
+                      {left}
+                    </span>
+                    <span className="ml-2 font-medium">dari {WAIT_WINDOW_WORKDAYS} hari kerja tersisa</span>
+                  </p>
+                  <p className="text-xs text-muted sm:text-right">
+                    Batas melengkapi
+                    <span className="block text-sm font-semibold text-text">
+                      {formatDateTime(data.fixDeadline)}
+                    </span>
+                  </p>
+                </div>
+                <div aria-hidden className="mt-3 flex gap-1">
+                  {Array.from({ length: WAIT_WINDOW_WORKDAYS }, (_, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        "h-1.5 flex-1 rounded-full",
+                        i < left ? (urgent ? "bg-late" : "bg-pause") : "bg-line",
+                      )}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2.5 text-xs text-muted">
+                  Lewat dari batas, permohonan dibatalkan otomatis. Selama menunggu, hitung mundur instansi
+                  dijeda, jadi waktu ini tidak merugikan Anda.
+                </p>
+              </div>
+            )}
+
+            <ol className="pt-1">
+              <FixStep n={1} title="Siapkan yang diminta petugas">
+                <blockquote className="rounded-lg bg-pause-soft px-3 py-2 font-medium">
+                  {data.fixNote}
+                </blockquote>
+                <p className="text-xs text-muted">
+                  Bawa juga dokumen berikut. Centang sebagai pengingat pribadi (tidak dikirim ke petugas):
+                </p>
+                <FixChecklist items={bring} />
+              </FixStep>
+              <FixStep n={2} title="Lengkapi di lokasi layanan terdekat">
+                <p>
+                  Datang pada jam kerja, Senin–Jumat 08.00–16.00 WIB, ke kelurahan, kecamatan, Dukcapil, atau
+                  MPP terdekat. Sebutkan nomor resi <span className="font-mono">{data.resi}</span> ke petugas.
+                </p>
+                <a
+                  href="#lokasi"
+                  className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline"
+                >
+                  <MapPin aria-hidden className="size-4" />
+                  Lihat lokasi terdekat
+                </a>
+              </FixStep>
+              <FixStep n={3} title="Konfirmasi di sini setelah dilengkapi" last>
+                <p className="text-muted">Proses berlanjut dan hitung mundur instansi berjalan lagi.</p>
+                <form
+                  method="post"
+                  className="space-y-3"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (await send("resubmit"))
+                      setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
+                  }}
+                >
+                  <Last4Field
+                    id="fix-last4"
+                    show={!verified}
+                    value={last4}
+                    onChange={setLast4}
+                    error={phoneError("resubmit")}
+                  >
+                    <button
+                      type="submit"
+                      disabled={pending === "resubmit"}
+                      className={buttonClass("primary")}
+                    >
+                      {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
+                    </button>
+                  </Last4Field>
+                  <FormError errors={errors} action="resubmit" />
+                </form>
+              </FixStep>
+            </ol>
+
+            {pushKey && (
+              <p className="flex gap-2 border-t border-line pt-3 text-xs text-muted">
+                <Bell aria-hidden className="mt-px size-3.5 shrink-0" />
+                Nyalakan &ldquo;Kabari saya&rdquo; di atas untuk pengingat {FIX_URGENT_DAYS} hari dan 1 hari
+                kerja sebelum batas.
               </p>
             )}
-            <p className="text-muted">
-              Hitung mundur instansi dihentikan sementara dan tidak merugikan Anda. Lengkapi berkas langsung
-              di lokasi layanan terdekat (peta di bawah), lalu konfirmasi di sini agar proses berlanjut.
-            </p>
-            <form
-              method="post"
-              className="flex flex-wrap items-end gap-3"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (await send("resubmit"))
-                  setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
-              }}
-            >
-              {!verified && (
-                <Last4Field id="fix-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-              )}
-              <button type="submit" disabled={pending === "resubmit"} className={buttonClass("primary")}>
-                {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
-              </button>
-              <FormError errors={errors} action="resubmit" />
-            </form>
           </NextStep>
         );
+      }
       case "siap_diambil":
         return (
           <NextStep tone="ok" icon={PackageCheck} title="Dokumen siap diambil">
@@ -533,14 +720,17 @@ export default function TrackView({
                   className={cn(inputClass, "py-2")}
                 />
               </div>
-              <div className="flex flex-wrap items-end gap-3">
-                {!verified && (
-                  <Last4Field id="rate-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-                )}
+              <Last4Field
+                id="rate-last4"
+                show={!verified}
+                value={last4}
+                onChange={setLast4}
+                error={phoneError("rate")}
+              >
                 <button type="submit" disabled={pending === "rate"} className={buttonClass("primary")}>
                   {pending === "rate" ? "Mengirim…" : "Kirim penilaian"}
                 </button>
-              </div>
+              </Last4Field>
               <FormError errors={errors} action="rate" />
             </form>
           </NextStep>
@@ -745,12 +935,14 @@ export default function TrackView({
           </Alert>
 
           {data.status !== "selesai" && (
-            <OfficeMap
-              key={data.status}
-              defaultOpen={mustVisit}
-              className={card}
-              title={mapTitle ?? "Lokasi pengambilan dokumen nanti"}
-            />
+            <div id="lokasi" className="scroll-mt-24">
+              <OfficeMap
+                key={data.status}
+                defaultOpen={mustVisit}
+                className={card}
+                title={mapTitle ?? "Lokasi pengambilan dokumen nanti"}
+              />
+            </div>
           )}
 
           <section aria-labelledby="journey-title" className={card}>
@@ -819,16 +1011,26 @@ export default function TrackView({
                 </p>
                 <form
                   method="post"
-                  className="mt-4 flex flex-wrap items-end gap-3"
+                  className="mt-4 space-y-3"
                   onSubmit={(e) => {
                     e.preventDefault();
                     send("verify");
                   }}
                 >
-                  <Last4Field id="verify-last4" value={last4} onChange={setLast4} error={errors.phoneLast4} />
-                  <button type="submit" disabled={pending === "verify"} className={buttonClass("secondary")}>
-                    {pending === "verify" ? "Memeriksa…" : "Tampilkan detail"}
-                  </button>
+                  <Last4Field
+                    id="verify-last4"
+                    value={last4}
+                    onChange={setLast4}
+                    error={phoneError("verify")}
+                  >
+                    <button
+                      type="submit"
+                      disabled={pending === "verify"}
+                      className={buttonClass("secondary")}
+                    >
+                      {pending === "verify" ? "Memeriksa…" : "Tampilkan detail"}
+                    </button>
+                  </Last4Field>
                   <FormError errors={errors} action="verify" />
                 </form>
               </>

@@ -434,6 +434,40 @@ body:has([data-header-dark]) .site-header:not([data-on-dark]) {
   animation: indeterminate 1.3s ease-in-out infinite;
 }
 
+/* Bintang berkelip pelan (kartu tiruan Asisten Pantas di beranda). */
+@keyframes twinkle {
+  0%,
+  100% {
+    scale: 1;
+    rotate: 0deg;
+    opacity: 1;
+  }
+  50% {
+    scale: 1.14;
+    rotate: 10deg;
+    opacity: 0.75;
+  }
+}
+@utility animate-twinkle {
+  animation: twinkle 2.8s ease-in-out infinite;
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    translate: 0 0;
+    opacity: 0.45;
+  }
+  40% {
+    translate: 0 -3px;
+    opacity: 1;
+  }
+}
+@utility animate-dot-bounce {
+  animation: dot-bounce 1s ease-in-out infinite;
+}
+
 /* Bar progres navigasi (NavProgress): cepat di awal, melambat mendekati 90% sampai halaman tiba. */
 @keyframes nav-progress {
   from {

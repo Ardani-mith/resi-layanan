@@ -278,10 +278,8 @@ function AssistantMock() {
       <div className="absolute -top-24 -right-16 size-64 rounded-full bg-[#8b7bff]/20 blur-3xl" />
       <div className="relative">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2.5 text-sm font-semibold text-hero-fg">
-            <span className="grid size-7 place-items-center rounded-lg bg-linear-to-br from-[#7c9cff] to-[#b07cff] shadow-[0_6px_18px_-6px_#8b7bff]">
-              <Sparkles className="size-4 text-white" />
-            </span>
+          <p className="flex items-center gap-2 text-sm font-semibold text-hero-fg">
+            <Sparkles className="size-5 text-white drop-shadow-[0_0_8px_rgb(180_163_255/0.85)] motion-safe:animate-twinkle" />
             Asisten Pantas
           </p>
           <span className="font-mono text-xs text-hero-muted">{site.hero.exampleResi}</span>
@@ -307,7 +305,7 @@ function AssistantMock() {
           {demo.answer}
           <span className="ml-0.5 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] bg-hero-accent motion-safe:animate-pulse" />
         </div>
-        <p className="mt-4 text-xs text-hero-muted">Dibantu AI · acuan resmi tetap data di halaman lacak</p>
+        {/* <p className="mt-4 text-xs text-hero-muted">Dibantu AI · acuan resmi tetap data di halaman lacak</p> */}
       </div>
     </div>
   );

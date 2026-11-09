@@ -230,7 +230,7 @@ export async function getStats({ internal = false } = {}) {
       .lean<ApplicationData[]>(),
     Service.find({ isActive: true })
       .sort({ order: 1, name: 1 })
-      .select("name slug steps.slaHours")
+      .select("name slug steps.key steps.name steps.slaHours")
       .lean<ServiceData[]>(),
   ]);
 

@@ -11,6 +11,7 @@ import {
   isOverdue,
   ISSUE_PROMISE_HOURS,
   issuePromise,
+  wibDateKey,
   workedWorkMs,
 } from "./sla.ts";
 import {
@@ -37,7 +38,12 @@ type StatsApp = Pick<
   | "createdAt"
   | "completedAt"
 >;
-type StatsService = { _id: unknown; slug: string; name: string; steps?: Pick<StepTemplate, "slaHours">[] };
+type StatsService = {
+  _id: unknown;
+  slug: string;
+  name: string;
+  steps?: (Partial<Pick<StepTemplate, "key" | "name">> & Pick<StepTemplate, "slaHours">)[];
+};
 
 const WEEK_MS = 7 * DAY_MS;
 
@@ -157,6 +163,94 @@ function weeklyTrend(apps: StatsApp[], now: DateLike, weeks: number) {
   });
 }
 
+/** Rentang tren bottleneck: 12 bulan terakhir (filter 3/6/12 bulan di rapor memotong dari sini). */
+export const BOTTLENECK_MONTHS = 12;
+
+/** "2026-11" untuk bulan berjalan & `count - 1` bulan sebelumnya (WIB), terlama dulu. */
+function monthKeys(now: DateLike, count: number): string[] {
+  const [year, month] = wibDateKey(now).split("-").map(Number);
+  const current = year * 12 + (month - 1);
+  return Array.from({ length: count }, (_, i) => {
+    const index = current - (count - 1 - i);
+    return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+  });
+}
+
+/**
+ * Tren bottleneck bulanan: per layanan & tahap, berapa tahap yang SELESAI di bulan itu dan berapa
+ * yang melewati tenggatnya. Bulan dihitung dari waktu tahap selesai (WIB). Urutan tahap mengikuti
+ * templat layanan; tahap lama yang sudah tidak ada di templat ikut di akhir.
+ */
+function monthlyBottlenecks(apps: StatsApp[], services: StatsService[], now: DateLike) {
+  const months = monthKeys(now, BOTTLENECK_MONTHS);
+  const column = new Map(months.map((m, i) => [m, i]));
+  return {
+    months,
+    services: services.map((service) => {
+      const rows = new Map<
+        string,
+        { key: string; name: string; cells: { completed: number; late: number }[] }
+      >();
+      const row = (key: string, name: string) => {
+        if (!rows.has(key)) {
+          rows.set(key, { key, name, cells: months.map(() => ({ completed: 0, late: 0 })) });
+        }
+        return rows.get(key)!;
+      };
+      for (const step of service.steps ?? []) if (step.key) row(step.key, step.name ?? step.key);
+      for (const app of apps) {
+        if (String(app.serviceId) !== String(service._id)) continue;
+        for (const step of app.steps) {
+          if (!step.completedAt) continue;
+          const i = column.get(wibDateKey(step.completedAt).slice(0, 7));
+          if (i === undefined) continue;
+          const cell = row(step.key, step.name).cells[i];
+          cell.completed += 1;
+          if (finishedLate(step)) cell.late += 1;
+        }
+      }
+      return { slug: service.slug, name: service.name, steps: [...rows.values()] };
+    }),
+  };
+}
+
+export type Bottlenecks = ReturnType<typeof monthlyBottlenecks>;
+
+/** Pilihan periode di rapor (bulan terakhir). */
+export const BOTTLENECK_PERIODS = [3, 6, 12] as const;
+
+/** Potong tren sesuai filter rapor: layanan (slug; null = semua) & `months` bulan terakhir. */
+export function filterBottlenecks(data: Bottlenecks, service: string | null, months: number): Bottlenecks {
+  const from = Math.max(0, data.months.length - months);
+  return {
+    months: data.months.slice(from),
+    services: data.services
+      .filter((s) => !service || s.slug === service)
+      .map((s) => ({ ...s, steps: s.steps.map((step) => ({ ...step, cells: step.cells.slice(from) })) })),
+  };
+}
+
+/**
+ * CSV untuk evaluasi instansi: satu baris per bulan × layanan × tahap (RFC 4180, CRLF). Diawali
+ * BOM UTF-8 agar Excel membaca huruf dengan benar; persen terlambat dibulatkan (tanpa desimal).
+ */
+export function bottleneckCsv(data: Bottlenecks): string {
+  const cell = (value: string | number) => {
+    const text = String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+  const lines = [["bulan", "layanan", "tahap", "tahap_selesai", "melewati_tenggat", "persen_terlambat"]];
+  for (const service of data.services) {
+    for (const step of service.steps) {
+      step.cells.forEach((c, i) => {
+        const rate = c.completed ? String(Math.round((c.late / c.completed) * 100)) : "";
+        lines.push([data.months[i], service.name, step.name, String(c.completed), String(c.late), rate]);
+      });
+    }
+  }
+  return `\uFEFF${lines.map((line) => line.map(cell).join(",")).join("\r\n")}\r\n`;
+}
+
 export function computeStats(
   apps: StatsApp[],
   services: StatsService[],
@@ -181,6 +275,7 @@ export function computeStats(
       };
     }),
     trend: weeklyTrend(apps, now, weeks),
+    bottlenecks: monthlyBottlenecks(apps, services, now),
   };
 }
 

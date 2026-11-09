@@ -6,6 +6,7 @@ import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 import { getStats } from "@/lib/dal";
 import { formatDateTime, formatPercent, formatWorkHours } from "@/lib/format";
+import BottleneckTrend from "./BottleneckTrend";
 
 export const metadata = {
   title: "Rapor SLA publik",
@@ -13,7 +14,7 @@ export const metadata = {
 };
 
 async function Report() {
-  const { overall, services, trend, generatedAt } = await getStats();
+  const { overall, services, trend, bottlenecks, generatedAt } = await getStats();
   return (
     <>
       <section className="grid gap-6 rounded-card border border-line bg-surface p-6 lg:grid-cols-[1fr_2fr] lg:items-center">
@@ -53,6 +54,9 @@ async function Report() {
         data={weeklyOnTime(trend)}
         emptyLabel="Belum ada yang selesai"
       />
+
+      {/* Tahap mana yang paling sering molor, bulan per bulan (filter layanan & periode, unduh CSV). */}
+      <BottleneckTrend data={bottlenecks} />
 
       <section className="rounded-card border border-line bg-surface" aria-labelledby="per-layanan">
         <h2 id="per-layanan" className="border-b border-line p-5 text-lg font-bold">

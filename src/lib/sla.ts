@@ -114,6 +114,11 @@ export function workMsBetween(from: DateLike, to: DateLike, holidays?: Holidays)
   return total;
 }
 
+/** Hari kerja tersisa sampai `to` (dibulatkan ke atas: sisa 2 jam = 1 hari); 0 jika sudah lewat. */
+export function workdaysUntil(from: DateLike, to: DateLike, holidays?: Holidays): number {
+  return Math.ceil(workMsBetween(from, to, holidays) / (WORKDAY_HOURS * HOUR_MS));
+}
+
 /** Tenggat awal sebuah tahap; null jika tahap tidak punya SLA (mis. penyerahan). */
 export function computeDueAt(
   startedAt: DateLike | null,

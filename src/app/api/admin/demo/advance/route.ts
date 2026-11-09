@@ -1,6 +1,9 @@
+import { after } from "next/server";
 import { ok, parseBody, requireUser, route } from "@/lib/api";
 import { advanceClock, getClock, resetClock } from "@/lib/clock";
 import { syncOverdue } from "@/lib/escalation";
+import { remindFixDeadlines } from "@/lib/push";
+import { siteOrigin } from "@/lib/qr";
 import { addWorkHours, DAY_MS } from "@/lib/sla";
 import { advanceSchema } from "@/lib/validators";
 
@@ -23,6 +26,9 @@ export const POST = route(async (request) => {
 
   const clock = await getClock();
   const escalated = await syncOverdue(clock.now, clock.holidays);
+  // Jam maju bisa melewati H-3/H-1 batas perbaikan: kirim pengingatnya seperti cron harian.
+  const origin = await siteOrigin();
+  after(() => remindFixDeadlines(clock, origin));
   return ok({
     clockOffsetMs: clock.clockOffsetMs,
     offsetDays: clock.clockOffsetMs / DAY_MS,

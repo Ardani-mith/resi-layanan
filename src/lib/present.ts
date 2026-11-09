@@ -12,6 +12,7 @@ import {
   remainingMs,
   type StepState,
   stepState,
+  workdaysUntil,
 } from "./sla.ts";
 import {
   type ApplicationData,
@@ -275,6 +276,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
     /** Menunggu perbaikan: lengkapi paling lambat ini, lewat itu dibatalkan otomatis. */
     fixDeadline: fixPausedAt ? fixDeadline(fixPausedAt, holidays) : null,
+    /** Sisa hari kerja untuk melengkapi berkas (dari WAIT_WINDOW_WORKDAYS), dihitung sama dengan pembatalan otomatis. */
+    fixWorkdaysLeft: fixPausedAt ? workdaysUntil(now, fixDeadline(fixPausedAt, holidays), holidays) : null,
     rejectionReason: app.rejectionReason,
     rated: Boolean(app.rating?.score),
     steps,

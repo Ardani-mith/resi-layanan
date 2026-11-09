@@ -229,6 +229,8 @@ export interface ApplicationData {
   completedAt: Date | null;
   rating: Rating | null;
   urgency?: Urgency | null;
+  /** Pengingat batas perbaikan yang sudah dikirim: `${pausedAt ISO}|${sisa hari}` (lib/push.ts). */
+  remindersSent?: string[];
   verifyLock?: { fails: number; until: Date | null };
   createdAt: Date;
   updatedAt?: Date;
@@ -593,7 +595,9 @@ export function followUpFor(escalations: Escalation[] | undefined, stepKey: stri
 // --- Batas kedatangan (layanan wajib hadir) ----------------------------------------
 
 /** Pendaftaran online layanan wajib hadir berlaku 10 hari kerja; lewat itu dibatalkan otomatis. */
-const ARRIVAL_WINDOW_WORK_HOURS = 10 * WORKDAY_HOURS;
+/** Batas menunggu warga (datang ke loket / melengkapi berkas), dalam hari kerja. */
+export const WAIT_WINDOW_WORKDAYS = 10;
+const ARRIVAL_WINDOW_WORK_HOURS = WAIT_WINDOW_WORKDAYS * WORKDAY_HOURS;
 
 /** Batas warga datang ke loket untuk pendaftaran yang dibuat pada `createdAt`. */
 export function arrivalDeadline(createdAt: DateLike, holidays?: Holidays): Date {

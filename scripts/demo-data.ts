@@ -433,6 +433,9 @@ class Sim {
 }
 
 /** Seluruh data permohonan demo relatif terhadap `now`. */
+/** Jumlah permohonan riwayat (tuntas 2–12 bulan lalu) untuk tren bottleneck bulanan di rapor. */
+export const DEMO_HISTORY = 216;
+
 export function buildDemoApplications({
   services,
   users,
@@ -658,6 +661,54 @@ export function buildDemoApplications({
       const score = rng() < 0.6 ? 5 : rng() < 0.7 ? 4 : 3;
       const ratedAt = Math.min(now.getTime(), sim.app.completedAt!.getTime() + rng() * DAY_MS);
       sim.rate(score, pick(COMMENTS), new Date(ratedAt));
+    }
+  }
+
+  // --- Riwayat 12 bulan (tren bottleneck bulanan di rapor) ------------------------
+  // Permohonan yang sudah tuntas 2–12 bulan lalu. Tiap layanan punya satu tahap "titik macet"
+  // yang dulu sering molor lalu membaik dari bulan ke bulan, supaya heatmap tahap × bulan bercerita.
+  // Dibuat setelah data di atas, jadi data terbaru (antrean, resi demo) tidak berubah.
+  for (let i = 0; i < DEMO_HISTORY; i += 1) {
+    const service = pick(services);
+    const age = rng(); // 0 = ±2 bulan lalu, 1 = ±12 bulan lalu
+    const channel: Channel = rng() < 0.4 ? "loket" : "online";
+    const sim = new Sim({
+      service,
+      applicant: {
+        name: `${pick(FIRST)} ${pick(LAST)}`,
+        phone: randomPhone(rng),
+        email: null,
+        ...protectNik(randomNik(rng)),
+      },
+      channel,
+      resi: null,
+      createdAt: officeTime(now, 60 + age * 300, rng, holidays),
+      holidays,
+      actors,
+      creator: channel === "loket" ? pick(loket) : null,
+      limit: now,
+    });
+    sims.push(sim);
+    if (sim.app.status === "menunggu_kedatangan") sim.act("arrive", sim.later(1 + rng() * 5, rng));
+
+    // Titik macet per layanan: salah satu tahap tengah, makin lama makin sering molor.
+    const hotspot = 1 + (service.slug.length % Math.max(1, service.steps.length - 2));
+    const hotLate = 0.1 + 0.5 * age;
+    while (sim.app.status !== "selesai" && sim.app.status !== "ditolak") {
+      const index = sim.app.currentStep;
+      if (index === 0 && rng() < 0.04) {
+        sim.act("reject", sim.finishTime(0.3, rng), { publicNote: pick(REJECT_NOTES) });
+        break;
+      }
+      const slow = index === hotspot ? rng() < hotLate : index > 0 && rng() < 0.06;
+      const at = sim.finishTime(slow ? 1.3 + rng() * 1.5 : 0.25 + rng() * 0.6, rng);
+      const isLast = index === sim.app.steps.length - 1;
+      sim.act("complete", at, isLast ? { publicNote: "Dokumen sudah diserahkan kepada pemohon." } : {});
+    }
+    sim.escalateUntil(now);
+    if (sim.app.status === "selesai" && rng() < 0.6) {
+      const score = rng() < 0.55 ? 5 : rng() < 0.7 ? 4 : 3;
+      sim.rate(score, pick(COMMENTS), new Date(sim.app.completedAt!.getTime() + rng() * DAY_MS));
     }
   }
 

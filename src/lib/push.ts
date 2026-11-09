@@ -6,7 +6,9 @@
 
 import webpush from "web-push";
 import { Application, PushSubscriber } from "../models.ts";
-import { AppError, OPEN_STATUSES } from "./workflow.ts";
+import { formatDateTime } from "./format.ts";
+import { type Holidays, workdaysUntil } from "./sla.ts";
+import { AppError, type ApplicationData, fixDeadline, OPEN_STATUSES, STATUS } from "./workflow.ts";
 
 /** Maksimal perangkat per resi; langganan tertua diganti bila lebih. */
 const MAX_PER_RESI = 5;
@@ -89,4 +91,49 @@ export async function sendPush(resi: string, message: PushMessage): Promise<void
   } catch (error) {
     console.error("[push]", error);
   }
+}
+
+/** Sisa hari kerja saat pengingat batas perbaikan dikirim (yang paling mendesak dulu). */
+export const FIX_REMINDER_DAYS = [1, 3] as const;
+
+/**
+ * Pengingat push sebelum batas melengkapi berkas (H-3 & H-1 hari kerja), untuk resi yang
+ * berlangganan. Idempoten: tiap pengingat dicatat di `remindersSent` (per jeda) secara atomik,
+ * jadi aman dipanggil berulang (cron harian, tombol jam demo). Mengembalikan jumlah terkirim.
+ */
+export async function remindFixDeadlines(
+  { now, holidays }: { now: Date; holidays?: Holidays },
+  origin: string,
+): Promise<number> {
+  if (!pushPublicKey()) return 0;
+  const subscribed = await PushSubscriber.distinct("resi");
+  if (!subscribed.length) return 0;
+  const apps = await Application.find({ status: STATUS.PERLU_PERBAIKAN, resi: { $in: subscribed } })
+    .select("resi serviceName currentStep steps")
+    .lean<ApplicationData[]>();
+  let sent = 0;
+  for (const app of apps) {
+    const pausedAt = app.steps[app.currentStep]?.pausedAt;
+    if (!pausedAt) continue;
+    const deadline = fixDeadline(pausedAt, holidays);
+    const left = workdaysUntil(now, deadline, holidays);
+    const mark = FIX_REMINDER_DAYS.find((days) => left > 0 && left <= days);
+    if (!mark) continue;
+    const key = `${new Date(pausedAt).toISOString()}|${mark}`;
+    const claimed = await Application.updateOne(
+      { _id: app._id, remindersSent: { $ne: key } },
+      { $addToSet: { remindersSent: key } },
+    );
+    if (!claimed.modifiedCount) continue;
+    await sendPush(app.resi, {
+      title:
+        left === 1
+          ? "Hari kerja terakhir untuk melengkapi berkas"
+          : `Sisa ${left} hari kerja untuk melengkapi berkas`,
+      body: `${app.serviceName} (${app.resi}): lengkapi paling lambat ${formatDateTime(deadline)}; lewat dari itu permohonan dibatalkan otomatis.`,
+      url: `${origin}/lacak/${app.resi}`,
+    });
+    sent += 1;
+  }
+  return sent;
 }

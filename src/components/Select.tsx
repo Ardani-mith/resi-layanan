@@ -24,6 +24,7 @@ export default function Select({
   error,
   hint,
   className,
+  defaultValue = "",
   onValueChange,
 }: {
   label: string;
@@ -33,10 +34,12 @@ export default function Select({
   error?: string | null;
   hint?: string;
   className?: string;
+  /** Pilihan awal (tanpa ini = placeholder). */
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
 }) {
   const id = useId();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   // Daftar membuka ke atas bila ruang di bawah tombol tidak cukup (mis. dekat dasar layar).
