@@ -257,9 +257,10 @@ describe("perlindungan NIK", () => {
 
   it("sandi yang diubah ditolak (AES-GCM)", () => {
     const [v, iv, tag, data] = encryptNik(nik).split(".");
-    // Karakter terakhir selalu diganti dengan yang BERBEDA (ciphertext acak; "AA" bisa kebetulan sama).
-    const last = data.at(-1) === "A" ? "B" : "A";
-    const tampered = [v, iv, tag, `${data.slice(0, -1)}${last}`].join(".");
+    // Ganti karakter PERTAMA (6 bit data penuh). Karakter terakhir base64url sebagian berisi bit
+    // padding, jadi mengubahnya kadang tidak mengubah byte apa pun dan tes jadi tidak stabil.
+    const first = data[0] === "A" ? "B" : "A";
+    const tampered = [v, iv, tag, `${first}${data.slice(1)}`].join(".");
     expect(() => decryptNik(tampered)).toThrow();
   });
 

@@ -6,6 +6,7 @@ import {
   Bell,
   Check,
   CheckCircle2,
+  CircleAlert,
   Clock,
   Copy,
   ExternalLink,
@@ -19,6 +20,7 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
@@ -158,12 +160,8 @@ function FormError({ errors, action }: { errors: FormErrors; action: CitizenActi
   return <Alert className="w-full">{errors.formAction === action && errors.form}</Alert>;
 }
 
-const TONES = {
-  brand: { icon: "bg-brand-soft text-brand", glow: "bg-brand/15", dot: "bg-brand" },
-  late: { icon: "bg-late-soft text-late", glow: "bg-late/15", dot: "bg-late" },
-  pause: { icon: "bg-pause-soft text-pause", glow: "bg-pause/15", dot: "bg-pause" },
-  ok: { icon: "bg-ok-soft text-ok", glow: "bg-ok/15", dot: "bg-ok" },
-};
+/** Nada status = warna ikon & label kecil di atas judul (tanpa badge/pendar). */
+const TONES = { brand: "text-brand", late: "text-late", pause: "text-pause", ok: "text-ok" };
 
 /** Kartu putih yang menumpuk di atas kepala gelap: sudut besar + bayangan lembut. */
 const card = "rounded-2xl border border-line bg-surface shadow-[0_24px_60px_-36px_rgb(15_27_45/0.5)]";
@@ -171,7 +169,8 @@ const card = "rounded-2xl border border-line bg-surface shadow-[0_24px_60px_-36p
 /**
  * Kartu "Langkah Anda berikutnya": satu jawaban jelas untuk "lalu saya harus apa?" sesuai status.
  * Semua pesan status (terlambat, perbaikan, siap diambil, ditolak, penilaian) ada di sini, tidak
- * tersebar menjadi banner terpisah. Nada status = ikon + pendar lembut di sudut kartu.
+ * tersebar menjadi banner terpisah. Sengaja polos (tanpa badge ikon/pendar): label kecil berwarna
+ * status, judul, lalu isi selebar kartu.
  */
 function NextStep({
   tone,
@@ -185,35 +184,18 @@ function NextStep({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby="next-title" className={cn(card, "relative overflow-hidden p-5 sm:p-6")}>
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute -top-28 -left-20 size-72 rounded-full blur-3xl",
-          TONES[tone].glow,
-        )}
-      />
-      <div className="relative flex items-start gap-4">
-        <span
-          aria-hidden
-          className={cn(
-            "grid size-11 shrink-0 place-items-center rounded-xl ring-1 ring-current/10 ring-inset",
-            TONES[tone].icon,
-          )}
-        >
-          <Icon className="size-5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 font-mono text-xs tracking-[0.14em] text-muted uppercase">
-            <span aria-hidden className={cn("size-1.5 rounded-full", TONES[tone].dot)} />
-            Langkah Anda berikutnya
-          </p>
-          <h2 id="next-title" className="mt-1 text-xl leading-snug font-semibold tracking-[-0.02em]">
-            {title}
-          </h2>
-          <div className="mt-3 space-y-3 text-sm leading-relaxed">{children}</div>
-        </div>
-      </div>
+    <section aria-labelledby="next-title" className={cn(card, "p-5 sm:p-6")}>
+      <p className={cn("flex items-center gap-1.5 text-xs font-medium", TONES[tone])}>
+        <Icon aria-hidden className="size-3.5" strokeWidth={2.25} />
+        Langkah Anda berikutnya
+      </p>
+      <h2
+        id="next-title"
+        className="mt-1.5 text-lg leading-snug font-semibold tracking-[-0.02em] text-balance sm:text-xl"
+      >
+        {title}
+      </h2>
+      <div className="mt-4 space-y-3 text-sm leading-relaxed">{children}</div>
     </section>
   );
 }
@@ -244,34 +226,18 @@ function barTone(data: Tracking, step: Tracking["steps"][number], i: number) {
 /** Sisa hari kerja di bawah ini = mendesak (merah); sama dengan pengingat push H-3. */
 const FIX_URGENT_DAYS = 3;
 
-/** Satu langkah bernomor di panduan perbaikan berkas (garis penghubung ke langkah berikutnya). */
-function FixStep({
-  n,
-  title,
-  last = false,
-  children,
-}: {
-  n: number;
-  title: string;
-  last?: boolean;
-  children: ReactNode;
-}) {
+/** Satu langkah bernomor di panduan perbaikan berkas: baris dalam satu panel bergaris pemisah. */
+function FixStep({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <li className="relative flex gap-3.5">
-      {!last && <span aria-hidden className="absolute top-8 bottom-0 left-[13.5px] w-px bg-line" />}
-      <span
-        aria-hidden
-        className="relative grid size-7 shrink-0 place-items-center rounded-full bg-pause-soft font-mono text-xs font-semibold text-pause ring-1 ring-pause/20"
-      >
-        {n}
-      </span>
-      <div className={cn("min-w-0 flex-1", !last && "pb-5")}>
-        <h3 className="leading-7 font-semibold">
-          <span className="sr-only">Langkah {n}: </span>
-          {title}
-        </h3>
-        <div className="mt-1 space-y-2">{children}</div>
-      </div>
+    <li className="px-4 py-4 sm:px-5">
+      <h3 className="flex items-baseline gap-2.5 font-semibold">
+        <span aria-hidden className="font-mono text-xs font-medium text-muted tabular-nums">
+          {String(n).padStart(2, "0")}
+        </span>
+        <span className="sr-only">Langkah {n}: </span>
+        <span className="min-w-0 leading-snug">{title}</span>
+      </h3>
+      <div className="mt-2.5 space-y-3">{children}</div>
     </li>
   );
 }
@@ -280,23 +246,35 @@ function FixStep({
 function FixChecklist({ items }: { items: string[] }) {
   const [done, setDone] = useState<string[]>([]);
   return (
-    <ul className="grid gap-1 sm:grid-cols-2">
-      {items.map((item) => (
-        <li key={item}>
-          <label className="flex cursor-pointer gap-2.5 rounded-lg p-1.5 hover:bg-surface-2">
-            <input
-              type="checkbox"
-              checked={done.includes(item)}
-              onChange={() =>
-                setDone((list) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]))
-              }
-              className="mt-0.5 size-4 shrink-0 accent-[var(--brand)]"
-            />
-            <span className={cn(done.includes(item) && "text-muted line-through")}>{item}</span>
-          </label>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-3 py-2 text-xs text-muted">
+        <span>Bawa juga · centang sebagai pengingat, tidak dikirim</span>
+        <span className="shrink-0 font-mono tabular-nums">
+          {done.length}/{items.length}
+        </span>
+      </div>
+      {/* Kisi bergaris rambut: gap-px di atas latar garis. */}
+      <ul className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2">
+        {items.map((item) => {
+          const checked = done.includes(item);
+          return (
+            <li key={item} className="bg-surface sm:last:odd:col-span-2">
+              <label className="flex h-full cursor-pointer items-start gap-2.5 px-3 py-2.5 leading-snug transition-colors hover:bg-surface-2 has-checked:bg-ok-soft/40">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setDone((list) => (checked ? list.filter((x) => x !== item) : [...list, item]))
+                  }
+                  className="mt-px size-4 shrink-0 accent-[var(--ok)]"
+                />
+                <span className={cn(checked && "text-muted line-through")}>{item}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -548,103 +526,127 @@ export default function TrackView({
         const urgent = left !== null && left <= FIX_URGENT_DAYS;
         return (
           <NextStep tone="pause" icon={FileWarning} title="Berkas perlu diperbaiki">
-            {left !== null && data.fixDeadline && (
-              <div
-                className={cn(
-                  "rounded-xl border p-4",
-                  urgent ? "border-late/30 bg-late-soft/50" : "border-pause/25 bg-pause-soft/40",
-                )}
-              >
-                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-                  <p className="leading-tight">
-                    <span
-                      className={cn(
-                        "font-mono text-4xl font-semibold tabular-nums",
-                        urgent ? "text-late" : "text-pause",
-                      )}
-                    >
-                      {left}
-                    </span>
-                    <span className="ml-2 font-medium">dari {WAIT_WINDOW_WORKDAYS} hari kerja tersisa</span>
-                  </p>
-                  <p className="text-xs text-muted sm:text-right">
-                    Batas melengkapi
-                    <span className="block text-sm font-semibold text-text">
-                      {formatDateTime(data.fixDeadline)}
-                    </span>
+            <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+              {left !== null && data.fixDeadline && (
+                <div className="bg-surface-2/60 px-4 py-3.5 sm:px-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <p className="flex items-baseline gap-1.5">
+                      <span
+                        className={cn(
+                          "font-mono text-2xl leading-none font-semibold tabular-nums",
+                          urgent && "text-late",
+                        )}
+                      >
+                        {left}
+                      </span>
+                      <span className="text-muted">dari {WAIT_WINDOW_WORKDAYS} hari kerja tersisa</span>
+                    </p>
+                    <p className="text-xs text-muted">
+                      Batas <span className="font-medium text-text">{formatDateTime(data.fixDeadline)}</span>
+                    </p>
+                  </div>
+                  <div aria-hidden className="mt-3 flex gap-0.5">
+                    {Array.from({ length: WAIT_WINDOW_WORKDAYS }, (_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "h-1 flex-1 first:rounded-l-full last:rounded-r-full",
+                          i < left ? (urgent ? "bg-late" : "bg-brand") : "bg-line",
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-muted">
+                    Lewat batas, permohonan batal otomatis. Hitung mundur instansi dijeda selama menunggu.
                   </p>
                 </div>
-                <div aria-hidden className="mt-3 flex gap-1">
-                  {Array.from({ length: WAIT_WINDOW_WORKDAYS }, (_, i) => (
-                    <span
-                      key={i}
-                      className={cn(
-                        "h-1.5 flex-1 rounded-full",
-                        i < left ? (urgent ? "bg-late" : "bg-pause") : "bg-line",
-                      )}
-                    />
-                  ))}
-                </div>
-                <p className="mt-2.5 text-xs text-muted">
-                  Lewat dari batas, permohonan dibatalkan otomatis. Selama menunggu, hitung mundur instansi
-                  dijeda, jadi waktu ini tidak merugikan Anda.
-                </p>
-              </div>
-            )}
+              )}
 
-            <ol className="pt-1">
-              <FixStep n={1} title="Siapkan yang diminta petugas">
-                <blockquote className="rounded-lg bg-pause-soft px-3 py-2 font-medium">
-                  {data.fixNote}
-                </blockquote>
-                <p className="text-xs text-muted">
-                  Bawa juga dokumen berikut. Centang sebagai pengingat pribadi (tidak dikirim ke petugas):
-                </p>
-                <FixChecklist items={bring} />
-              </FixStep>
-              <FixStep n={2} title="Lengkapi di lokasi layanan terdekat">
-                <p>
-                  Datang pada jam kerja, Senin–Jumat 08.00–16.00 WIB, ke kelurahan, kecamatan, Dukcapil, atau
-                  MPP terdekat. Sebutkan nomor resi <span className="font-mono">{data.resi}</span> ke petugas.
-                </p>
-                <a
-                  href="#lokasi"
-                  className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline"
-                >
-                  <MapPin aria-hidden className="size-4" />
-                  Lihat lokasi terdekat
-                </a>
-              </FixStep>
-              <FixStep n={3} title="Konfirmasi di sini setelah dilengkapi" last>
-                <p className="text-muted">Proses berlanjut dan hitung mundur instansi berjalan lagi.</p>
-                <form
-                  method="post"
-                  className="space-y-3"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (await send("resubmit"))
-                      setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
-                  }}
-                >
-                  <Last4Field
-                    id="fix-last4"
-                    show={!verified}
-                    value={last4}
-                    onChange={setLast4}
-                    error={phoneError("resubmit")}
+              <ol className="divide-y divide-line">
+                <FixStep n={1} title="Siapkan yang diminta petugas">
+                  {/* Inti permintaan: kartu pesan bergradasi biru brand + foto profil petugas (pixel-art,
+                      sama dengan denah kantor). Tetap biru di kedua tema agar selalu paling menonjol. */}
+                  <figure className="relative overflow-hidden rounded-xl bg-[linear-gradient(135deg,#3b74f0_0%,#2156d9_45%,#123a9c_100%)] p-4 text-white shadow-[0_18px_36px_-22px_#2156d9] ring-1 ring-white/15 sm:p-5">
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -top-16 -right-10 size-44 rounded-full bg-white/15 blur-2xl"
+                    />
+                    {/* Ikon "penting" besar sebagai watermark latar di sisi kanan. */}
+                    <CircleAlert
+                      aria-hidden
+                      strokeWidth={1.5}
+                      className="pointer-events-none absolute top-1/2 -right-8 size-40 -translate-y-1/2 -rotate-12 text-white/10 sm:-right-6 sm:size-48"
+                    />
+                    <figcaption className="relative flex items-center gap-3">
+                      <Image
+                        src="/brand/petugas-avatar.png"
+                        alt=""
+                        width={44}
+                        height={44}
+                        className="size-11 shrink-0 rounded-full bg-white object-cover ring-2 ring-white/70 [image-rendering:pixelated]"
+                      />
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <p className="text-sm font-semibold">Petugas Dukcapil</p>
+                        <p className="mt-0.5 text-xs text-white/70">
+                          Permintaan perbaikan
+                          {data.fixRequestedAt && <> · {formatDateTime(data.fixRequestedAt)}</>}
+                        </p>
+                      </div>
+                      {/* <span className="shrink-0 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium ring-1 ring-white/25">
+                        Wajib
+                      </span> */}
+                    </figcaption>
+                    <blockquote className="relative mt-3.5 text-[0.95rem] leading-relaxed font-medium text-pretty sm:text-base">
+                      &ldquo;{data.fixNote}&rdquo;
+                    </blockquote>
+                  </figure>
+                  <FixChecklist items={bring} />
+                </FixStep>
+                <FixStep n={2} title="Lengkapi di lokasi layanan terdekat">
+                  <p>
+                    Datang pada jam kerja, Senin–Jumat 08.00–16.00 WIB, ke kelurahan, kecamatan, Dukcapil,
+                    atau MPP terdekat. Sebutkan nomor resi <span className="font-mono">{data.resi}</span> ke
+                    petugas.
+                  </p>
+                  <a
+                    href="#lokasi"
+                    className="inline-flex items-center gap-1.5 font-semibold text-brand hover:underline"
                   >
-                    <button
-                      type="submit"
-                      disabled={pending === "resubmit"}
-                      className={buttonClass("primary")}
+                    <MapPin aria-hidden className="size-4" />
+                    Lihat lokasi terdekat
+                  </a>
+                </FixStep>
+                <FixStep n={3} title="Konfirmasi di sini setelah dilengkapi">
+                  <p className="text-muted">Proses berlanjut dan hitung mundur instansi berjalan lagi.</p>
+                  <form
+                    method="post"
+                    className="space-y-3"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (await send("resubmit"))
+                        setNotice("Terima kasih. Proses dilanjutkan dan hitung mundur berjalan kembali.");
+                    }}
+                  >
+                    <Last4Field
+                      id="fix-last4"
+                      show={!verified}
+                      value={last4}
+                      onChange={setLast4}
+                      error={phoneError("resubmit")}
                     >
-                      {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
-                    </button>
-                  </Last4Field>
-                  <FormError errors={errors} action="resubmit" />
-                </form>
-              </FixStep>
-            </ol>
+                      <button
+                        type="submit"
+                        disabled={pending === "resubmit"}
+                        className={buttonClass("primary")}
+                      >
+                        {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
+                      </button>
+                    </Last4Field>
+                    <FormError errors={errors} action="resubmit" />
+                  </form>
+                </FixStep>
+              </ol>
+            </div>
 
             {pushKey && (
               <p className="flex gap-2 border-t border-line pt-3 text-xs text-muted">

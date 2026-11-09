@@ -274,6 +274,8 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     arrivalDeadline:
       app.status === STATUS.MENUNGGU_KEDATANGAN ? arrivalDeadline(app.createdAt, holidays) : null,
     fixNote: app.status === STATUS.PERLU_PERBAIKAN ? (app.steps[app.currentStep]?.publicNote ?? null) : null,
+    /** Kapan petugas meminta perbaikan (awal jeda tahap berjalan). */
+    fixRequestedAt: fixPausedAt ?? null,
     /** Menunggu perbaikan: lengkapi paling lambat ini, lewat itu dibatalkan otomatis. */
     fixDeadline: fixPausedAt ? fixDeadline(fixPausedAt, holidays) : null,
     /** Sisa hari kerja untuk melengkapi berkas (dari WAIT_WINDOW_WORKDAYS), dihitung sama dengan pembatalan otomatis. */
