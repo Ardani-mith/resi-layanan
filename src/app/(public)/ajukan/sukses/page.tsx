@@ -75,7 +75,8 @@ async function Success({ searchParams }: SearchParamsOf) {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center gap-4">
+      {/* HP: ikon + judul sebaris, resi selebar layar di bawahnya; sm ke atas: satu baris. */}
+      <header className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 sm:flex sm:flex-wrap">
         <span
           aria-hidden
           className="grid size-12 shrink-0 place-items-center rounded-full bg-ok-soft text-ok"
@@ -93,7 +94,7 @@ async function Success({ searchParams }: SearchParamsOf) {
               : "Simpan nomor resi ini untuk melacak permohonan."}
           </p>
         </div>
-        <p className="rounded-xl border-2 border-dashed border-brand bg-brand-soft px-4 py-2 font-mono text-2xl font-bold tracking-widest select-all">
+        <p className="col-span-2 rounded-xl border-2 border-dashed border-brand bg-brand-soft px-4 py-3 text-center font-mono text-xl font-bold tracking-widest select-all sm:py-2 sm:text-2xl">
           {resi}
         </p>
       </header>

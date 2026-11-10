@@ -1099,26 +1099,34 @@ function ApplyFormBody({
                 className="rounded-2xl border border-brand/50 bg-surface p-5 shadow-[0_0_0_4px_var(--brand-soft)] motion-safe:animate-[select-in_.25s_ease-out] sm:p-6"
               >
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-start lg:gap-8">
-                  <div className="flex gap-3">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand text-white">
+                  {/* HP: ikon + judul sebaris, keterangan & kode demo selebar panel; sm ke atas: ikon di kiri semua baris. */}
+                  <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 sm:items-start">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand text-white sm:row-span-3">
                       <ShieldCheck aria-hidden className="size-5" />
                     </span>
-                    <div className="min-w-0 space-y-2">
-                      <h2 id="otp-title" className="font-semibold">
-                        Verifikasi nomor HP
-                      </h2>
-                      <p className="text-sm text-muted">
-                        Kode 6 digit dikirim ke{" "}
-                        <span className="font-mono font-semibold text-text">{otp.phoneMasked}</span>. Berlaku
-                        5 menit.
+                    <h2 id="otp-title" className="font-semibold sm:self-center">
+                      Verifikasi nomor HP
+                    </h2>
+                    <p className="col-span-2 text-sm text-muted sm:col-span-1 sm:col-start-2">
+                      Kode 6 digit dikirim ke{" "}
+                      <span className="font-mono font-semibold whitespace-nowrap text-text">
+                        {otp.phoneMasked}
+                      </span>
+                      . Berlaku 5 menit.
+                    </p>
+                    {otp.demoCode && (
+                      // HP: kartu kode besar di tengah; sm ke atas: satu baris ringkas.
+                      <p className="col-span-2 flex flex-col items-center gap-1 rounded-xl bg-warn-soft px-4 py-3 text-center text-warn sm:col-span-1 sm:col-start-2 sm:flex-row sm:flex-wrap sm:gap-x-2 sm:rounded-lg sm:px-3 sm:py-1.5 sm:text-left">
+                        <span className="text-xs font-medium sm:text-sm sm:font-normal">
+                          Mode demo · SMS/WhatsApp belum tersambung.
+                          <span className="hidden sm:inline"> Kode Anda:</span>
+                        </span>
+                        <span className="pl-[0.4em] font-mono text-3xl font-bold tracking-[0.4em] sm:pl-0 sm:text-sm sm:tracking-widest">
+                          <span className="sr-only sm:hidden">Kode Anda: </span>
+                          {otp.demoCode}
+                        </span>
                       </p>
-                      {otp.demoCode && (
-                        <p className="inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-warn-soft px-3 py-1.5 text-sm text-warn">
-                          Mode demo, SMS/WhatsApp belum tersambung. Kode Anda:
-                          <span className="font-mono font-bold tracking-widest">{otp.demoCode}</span>
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   <div>
@@ -1132,13 +1140,15 @@ function ApplyFormBody({
                         maxLength={6}
                         autoFocus
                         error={errors.otp}
+                        placeholder="••••••"
+                        inputClassName="h-14 text-center font-mono text-2xl tracking-[0.5em] placeholder:tracking-[0.5em] sm:h-auto sm:text-left sm:text-lg sm:tracking-[0.3em]"
                       />
                       {/* Sejajar dengan kotak isian (di bawah labelnya). */}
                       <SubmitButton
                         pending={pending}
                         pendingLabel="Memeriksa kode…"
                         icon={ShieldCheck}
-                        className="shrink-0 sm:mt-6.5"
+                        className="min-h-12 w-full shrink-0 sm:mt-6.5 sm:min-h-0 sm:w-auto"
                       >
                         Verifikasi & ajukan
                       </SubmitButton>

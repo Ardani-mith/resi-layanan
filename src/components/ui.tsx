@@ -176,6 +176,8 @@ type FieldProps = {
   children?: ReactNode;
   /** Penanda kecil di dalam input, sisi kanan (mis. "Terverifikasi"). Hanya untuk `as="input"`. */
   trailing?: ReactNode;
+  /** Kelas tambahan untuk kotak isiannya sendiri (mis. kode OTP besar & berjarak). */
+  inputClassName?: string;
 } & Omit<ComponentPropsWithoutRef<"input">, "className" | "children">;
 
 /** Kelas dasar kotak isian (dipakai Field & isian khusus seperti RT/RW). */
@@ -193,14 +195,23 @@ export function FieldMessage({ id, error, hint }: { id: string; error?: string |
 }
 
 /** Input berlabel dengan pesan error yang terhubung lewat aria-describedby. */
-export function Field({ label, error, hint, className = "", as = "input", trailing, ...props }: FieldProps) {
+export function Field({
+  label,
+  error,
+  hint,
+  className = "",
+  as = "input",
+  trailing,
+  inputClassName,
+  ...props
+}: FieldProps) {
   const id = useId();
   const messageId = `${id}-message`;
   const control = {
     id,
     "aria-invalid": Boolean(error),
     "aria-describedby": error || hint ? messageId : undefined,
-    className: inputClass,
+    className: cn(inputClass, inputClassName),
   };
   return (
     <div className={className}>
