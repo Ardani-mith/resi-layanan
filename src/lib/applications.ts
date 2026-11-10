@@ -218,11 +218,20 @@ export async function createApplication({
   if (input.channel === "online") await consumeOtp(input.otp, applicant.phone, nik);
 
   // Dicek setelah OTP: info "ada permohonan aktif" hanya untuk pemegang nomor HP, tanpa detail apa pun.
-  const active = await Application.exists({
+  // Pembatalan otomatis (tidak datang / tidak melengkapi berkas 10 hari kerja) bersifat lazy, jadi
+  // disinkronkan dulu di sini: pendaftaran yang sudah lewat batas tidak boleh mengunci NIK.
+  const candidates = await Application.find({
     "applicant.nikHash": applicant.nikHash,
     serviceSlug: service.slug,
     status: { $in: OPEN_STATUSES },
-  });
+  })
+    .select("status createdAt currentStep steps currentDueAt rejectionReason completedAt escalations")
+    .lean<ApplicationData[]>();
+  let active = false;
+  for (const existing of candidates) {
+    await syncExpiry(existing, clock.now, clock.holidays);
+    if (OPEN_STATUSES.includes(existing.status)) active = true;
+  }
   if (active) {
     throw new AppError(
       409,

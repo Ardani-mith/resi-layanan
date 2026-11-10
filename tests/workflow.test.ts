@@ -211,6 +211,18 @@ describe("perlu perbaikan", () => {
     expect(app.currentDueAt).toEqual(app.steps[0].dueAt);
   });
 
+  it("tidak bisa diminta saat dokumen sudah siap diambil (dokumen terbit tidak boleh ikut batal)", () => {
+    const app = newApp();
+    act(app, "complete", loket, wib("2026-10-12T11:00:00"));
+    act(app, "complete", teknis, wib("2026-10-13T11:00:00"));
+    act(app, "complete", pimpinan, wib("2026-10-14T11:00:00"));
+    expect(app.status).toBe("siap_diambil");
+    expect(() =>
+      act(app, "request_fix", loket, wib("2026-10-15T10:00:00"), { publicNote: "Bawa surat kuasa" }),
+    ).toThrow(/sudah terbit/);
+    expect(app.status).toBe("siap_diambil");
+  });
+
   it("resume hanya dari perlu_perbaikan", () => {
     expect(() => act(newApp(), "resume", loket, T0)).toThrow(/menunggu perbaikan/);
   });

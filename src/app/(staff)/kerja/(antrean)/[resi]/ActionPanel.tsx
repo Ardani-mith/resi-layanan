@@ -91,7 +91,10 @@ export default function ActionPanel({
       ? ["arrive", "reject"]
       : status === "perlu_perbaikan"
         ? ["resume", "reject"]
-        : ["complete", "request_fix", "reject"];
+        : // Dokumen sudah terbit: tidak ada lagi berkas yang bisa diminta perbaikan.
+          status === "siap_diambil"
+          ? ["complete", "reject"]
+          : ["complete", "request_fix", "reject"];
   const [action, setAction] = useState<Action | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const [evidence, setEvidence] = useState("");

@@ -467,6 +467,14 @@ export function applyAction(
       if (!RUNNING_STATUSES.includes(app.status)) {
         throw new WorkflowError("invalid_state", "Permohonan ini tidak sedang berjalan.");
       }
+      // Dokumen sudah terbit & tinggal diambil: jeda di sini akan membatalkan dokumen yang sudah jadi
+      // bila tidak "dilengkapi" 10 hari kerja. Masalah saat pengambilan cukup dicatat, tahap tetap terbuka.
+      if (app.status === STATUS.SIAP_DIAMBIL) {
+        throw new WorkflowError(
+          "invalid_state",
+          "Dokumen sudah terbit; perbaikan berkas tidak bisa diminta lagi.",
+        );
+      }
       requireNote(cleanPublic, "Jelaskan kepada warga apa yang perlu diperbaiki.");
       pauseStep(step, now);
       step.publicNote = cleanPublic;

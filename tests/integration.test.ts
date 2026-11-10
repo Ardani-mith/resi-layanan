@@ -308,6 +308,38 @@ describe("pengaman pengajuan online", () => {
     await expect(second).rejects.toThrow(/^(?!.*RL-).*masih berjalan/);
   });
 
+  it("permohonan yang sudah lewat batas perbaikan tidak mengunci NIK, walau belum pernah disinkronkan", async () => {
+    const nik = uniqueNik();
+    const apply = (clock: ReturnType<typeof clockAt>) =>
+      createApplication({
+        input: {
+          serviceSlug: "akta-kelahiran",
+          channel: "loket",
+          applicant: { name: "Uji Batas", phone: "081277770010", email: "", nik },
+          requirementsChecked: [],
+          consent: true,
+        },
+        actor: actor("petugas_loket"),
+        clock,
+      });
+    const first = await apply(clockAt());
+    await performAction({
+      resi: first.resi,
+      input: { action: "request_fix", publicNote: "Lengkapi fotokopi KK." },
+      actor: actor("petugas_loket"),
+      clock: clockAt(),
+    });
+    // Masih dalam 10 hari kerja: tetap dianggap berjalan.
+    await expect(apply(clockAt(1))).rejects.toMatchObject({ status: 409 });
+    // Lewat batas tanpa ada yang membuka resi/antrean: pengajuan baru tetap bisa, yang lama dibatalkan.
+    const second = await apply(clockAt(16));
+    expect(second.resi).not.toBe(first.resi);
+    expect((await stored(first.resi)).status).toBe("ditolak");
+    expect(
+      await Event.exists({ applicationId: (await stored(first.resi))._id, action: "fix_expired" }),
+    ).toBeTruthy();
+  });
+
   it(`maksimal ${DAILY_ONLINE_LIMIT} pengajuan online per nomor HP per hari`, async () => {
     const phone = "081277770009";
     for (let i = 0; i < DAILY_ONLINE_LIMIT; i += 1) await submitOnline(input(uniqueNik(), phone));
