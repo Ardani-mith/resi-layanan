@@ -100,7 +100,7 @@ export function addWorkHours(start: DateLike, hours: number, holidays?: Holidays
   return addWorkMs(start, hours * HOUR_MS, holidays);
 }
 
-/** Lama waktu kerja (ms) di antara dua titik; 0 jika `to` ≤ `from`. */
+/** Lama waktu kerja (ms) di antara dua titik; 0 jika `to` ± `from`. */
 export function workMsBetween(from: DateLike, to: DateLike, holidays?: Holidays): number {
   const set = toHolidaySet(holidays);
   const end = toDate(to).getTime();

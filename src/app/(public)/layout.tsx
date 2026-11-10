@@ -42,9 +42,6 @@ function PublicLinks({ Item = SlideLink }: { Item?: NavItem }) {
       <Item href="/rapor" className={linkClass}>
         <Label short="Rapor" full="Rapor SLA" />
       </Item>
-      <Item href="/ajukan" className={linkClass}>
-        Ajukan
-      </Item>
     </>
   );
 }
@@ -139,7 +136,6 @@ function Footer() {
           <ul className="mt-4 space-y-2.5">
             {[
               ["/layanan", "Layanan & syarat"],
-              ["/ajukan", "Ajukan permohonan"],
               ["/lacak", "Lacak resi"],
               ["/rapor", "Rapor SLA"],
               ["/masuk", "Masuk petugas"],

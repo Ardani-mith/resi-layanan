@@ -126,7 +126,7 @@ describe("jam kerja (Senin–Jumat 08.00–16.00 WIB)", () => {
   });
 });
 
-describe("janji terbit ≤ 24 jam setelah berkas lengkap (Permendagri 19/2018)", () => {
+describe("janji terbit ± 24 jam setelah berkas lengkap (Permendagri 19/2018)", () => {
   const steps = (issuedAt: string | null): (TestStep & { slaHours: number | null })[] => [
     { slaHours: 8, completedAt: wib("2026-10-12T14:00:00") }, // berkas lengkap Senin 14.00
     { slaHours: 2, completedAt: wib("2026-10-12T15:30:00") },

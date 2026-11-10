@@ -30,7 +30,7 @@ test("admin membuat & mengubah layanan, lalu layanan tampil di katalog", async (
   await expect(admin.getByText("Layanan diubah · Surat Keterangan Pindah")).toBeVisible();
 
   await gotoReady(admin, "/layanan/surat-pindah");
-  await expect(admin.getByRole("heading", { name: "Surat Keterangan Pindah" })).toBeVisible();
+  await expect(admin.getByRole("heading", { name: "Surat Keterangan Pindah", exact: true })).toBeVisible();
   await expect(admin.getByText("Kartu Keluarga asli")).toBeVisible();
 });
 

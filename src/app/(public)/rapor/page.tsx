@@ -31,7 +31,7 @@ async function Report() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatTile
-            label="Terbit ≤ 24 jam"
+            label="Terbit ± 24 jam"
             value={formatPercent(overall.promiseRate)}
             note={`rata-rata ${formatWorkHours(overall.avgIssueHours)} setelah berkas lengkap`}
           />
@@ -103,7 +103,7 @@ async function Report() {
                   <span className="block text-xs text-muted sm:hidden">Rata-rata terbit</span>
                   {formatWorkHours(s.avgIssueHours)}
                   <span className="block text-xs text-muted">
-                    janji ≤ {formatWorkHours(s.issueTargetHours)} · {formatPercent(s.promiseRate)} tepat janji
+                    janji ± {formatWorkHours(s.issueTargetHours)} · {formatPercent(s.promiseRate)} tepat janji
                   </span>
                 </p>
                 <p className="text-sm tabular-nums">

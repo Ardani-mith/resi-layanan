@@ -63,7 +63,7 @@ async function Dashboard() {
         />
         <StatTile
           bare
-          label="Terbit ≤ 24 jam"
+          label="Terbit ± 24 jam"
           value={formatPercent(overall.promiseRate)}
           note={`rata-rata ${formatWorkHours(overall.avgIssueHours)} setelah berkas lengkap`}
         />
@@ -193,7 +193,7 @@ async function Dashboard() {
               <Panel
                 key={service.slug}
                 title={service.name}
-                description={`${formatPercent(service.onTimeRate)} tepat waktu · ${formatPercent(service.promiseRate)} terbit ≤ 24 jam · target terbit ${formatWorkHours(service.issueTargetHours)} · ${service.open} berjalan`}
+                description={`${formatPercent(service.onTimeRate)} tepat waktu · ${formatPercent(service.promiseRate)} terbit ± 24 jam · target terbit ${formatWorkHours(service.issueTargetHours)} · ${service.open} berjalan`}
                 flush
               >
                 <div className="overflow-x-auto">

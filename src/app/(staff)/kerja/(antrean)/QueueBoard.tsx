@@ -3,7 +3,7 @@
 import { ArrowUpRight, Flag, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useDeferredValue, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { ChannelBadge } from "@/components/application/Badges";
 import { Alert, buttonClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -128,7 +128,7 @@ function Board({ queue, initialQuery, done }: { queue: Queue; initialQuery: stri
     // Daftar online layanan wajib hadir: dicari saat warga datang ke loket (tenggat belum berjalan).
     {
       key: "arrival",
-      label: "Menunggu datang",
+      label: "Belum datang",
       count: counts.waitingArrival,
       match: (i) => i.status === "menunggu_kedatangan",
     },
@@ -140,6 +140,25 @@ function Board({ queue, initialQuery, done }: { queue: Queue; initialQuery: stri
     },
     ...(seesAll ? [{ key: "all", label: "Semua", count: counts.total, match: () => true }] : []),
   ];
+
+  // Penanda tab yang masih bisa digeser ke kiri/kanan.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [tabFade, setTabFade] = useState({ left: false, right: false });
+  const updateTabFade = useCallback(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setTabFade((f) => (f.left === left && f.right === right ? f : { left, right }));
+  }, []);
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    updateTabFade();
+    const observer = new ResizeObserver(updateTabFade);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateTabFade]);
 
   const selected = usePathname().split("/")[2];
   // Tab awal: yang memuat permohonan yang sedang dibuka (mis. lewat ⌘K atau tautan), supaya
@@ -198,8 +217,22 @@ function Board({ queue, initialQuery, done }: { queue: Queue; initialQuery: stri
             className="h-8 w-full rounded-md border border-line bg-surface-2 pr-3 pl-8 text-sm outline-none placeholder:text-muted focus:border-brand focus:bg-surface"
           />
         </label>
-        {/* Filter sebagai tab bergaris bawah, jumlah di kapsul kecil. */}
-        <div role="group" aria-label="Filter antrean" className="mt-2 flex gap-4 overflow-x-auto px-4">
+        {/* Filter sebagai tab bergaris bawah, jumlah di kapsul kecil. Bila tidak muat (mis. pimpinan,
+            5 tab), tepi yang masih bisa digeser memudar sebagai penanda, bukan terpotong tajam. */}
+        <div
+          ref={tabsRef}
+          role="group"
+          aria-label="Filter antrean"
+          onScroll={updateTabFade}
+          className={cn(
+            "mt-2 flex [scrollbar-width:none] gap-2.5 overflow-x-auto pr-2 pl-4 [&::-webkit-scrollbar]:hidden",
+            tabFade.left && tabFade.right
+              ? "mask-x-from-90% mask-x-to-100%"
+              : tabFade.right
+                ? "mask-r-from-85% mask-r-to-100%"
+                : tabFade.left && "mask-l-from-85% mask-l-to-100%",
+          )}
+        >
           {tabs.map((t) => {
             const on = t.key === active.key;
             return (

@@ -79,12 +79,16 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
   await nik.fill("3299010101120001");
   await expect(page.getByText(/pemohon berusia 14 tahun/)).toBeVisible();
   await nik.fill("3299012208950001");
-  await expect(page.getByText(/NIK valid · lahir 22-08-1995/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Terverifikasi" })).toBeVisible();
 
   await submit.click();
   await expect(page.getByText("Pastikan semua persyaratan sudah Anda siapkan.")).toBeVisible();
 
-  for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
+  for (const box of await page
+    .getByRole("group", { name: "Persyaratan", exact: true })
+    .getByRole("checkbox")
+    .all())
+    await box.check();
   await page.getByLabel(/Saya menyatakan/).check();
   await submit.click();
   await expect(page.getByText("Nama minimal 3 huruf.")).toBeVisible(); // validasi dari server
@@ -114,7 +118,7 @@ test("pengajuan online: validasi, resi baru, dan nama tersamar di halaman lacak"
 test("tampilan HP & mode gelap tanpa scroll horizontal", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE });
   await page.addInitScript(() => localStorage.setItem("theme", "dark"));
-  for (const path of ["/", "/ajukan", "/lacak/RL-HJ26-AKTA", "/rapor"]) {
+  for (const path of ["/", "/ajukan?layanan=perekaman-ktp-el", "/lacak/RL-HJ26-AKTA", "/rapor"]) {
     await gotoReady(page, path);
     await page.locator("main h1").first().waitFor();
     expect(await hasHorizontalScroll(page), path).toBe(false);
@@ -155,11 +159,19 @@ test("katalog layanan: persyaratan, tahapan & SLA, lalu ajukan", async ({ openPa
   await page.getByRole("link", { name: /Akta Kelahiran/ }).click();
   await page.waitForURL("**/layanan/akta-kelahiran");
   await expect(page.getByRole("heading", { name: "Tahapan & janji waktu" })).toBeVisible();
-  await expect(page.getByText("Verifikasi berkas", { exact: true })).toBeVisible();
-  await expect(page.getByText(/dokumen terbit paling lama 4 jam kerja/)).toBeVisible();
+  // Nama tahap juga muncul di kartu pengajuan, jadi dicek di dalam kartu tahapan.
+  await expect(
+    page
+      .getByRole("region", { name: "Tahapan & janji waktu" })
+      .getByText("Verifikasi berkas", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Terbit ± 4 jam kerja")).toBeVisible();
   expect(await hasHorizontalScroll(page)).toBe(false);
-  await page.getByRole("link", { name: "Ajukan sekarang" }).click();
+  // Detail = informasi saja; sorotan "Ajukan sekarang" membuka form layanan ini.
+  await expect(page.getByRole("heading", { name: "Persyaratan" })).toBeVisible();
+  await page.getByRole("link", { name: "Ajukan sekarang" }).last().click();
   await page.waitForURL("**/ajukan?layanan=akta-kelahiran");
+  await expect(page.getByRole("group", { name: "Persyaratan", exact: true })).toBeVisible();
 });
 
 test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ openPage }) => {
@@ -180,7 +192,7 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
       .first(),
   ).toBeVisible();
   await page.getByLabel("NIK", { exact: true }).fill("3299015508080002");
-  await expect(page.getByText(/NIK valid · lahir 15-08-2008 · perempuan/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Terverifikasi" })).toBeVisible();
   await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Siti Rahmawati");
   await shows("SITI RAHMAWATI");
   await shows("3299 0155 0808 0002");
@@ -200,13 +212,18 @@ test("pengajuan KTP-el: isian KTP mengisi pratinjau, lalu terkirim", async ({ op
   await page.getByRole("combobox", { name: /Status perkawinan/ }).focus();
   await page.keyboard.press("b");
   await page.keyboard.press("Enter");
-  await page.getByLabel("Pekerjaan").fill("PELAJAR/MAHASISWA");
+  await page.getByRole("combobox", { name: /Pekerjaan/ }).click();
+  await page.getByRole("option", { name: "Pelajar/Mahasiswa" }).click();
   await shows("HARAPAN JAYA, 15-08-2008");
   await shows("JL. MELATI NO. 12");
   await shows("003/005"); // RT/RW diisi "3" & "5": nol di depan ditambahkan otomatis
   await shows("BELUM KAWIN");
 
-  for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
+  for (const box of await page
+    .getByRole("group", { name: "Persyaratan", exact: true })
+    .getByRole("checkbox")
+    .all())
+    await box.check();
   await page.getByLabel(/Saya menyatakan/).check();
   await page.getByRole("button", { name: "Ajukan & dapatkan resi" }).click();
   await confirmOtp(page);

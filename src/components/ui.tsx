@@ -1,7 +1,7 @@
 // Komponen UI dasar yang dipakai di banyak halaman. Semuanya aman untuk Server
 // Component (tanpa state); form client cukup mengimpornya.
 
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, LoaderCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   type ComponentProps,
@@ -45,6 +45,72 @@ type ButtonProps = { variant?: ButtonVariant; className?: string } & (
 export function Button({ variant = "primary", className, ...props }: ButtonProps) {
   if (props.href !== undefined) return <Link {...props} className={buttonClass(variant, className)} />;
   return <button type="button" {...props} className={buttonClass(variant, className)} />;
+}
+
+/**
+ * Tombol kirim form yang hidup: terangkat & berpendar saat disorot, kilau melintas, panah bergeser,
+ * mengecil saat ditekan. Saat `pending`: putaran + label proses + bar berjalan di tepi bawah
+ * (tetap terang, tidak memudar seperti tombol nonaktif). Gerak mati saat "kurangi gerakan".
+ */
+export function SubmitButton({
+  pending = false,
+  pendingLabel = "Memproses…",
+  icon: Icon = ArrowRight,
+  variant = "primary",
+  className,
+  children,
+  disabled,
+  ...props
+}: {
+  pending?: boolean;
+  pendingLabel?: string;
+  /** Ikon di kanan label; null = tanpa ikon. */
+  icon?: LucideIcon | null;
+  variant?: ButtonVariant;
+  className?: string;
+  children: ReactNode;
+} & Omit<ComponentProps<"button">, "className" | "children">) {
+  const primary = variant === "primary";
+  return (
+    <button
+      type="submit"
+      disabled={pending || disabled}
+      aria-busy={pending}
+      {...props}
+      className={buttonClass(
+        variant,
+        "group/submit relative isolate overflow-hidden rounded-xl duration-200 enabled:active:scale-[0.97] aria-busy:cursor-progress aria-busy:opacity-100 motion-reduce:transform-none",
+        primary &&
+          "shadow-[0_10px_24px_-14px_var(--brand)] enabled:hover:-translate-y-px enabled:hover:shadow-[0_16px_30px_-12px_var(--brand)]",
+        className,
+      )}
+    >
+      {/* Kilau diagonal melintas sekali tiap kali disorot. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 -z-10 w-1/4 -translate-x-full -skew-x-12 bg-linear-to-r from-transparent via-white/35 to-transparent group-hover/submit:animate-[glass-sweep_0.9s_ease-out] group-disabled/submit:hidden motion-reduce:hidden"
+      />
+      {pending ? (
+        <>
+          <LoaderCircle aria-hidden className="size-4 animate-spin motion-reduce:animate-none" />
+          {pendingLabel}
+          <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
+            <span className="block h-full w-1/3 animate-indeterminate bg-current opacity-60" />
+          </span>
+        </>
+      ) : (
+        <>
+          {children}
+          {Icon && (
+            <Icon
+              aria-hidden
+              className="size-4 transition-transform duration-200 group-enabled/submit:group-hover/submit:translate-x-1"
+            />
+          )}
+        </>
+      )}
+    </button>
+  );
 }
 
 // --- Pesan --------------------------------------------------------------------------
@@ -108,6 +174,8 @@ type FieldProps = {
   /** "select" untuk pilihan (isi `<option>` lewat children), "textarea" untuk teks panjang. */
   as?: "input" | "select" | "textarea";
   children?: ReactNode;
+  /** Penanda kecil di dalam input, sisi kanan (mis. "Terverifikasi"). Hanya untuk `as="input"`. */
+  trailing?: ReactNode;
 } & Omit<ComponentPropsWithoutRef<"input">, "className" | "children">;
 
 /** Kelas dasar kotak isian (dipakai Field & isian khusus seperti RT/RW). */
@@ -125,7 +193,7 @@ export function FieldMessage({ id, error, hint }: { id: string; error?: string |
 }
 
 /** Input berlabel dengan pesan error yang terhubung lewat aria-describedby. */
-export function Field({ label, error, hint, className = "", as = "input", ...props }: FieldProps) {
+export function Field({ label, error, hint, className = "", as = "input", trailing, ...props }: FieldProps) {
   const id = useId();
   const messageId = `${id}-message`;
   const control = {
@@ -159,7 +227,13 @@ export function Field({ label, error, hint, className = "", as = "input", ...pro
           {...(props as ComponentPropsWithoutRef<"textarea">)}
         />
       ) : (
-        <input {...control} {...props} />
+        // Pembungkus selalu ada: kalau baru muncul bersama `trailing`, input ter-mount ulang (isi & fokus hilang).
+        <div className="relative">
+          <input {...control} className={cn(control.className, trailing && "pr-12")} {...props} />
+          {trailing && (
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">{trailing}</div>
+          )}
+        </div>
       )}
       <FieldMessage id={messageId} error={error} hint={hint} />
     </div>

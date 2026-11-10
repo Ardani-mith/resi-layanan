@@ -1,11 +1,29 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Baby,
+  BadgeAlert,
+  BadgeCheck,
+  BadgeX,
+  CalendarClock,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  FileText,
+  HeartHandshake,
+  IdCard,
+  Lock,
+  type LucideIcon,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { startNavProgress } from "@/components/layout/NavProgress";
 import Select from "@/components/Select";
-import { Alert, buttonClass, Field, FieldMessage, inputClass } from "@/components/ui";
+import { Alert, buttonClass, Field, FieldMessage, inputClass, SubmitButton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ActiveService } from "@/lib/dal";
 import { formatDate, formatWorkHours } from "@/lib/format";
@@ -24,7 +42,7 @@ import {
   RELIGIONS,
 } from "@/lib/present";
 import type { Channel } from "@/lib/workflow";
-import { KtpArt } from "./DocumentArt";
+import { DocumentArtFor, KtpArt } from "./DocumentArt";
 
 /** Nama input yang ikut ditampilkan di pratinjau KTP (sama dengan nama field form). */
 const PREVIEW_FIELDS = [
@@ -42,22 +60,52 @@ const PREVIEW_FIELDS = [
 ] as const;
 type Person = Partial<Record<(typeof PREVIEW_FIELDS)[number], string>>;
 
+// Pilihan pekerjaan mengikuti isian umum KTP-el (SIAK); "LAINNYA" untuk yang tidak ada di daftar.
 const JOBS = [
-  "PELAJAR/MAHASISWA",
   "BELUM/TIDAK BEKERJA",
   "MENGURUS RUMAH TANGGA",
-  "KARYAWAN SWASTA",
-  "WIRASWASTA",
+  "PELAJAR/MAHASISWA",
+  "PENSIUNAN",
   "PEGAWAI NEGERI SIPIL",
+  "TENTARA NASIONAL INDONESIA",
+  "KEPOLISIAN RI",
+  "KARYAWAN SWASTA",
+  "KARYAWAN BUMN",
+  "KARYAWAN BUMD",
+  "KARYAWAN HONORER",
+  "WIRASWASTA",
+  "PERDAGANGAN",
+  "PEDAGANG",
   "PETANI/PEKEBUN",
+  "PETERNAK",
+  "NELAYAN/PERIKANAN",
   "BURUH HARIAN LEPAS",
+  "BURUH TANI/PERKEBUNAN",
+  "PEMBANTU RUMAH TANGGA",
+  "TUKANG",
+  "SOPIR",
+  "GURU",
+  "DOSEN",
+  "DOKTER",
+  "BIDAN",
+  "PERAWAT",
+  "LAINNYA",
 ];
 
 /**
  * Pratinjau KTP-el yang ikut berubah saat warga mengetik. Tanggal lahir & jenis kelamin
  * dibaca dari NIK, jadi salah ketik NIK langsung terlihat.
  */
-function KtpPreview({ person, className }: { person: Person; className?: string }) {
+function KtpPreview({
+  person,
+  className,
+  onDark = false,
+}: {
+  person: Person;
+  className?: string;
+  /** Di atas panel navy: keterangan putih. */
+  onDark?: boolean;
+}) {
   const up = (key: keyof Person) => (person[key] ?? "").trim().toUpperCase();
   const nik = person.nik ?? "";
   const info = nikInfo(nik);
@@ -82,9 +130,9 @@ function KtpPreview({ person, className }: { person: Person; className?: string 
           validUntil: "SEUMUR HIDUP",
         }}
       />
-      <figcaption className="text-xs text-muted">
+      <figcaption className={cn("text-xs", onDark ? "text-white/65" : "text-muted")}>
         {badNik ? (
-          <span className="font-medium text-late">
+          <span className={cn("font-medium", onDark ? "text-[#ffb4ab]" : "text-late")}>
             Digit tanggal lahir di NIK (digit 7–12) tidak valid. Periksa kembali NIK Anda.
           </span>
         ) : (
@@ -101,6 +149,14 @@ const choiceLabel = (value: string) =>
     .toLowerCase()
     .replace(/^\p{L}/u, (c) => c.toUpperCase())
     .replace("tuhan yme", "Tuhan YME");
+
+/** "KARYAWAN BUMN" → "Karyawan BUMN", "PETANI/PEKEBUN" → "Petani/Pekebun" (label pilihan pekerjaan). */
+const jobLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\p{L}+/gu, (word) =>
+      ["ri", "bumn", "bumd"].includes(word) ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1),
+    );
 
 const digits = (value: string) => value.replace(/\D/g, "").slice(0, 3);
 const pad3 = (value: string) => (value ? value.padStart(3, "0") : "");
@@ -201,7 +257,7 @@ function KtpFields({
   const tooYoung = info && person.marital && !ktpAgeAllowed(info.birthDate, person.marital);
   const err = (key: string) => errors[`applicant.ktp.${key}`];
   return (
-    <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+    <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-4">
       <Field label="Tempat lahir" name="birthPlace" required error={err("birthPlace")} />
       <Select
         label="Golongan darah"
@@ -215,26 +271,20 @@ function KtpFields({
         label="Alamat"
         name="address"
         autoComplete="street-address"
-        placeholder="JL. MELATI NO. 12"
+        placeholder="JL. SUDIRMAN NO. 12"
         required
         error={err("address")}
       />
       <RtRwField error={err("rtRw")} onValue={(v) => onValue("rtRw", v)} />
       <Field label="Kelurahan/Desa" name="village" required error={err("village")} />
       <Field label="Kecamatan" name="district" required error={err("district")} />
-      <Field
+      <Select
         label="Pekerjaan"
         name="job"
-        list="ktp-jobs"
-        hint="Ketik, lalu pilih dari saran."
-        required
+        options={JOBS.map((j) => ({ value: j, label: jobLabel(j) }))}
         error={err("job")}
+        onValueChange={(v) => onValue("job", v)}
       />
-      <datalist id="ktp-jobs">
-        {JOBS.map((j) => (
-          <option key={j} value={j} />
-        ))}
-      </datalist>
       <Select
         label="Agama/Kepercayaan"
         name="religion"
@@ -259,12 +309,28 @@ function KtpFields({
   );
 }
 
-const genderText = (g: string) => (g === "PEREMPUAN" ? "perempuan" : "laki-laki");
-
 /** Ulang tahun ke-17 dari "DD-MM-YYYY" → tanggal paling awal bisa membuat KTP-el (jika belum kawin). */
 function eligibleFrom(birthDate: string): Date {
   const [day, month, year] = birthDate.split("-").map(Number);
   return new Date(Date.UTC(year + KTP_MIN_AGE, month - 1, day));
+}
+
+type NikState = "ok" | "error" | "pending" | null;
+
+/** Lencana tanpa teks di kanan kolom NIK (verified biru / X merah / peringatan); teksnya untuk pembaca layar. */
+function NikBadge({ state }: { state: NikState }) {
+  if (!state) return null;
+  const badge = {
+    ok: { Icon: BadgeCheck, className: "fill-[#0866ff]", label: "Terverifikasi" },
+    error: { Icon: BadgeX, className: "fill-late", label: "NIK tidak dapat dipakai" },
+    pending: { Icon: BadgeAlert, className: "fill-warn", label: "Perlu jawaban di bawah" },
+  }[state];
+  return (
+    <span key={state} role="status" className="flex motion-safe:animate-[select-in_.25s_ease-out]">
+      <badge.Icon aria-hidden className={cn("size-6 text-white", badge.className)} />
+      <span className="sr-only">{badge.label}</span>
+    </span>
+  );
 }
 
 /**
@@ -280,56 +346,78 @@ function MinorKtpQuestion({
   married: boolean | null;
   onAnswer: (married: boolean) => void;
 }) {
-  const options: [boolean, string][] = [
-    [true, "Sudah/pernah kawin"],
-    [false, "Belum kawin"],
+  const options: { value: boolean; label: string; note: string; icon: LucideIcon }[] = [
+    {
+      value: true,
+      label: "Sudah/pernah kawin",
+      note: "Bawa buku nikah/akta perkawinan",
+      icon: HeartHandshake,
+    },
+    { value: false, label: "Belum kawin", note: `Tunggu sampai ${KTP_MIN_AGE} tahun`, icon: CalendarClock },
   ];
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-warn/40 bg-warn-soft p-4 text-sm">
-      <p className="flex gap-2">
-        <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
-        <span>
-          <span className="font-semibold">
-            Lahir {check.birthDate} · {genderText(check.gender)} · {check.age} tahun.
-          </span>{" "}
-          KTP-el diberikan kepada warga berusia {KTP_MIN_AGE} tahun, atau yang sudah/pernah kawin walau belum{" "}
-          {KTP_MIN_AGE} tahun.
+    <div className="mt-4 overflow-hidden rounded-2xl border border-line motion-safe:animate-[select-in_.25s_ease-out]">
+      <div className="flex gap-3 bg-warn-soft/70 p-4">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-warn text-white">
+          <AlertTriangle aria-hidden className="size-4.5" />
         </span>
-      </p>
-      <fieldset>
-        <legend className="mb-2 font-semibold">Apakah pemohon sudah atau pernah kawin?</legend>
-        <div className="flex flex-wrap gap-2">
-          {options.map(([value, label]) => (
-            <button
+        <div className="text-sm">
+          <p className="font-semibold">Anda masih di bawah umur {KTP_MIN_AGE} tahun</p>
+          <p className="mt-0.5 text-muted">
+            KTP-el untuk warga berusia {KTP_MIN_AGE} tahun, atau yang sudah/pernah kawin walau belum{" "}
+            {KTP_MIN_AGE} tahun.
+          </p>
+        </div>
+      </div>
+
+      <fieldset className="p-4">
+        <legend className="float-left mb-3 w-full text-sm font-semibold">
+          Apakah pemohon sudah atau pernah kawin?
+        </legend>
+        <div className="clear-both grid gap-2 sm:grid-cols-2">
+          {options.map(({ value, label, note, icon: Icon }) => (
+            <label
               key={label}
-              type="button"
-              aria-pressed={married === value}
-              onClick={() => onAnswer(value)}
-              className={cn(
-                "rounded-full border px-4 py-1.5 font-semibold transition-colors",
-                married === value
-                  ? "border-brand bg-brand text-on-brand"
-                  : "border-line bg-surface hover:bg-surface-2",
-              )}
+              className="group flex cursor-pointer items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm transition-colors hover:bg-surface-2 has-checked:border-brand/50 has-checked:bg-brand-soft/50 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand"
             >
-              {label}
-            </button>
+              <input
+                type="radio"
+                name="minorMarried"
+                checked={married === value}
+                onChange={() => onAnswer(value)}
+                className="sr-only"
+              />
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted transition-colors group-has-checked:bg-brand group-has-checked:text-white">
+                <Icon aria-hidden className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold">{label}</span>
+                <span className="block text-xs text-muted">{note}</span>
+              </span>
+            </label>
           ))}
         </div>
+
+        {married === true && (
+          <p role="status" className="mt-3 flex items-start gap-2 text-sm text-ok">
+            <BadgeCheck aria-hidden className="size-5 shrink-0 fill-ok text-white" />
+            Bisa dilanjutkan. Siapkan buku nikah atau akta perkawinan untuk diperiksa petugas.
+          </p>
+        )}
+        {married === false && (
+          <p
+            role="status"
+            className="mt-3 flex items-start gap-2 rounded-xl bg-surface-2 px-3 py-2.5 text-sm"
+          >
+            <BadgeX aria-hidden className="size-5 shrink-0 fill-late text-white" />
+            <span>
+              Pemohon bisa mengajukan KTP-el mulai{" "}
+              <span className="font-semibold">{formatDate(eligibleFrom(check.birthDate))}</span>. Sampai saat
+              itu, identitas anak tercatat di Kartu Keluarga dan Kartu Identitas Anak (KIA).
+            </span>
+          </p>
+        )}
       </fieldset>
-      {married === true && (
-        <p role="status" className="flex gap-2 text-ok">
-          <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0" />
-          Bisa dilanjutkan. Siapkan buku nikah atau akta perkawinan untuk diperiksa petugas.
-        </p>
-      )}
-      {married === false && (
-        <p role="status" className="rounded-lg bg-surface px-3 py-2">
-          Pemohon bisa mengajukan KTP-el mulai{" "}
-          <span className="font-semibold">{formatDate(eligibleFrom(check.birthDate))}</span>. Sampai saat itu,
-          identitas anak tercatat di Kartu Keluarga dan Kartu Identitas Anak (KIA).
-        </p>
-      )}
     </div>
   );
 }
@@ -337,7 +425,280 @@ function MinorKtpQuestion({
 /** Kode OTP yang sedang menunggu diisi (pengajuan online). */
 type OtpChallenge = { id: string; phoneMasked: string; demoCode?: string };
 
-type ApplyFormProps = { services: ActiveService[]; initialSlug?: string; channel?: Channel };
+type ApplyFormProps = {
+  services: ActiveService[];
+  initialSlug?: string;
+  channel?: Channel;
+};
+
+/**
+ * Panel kiri form (navy): layanan yang diajukan + menu ganti layanan (isian tidak diulang), fakta
+ * singkat, alur tahap, dan dokumen hasil (KTP-el: pratinjau langsung dari isian).
+ */
+function ServicePanel({
+  service,
+  services,
+  onSwitch,
+  person,
+  showKtp,
+  isLoket,
+}: {
+  service: ActiveService;
+  services: ActiveService[];
+  onSwitch: (slug: string) => void;
+  person: Person;
+  showKtp: boolean;
+  isLoket: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const { icon: Icon, blurb } = serviceMeta(service);
+
+  // Tutup menu saat klik di luar atau Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <aside
+      data-header-dark
+      className="relative isolate overflow-clip bg-[linear-gradient(160deg,var(--hero-g1)_0%,var(--hero-g2)_55%,var(--hero-g3)_100%)] p-6 text-white sm:p-8"
+    >
+      <div className="space-y-6 lg:sticky lg:top-20">
+        <div>
+          <p className="text-xs font-medium tracking-wider text-white/60 uppercase">
+            {isLoket ? "Didaftarkan di loket" : "Anda mengajukan"}
+          </p>
+          <div ref={box} className="relative mt-2">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              aria-controls={menuId}
+              onClick={() => setOpen((o) => !o)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 text-left transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#0c1f5c]">
+                <Icon aria-hidden className="size-5" />
+              </span>
+              <span key={service.slug} className="min-w-0 flex-1 motion-safe:animate-[fade-up_.35s_ease-out]">
+                <span className="block font-semibold">{service.name}</span>
+                <span className="block text-sm text-white/65">{blurb}</span>
+              </span>
+              <span className="flex items-center gap-1 text-xs font-medium text-white/70">
+                Ganti
+                <ChevronDown
+                  aria-hidden
+                  className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
+                />
+              </span>
+            </button>
+            <div
+              id={menuId}
+              role="menu"
+              aria-label="Ganti layanan"
+              className={cn(
+                "absolute inset-x-0 top-full z-20 mt-2 rounded-2xl border border-line bg-surface p-1.5 text-text shadow-[0_24px_50px_-20px_rgb(4_10_26/0.55)] transition duration-200",
+                open ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-1.5 opacity-0",
+              )}
+            >
+              {services.map((s) => {
+                const meta = serviceMeta(s);
+                const active = s.slug === service.slug;
+                return (
+                  <button
+                    key={s.slug}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={active}
+                    tabIndex={open ? 0 : -1}
+                    onClick={() => {
+                      onSwitch(s.slug);
+                      setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
+                  >
+                    <span
+                      className={cn(
+                        "grid size-9 shrink-0 place-items-center rounded-lg transition-colors",
+                        active ? "bg-brand text-white" : "bg-surface-2 text-muted",
+                      )}
+                    >
+                      <meta.icon aria-hidden className="size-4.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">{s.name}</span>
+                      <span className="block text-xs text-muted">{meta.blurb}</span>
+                    </span>
+                    {active && <Check aria-hidden className="size-4 text-brand" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <ul className="flex flex-wrap gap-1.5 text-xs font-medium">
+          <li className="rounded-full bg-ok-soft px-2.5 py-1 text-ok">Gratis</li>
+          <li className="rounded-full bg-white/10 px-2.5 py-1">
+            Terbit ± {formatWorkHours(service.issueSlaHours)}
+          </li>
+          <li className="rounded-full bg-white/10 px-2.5 py-1">
+            {service.requiresVisit ? "Wajib datang ke loket" : "Bisa online"}
+          </li>
+        </ul>
+
+        {/* Alur tahap: titik + garis, waktu di kanan. Desktop terbuka; HP dilipat agar form cepat terlihat. */}
+        <ol key={service.slug} className="hidden motion-safe:animate-[fade-up_.35s_ease-out] lg:block">
+          {service.steps.map((step, i) => {
+            const last = i === service.steps.length - 1;
+            return (
+              <li key={step.key} className="relative flex gap-3 pb-3 text-sm last:pb-0">
+                {!last && (
+                  <span aria-hidden className="absolute top-3.5 bottom-0 left-[3.5px] w-px bg-white/20" />
+                )}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "relative mt-1.5 size-2 shrink-0 rounded-full",
+                    i === 0 ? "bg-white/40" : last ? "bg-[#4cc79a]" : "bg-[#8fb0ff]",
+                  )}
+                />
+                <span className="flex min-w-0 flex-1 justify-between gap-3">
+                  <span>{step.name}</span>
+                  <span className="shrink-0 font-mono text-xs text-white/60 tabular-nums">
+                    {step.slaHours ? formatWorkHours(step.slaHours, { short: true }) : "—"}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <details className="group rounded-xl bg-white/10 px-3 py-2.5 text-sm lg:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium [&::-webkit-details-marker]:hidden">
+            Lihat alur ({service.steps.length} tahap)
+            <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+          </summary>
+          <ol className="mt-3">
+            {service.steps.map((step, i) => {
+              const last = i === service.steps.length - 1;
+              return (
+                <li key={step.key} className="relative flex gap-3 pb-3 text-sm last:pb-0">
+                  {!last && (
+                    <span aria-hidden className="absolute top-3.5 bottom-0 left-[3.5px] w-px bg-white/20" />
+                  )}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "relative mt-1.5 size-2 shrink-0 rounded-full",
+                      i === 0 ? "bg-white/40" : last ? "bg-[#4cc79a]" : "bg-[#8fb0ff]",
+                    )}
+                  />
+                  <span className="flex min-w-0 flex-1 justify-between gap-3">
+                    <span>{step.name}</span>
+                    <span className="shrink-0 font-mono text-xs text-white/60 tabular-nums">
+                      {step.slaHours ? formatWorkHours(step.slaHours, { short: true }) : "—"}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </details>
+
+        {service.requiresVisit && !isLoket && (
+          <p className="rounded-xl bg-white/10 px-3 py-2.5 text-sm text-white/85">
+            <span className="font-semibold text-white">Wajib datang ke loket.</span> Pengajuan online
+            mendaftarkan data Anda lebih dulu; hitung mundur dimulai saat Anda hadir dengan dokumen asli.
+          </p>
+        )}
+
+        {/* KTP-el: pratinjau kartu dari isian; layanan lain: dokumen hasil sebagai ilustrasi (desktop;
+            di HP pratinjau KTP pindah ke atas isian data pemohon). */}
+        {showKtp ? (
+          <KtpPreview person={person} onDark className="hidden lg:block" />
+        ) : (
+          <div
+            aria-hidden
+            className="mx-auto hidden w-3/5 max-w-60 drop-shadow-[0_18px_30px_rgb(4_10_26/0.45)] lg:block"
+          >
+            <DocumentArtFor slug={service.slug} />
+          </div>
+        )}
+
+        <p className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-4 text-xs text-white/60">
+          <span className="inline-flex items-center gap-1.5">
+            <Lock aria-hidden className="size-3.5" /> NIK disimpan terenkripsi
+          </span>
+          <span>Resi langsung terbit · Jam kerja Senin–Jumat 08.00–16.00 WIB</span>
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+/** Ikon & deskripsi singkat kartu pilihan layanan (layanan bawaan); layanan baru memakai nama hasilnya. */
+function serviceMeta(service: ActiveService): { icon: LucideIcon; blurb: string } {
+  const { slug } = service;
+  if (slug.includes("ktp")) return { icon: IdCard, blurb: "Rekam data untuk KTP pertama" };
+  if (slug.includes("kk") || slug.includes("keluarga"))
+    return { icon: Users, blurb: "Ubah susunan anggota keluarga" };
+  if (slug.includes("akta")) return { icon: Baby, blurb: "Catat kelahiran anak" };
+  return { icon: FileText, blurb: service.output || "Layanan kependudukan" };
+}
+
+/**
+ * Pemilih layanan untuk loket (petugas). Warga memilih layanan di katalog /layanan, jadi tampilan
+ * pilihan layanan warga hanya satu.
+ */
+function ServicePicker({ services, onPick }: { services: ActiveService[]; onPick: (slug: string) => void }) {
+  return (
+    <section aria-labelledby="pick-title">
+      <h2 id="pick-title" className="text-lg font-bold">
+        Pilih layanan
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        Setiap tahap punya tenggat dalam jam kerja yang bisa Anda pantau lewat nomor resi.
+      </p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {services.map((s) => (
+          <button
+            key={s.slug}
+            type="button"
+            onClick={() => onPick(s.slug)}
+            className="group flex flex-col rounded-card border border-line bg-surface p-5 text-left transition hover:border-brand hover:shadow-card focus-visible:border-brand"
+          >
+            <span className="flex items-start justify-between gap-3">
+              <span className="font-semibold">{s.name}</span>
+              <ArrowRight
+                aria-hidden
+                className="mt-0.5 size-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand"
+              />
+            </span>
+            <span className="mt-1 line-clamp-2 text-sm text-muted">{s.description}</span>
+            <span className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-4 text-xs font-medium text-brand">
+              <span>Terbit ± {formatWorkHours(s.issueSlaHours)} setelah berkas lengkap</span>
+              {s.requiresVisit && <span className="text-warn">Wajib datang ke loket</span>}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /**
  * Form pengajuan permohonan. channel="online" untuk warga, "loket" untuk petugas
@@ -373,9 +734,9 @@ function ApplyFormBody({
   onSubmitted,
 }: ApplyFormProps & { onSubmitted: () => void }) {
   const router = useRouter();
-  const [slug, setSlug] = useState(
-    services.some((s) => s.slug === initialSlug) ? initialSlug : services[0]?.slug,
-  );
+  const initial = services.find((s) => s.slug === initialSlug);
+  // Tanpa layanan terpilih: tampilkan pemilih layanan dulu (bukan daftar radio di dalam form).
+  const [slug, setSlug] = useState<string | undefined>(initial?.slug);
   const [checked, setChecked] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
@@ -385,6 +746,7 @@ function ApplyFormBody({
   // Jawaban "sudah/pernah kawin?" untuk pemohon KTP-el di bawah 17 tahun (null = belum dijawab).
   const [married, setMarried] = useState<boolean | null>(null);
   const [otp, setOtp] = useState<OtpChallenge | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const service = services.find((s) => s.slug === slug);
   const isLoket = channel === "loket";
@@ -392,17 +754,44 @@ function ApplyFormBody({
   const showKtp = Boolean(service && needsKtpData(service.slug));
 
   const nikOk = Boolean(nikCheck?.ok && (!nikCheck.needsMarried || married === true));
+  // Lencana di dalam kolom NIK (tanpa teks): benar, salah, atau perlu jawaban (di bawah umur).
+  const nikState: NikState = nikOk
+    ? "ok"
+    : errors["applicant.nik"] || nikCheck?.ok === false || married === false
+      ? "error"
+      : nikCheck?.ok
+        ? "pending"
+        : null;
   const checkFor = (nik: string, serviceSlug = slug ?? "") =>
     nik.length === 16 || /\D/.test(nik) ? checkNik(nik, serviceSlug) : null;
 
-  function chooseService(next: string) {
+  /** Pilih/ganti layanan. Isian form ikut kosong (form dipasang ulang), jadi semua cek direset. */
+  function chooseService(next: string | undefined) {
     setSlug(next);
     setChecked([]);
     setErrors({});
     setOtp(null);
-    // Aturan umur bergantung layanan (KTP-el boleh di bawah 17 jika sudah kawin).
-    setNikCheck(checkFor(person.nik ?? "", next));
+    setPerson({});
+    setNikCheck(null);
     setMarried(null);
+  }
+
+  /**
+   * Ganti layanan dari kartu pilihan di atas form tanpa mengulang: NIK & data pemohon tetap,
+   * NIK dicek ulang untuk aturan layanan baru; hanya centang persyaratan & kode OTP yang direset.
+   */
+  function switchService(next: string) {
+    if (next === slug) return;
+    const nikInput = formRef.current?.elements.namedItem("nik");
+    const nik = nikInput instanceof HTMLInputElement ? nikInput.value.trim() : "";
+    setSlug(next);
+    setChecked([]);
+    setErrors({});
+    setOtp(null);
+    setNikCheck(nik ? checkFor(nik, next) : null);
+    setMarried(null);
+    // Warga: URL ikut layanan terpilih, supaya muat ulang/berbagi tautan membuka layanan yang sama.
+    if (!isLoket) window.history.replaceState(null, "", `/ajukan?layanan=${next}`);
   }
 
   function toggle(requirement: string) {
@@ -502,13 +891,16 @@ function ApplyFormBody({
     });
   }
 
-  if (!service) {
+  if (!services.length) {
     return <p className="rounded-card bg-surface p-6 text-muted">Belum ada layanan yang dibuka.</p>;
   }
+  if (!service) return <ServicePicker services={services} onPick={chooseService} />;
 
   // method="post": jika dikirim sebelum JavaScript aktif, NIK & nomor HP tidak masuk ke URL.
+  // Tata letak "checkout terbelah": kiri panel navy (layanan, alur, dokumen hasil), kanan form.
   return (
     <form
+      ref={formRef}
       method="post"
       onSubmit={submit}
       onChange={(event) => {
@@ -526,90 +918,69 @@ function ApplyFormBody({
         if (otp && (name === "nik" || name === "phone")) setOtp(null);
       }}
       noValidate
-      className={cn(
-        "grid gap-6 lg:items-start",
-        showKtp ? "lg:grid-cols-[1fr_24rem]" : "lg:grid-cols-[1fr_20rem]",
-      )}
+      aria-busy={pending}
+      className="relative grid overflow-clip rounded-3xl border border-line bg-surface lg:grid-cols-[22rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]"
     >
-      <div className="space-y-6">
-        {/* 1. NIK lebih dulu: pemohon fiktif/di bawah umur tertolak sebelum mengisi apa pun. */}
-        <section aria-labelledby="nik-title" className="rounded-card border border-line bg-surface p-5">
-          <h2 id="nik-title" className="text-lg font-bold">
-            1. NIK pemohon
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Pemohon adalah orang yang mengajukan dan bertanggung jawab atas data, minimal {APPLICANT_MIN_AGE}{" "}
-            tahun (KTP-el: atau sudah/pernah kawin). Untuk dokumen anak, gunakan NIK orang tua atau wali.
-          </p>
-          <Field
-            className="mt-3 sm:max-w-sm"
-            label="NIK"
-            name="nik"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={16}
-            required
-            hint="16 digit sesuai KTP-el/KK. Tidak pernah ditampilkan di halaman lacak."
-            error={errors["applicant.nik"] ?? (nikCheck?.ok === false ? nikCheck.message : null)}
-          />
-          {nikCheck?.ok && !nikCheck.needsMarried && (
-            <p role="status" className="mt-3 flex gap-2 rounded-xl bg-ok-soft px-3 py-2 text-sm text-ok">
-              <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0" />
-              <span>
-                NIK valid · lahir {nikCheck.birthDate} · {genderText(nikCheck.gender)} · {nikCheck.age} tahun
-              </span>
+      {/* Saat mengirim: bar berjalan di tepi atas form. */}
+      {pending && (
+        <span aria-hidden className="absolute inset-x-0 top-0 z-30 h-1 overflow-hidden bg-brand/15">
+          <span className="block h-full w-1/3 animate-indeterminate rounded-full bg-brand" />
+        </span>
+      )}
+      <ServicePanel
+        service={service}
+        services={services}
+        onSwitch={switchService}
+        person={person}
+        showKtp={showKtp}
+        isLoket={isLoket}
+      />
+
+      <div
+        className={cn(
+          "min-w-0 divide-y divide-line transition-opacity duration-300",
+          // Isian dibekukan selama pengiriman (tombol tetap terang).
+          pending && "pointer-events-none [&>*:not(:last-child)]:opacity-60",
+        )}
+      >
+        {/* Layar lebar: NIK & persyaratan berdampingan agar form tidak memanjang ke bawah. */}
+        <div className="grid divide-y divide-line xl:grid-cols-2 xl:divide-x xl:divide-y-0">
+          {/* NIK lebih dulu: pemohon fiktif/di bawah umur tertolak sebelum mengisi apa pun. */}
+          <section aria-labelledby="nik-title" className="p-6 sm:p-8">
+            <h2 id="nik-title" className="font-semibold">
+              NIK pemohon
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Pemohon adalah orang yang mengajukan dan bertanggung jawab atas data, minimal{" "}
+              {APPLICANT_MIN_AGE} tahun (KTP-el: atau sudah/pernah kawin). Untuk dokumen anak, gunakan NIK
+              orang tua atau wali.
             </p>
-          )}
-          {nikCheck?.ok && nikCheck.needsMarried && (
-            <MinorKtpQuestion check={nikCheck} married={married} onAnswer={setMarried} />
-          )}
-        </section>
+            <Field
+              className="mt-3 w-full"
+              label="NIK"
+              name="nik"
+              // Warga yang datang dengan layanan terpilih langsung mulai mengisi dari NIK.
+              autoFocus={!isLoket}
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={16}
+              required
+              hint="16 digit sesuai KTP-el/KK. Tidak pernah ditampilkan di halaman lacak."
+              error={errors["applicant.nik"] ?? (nikCheck?.ok === false ? nikCheck.message : null)}
+              trailing={<NikBadge state={nikState} />}
+            />
+            {nikCheck?.ok && nikCheck.needsMarried && (
+              <MinorKtpQuestion check={nikCheck} married={married} onAnswer={setMarried} />
+            )}
+          </section>
 
-        {/* Terkunci (inert) sampai NIK valid; nilainya tetap ikut terkirim. */}
-        <div
-          inert={!nikOk}
-          className={cn("space-y-6 transition-opacity", !nikOk && "opacity-50")}
-          aria-describedby={nikOk ? undefined : "nik-title"}
-        >
-          {/* 2. Layanan */}
-          <fieldset className="rounded-card border border-line bg-surface p-5">
-            <legend className="float-left w-full text-lg font-bold">2. Pilih layanan</legend>
-            <div className="clear-both grid gap-3 pt-3">
-              {services.map((s) => (
-                <label
-                  key={s.slug}
-                  className={cn(
-                    "flex cursor-pointer gap-3 rounded-xl border p-4 transition",
-                    s.slug === slug ? "border-brand bg-brand-soft" : "border-line hover:bg-surface-2",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="service"
-                    value={s.slug}
-                    checked={s.slug === slug}
-                    onChange={() => chooseService(s.slug)}
-                    className="mt-1 size-4 accent-[var(--brand)]"
-                  />
-                  <span>
-                    <span className="block font-semibold">{s.name}</span>
-                    <span className="block text-sm text-muted">{s.description}</span>
-                    <span className="mt-1 block text-xs font-semibold text-brand">
-                      Verifikasi ≤ {formatWorkHours(s.steps[0]?.slaHours)} · terbit ≤{" "}
-                      {formatWorkHours(s.issueSlaHours)} setelah berkas lengkap
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          {/* 2. Persyaratan */}
+          {/* Bagian di bawah NIK terkunci (inert) sampai NIK valid; nilainya tetap ikut terkirim. */}
           <fieldset
-            className="rounded-card border border-line bg-surface p-5"
+            inert={!nikOk}
+            className={cn("p-6 transition-opacity sm:p-8", !nikOk && "opacity-50")}
             aria-describedby={errors.requirementsChecked ? "req-error" : undefined}
           >
-            <legend className="float-left w-full text-lg font-bold">3. Persyaratan</legend>
+            <legend className="float-left w-full font-semibold">Persyaratan</legend>
             <p className="clear-both pt-1 text-sm text-muted">
               {isLoket
                 ? "Centang dokumen yang sudah diperiksa di loket."
@@ -620,7 +991,7 @@ function ApplyFormBody({
             <ul className="mt-3 space-y-2">
               {service.requirements.map((r) => (
                 <li key={r}>
-                  <label className="flex cursor-pointer gap-3 rounded-xl p-2 hover:bg-surface-2">
+                  <label className="flex cursor-pointer gap-3 rounded-xl border border-line px-3 py-2.5 text-sm transition-colors hover:bg-surface-2 has-checked:border-brand/40 has-checked:bg-brand-soft/50">
                     <input
                       type="checkbox"
                       checked={checked.includes(r)}
@@ -638,55 +1009,68 @@ function ApplyFormBody({
               </p>
             )}
           </fieldset>
+        </div>
 
-          {/* 4. Data pemohon (HP: pratinjau KTP di atas isian agar terlihat sambil mengetik) */}
-          {showKtp && <KtpPreview person={person} className="lg:hidden" />}
-          <fieldset className="rounded-card border border-line bg-surface p-5">
-            <legend className="float-left w-full text-lg font-bold">4. Data pemohon</legend>
-            <div className="clear-both grid gap-4 pt-3 sm:grid-cols-2">
-              <Field
-                className="sm:col-span-2"
-                label="Nama lengkap sesuai KTP/KK"
-                name="name"
-                autoComplete="name"
-                required
-                error={errors["applicant.name"]}
+        <fieldset
+          inert={!nikOk}
+          className={cn("p-6 transition-opacity sm:p-8", !nikOk && "opacity-50")}
+          aria-describedby={nikOk ? undefined : "nik-title"}
+        >
+          <legend className="float-left w-full font-semibold">Data pemohon</legend>
+          {/* HP: pratinjau KTP tepat di atas isian, terlihat sambil mengetik. */}
+          {showKtp && <KtpPreview person={person} className="clear-both pt-3 lg:hidden" />}
+          {/* Layar lebar: nama, HP, email satu baris. */}
+          <div className="clear-both grid gap-4 pt-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Field
+              className="sm:col-span-2"
+              label="Nama lengkap sesuai KTP/KK"
+              name="name"
+              autoComplete="name"
+              required
+              error={errors["applicant.name"]}
+            />
+            <Field
+              label="Nomor HP"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              required
+              // hint={
+              //   isLoket
+              //     ? "4 digit terakhir untuk membuka detail resi."
+              //     : "Untuk kode verifikasi; 4 digit terakhir membuka detail resi."
+              // }
+              error={errors["applicant.phone"]}
+            />
+            <Field
+              label="Email (opsional)"
+              name="email"
+              type="email"
+              autoComplete="email"
+              // hint="Untuk notifikasi status."
+              error={errors["applicant.email"]}
+            />
+            {showKtp && (
+              <KtpFields
+                person={person}
+                errors={errors}
+                marriedOnly={married === true}
+                onValue={(name, value) => setPerson((p) => ({ ...p, [name]: value }))}
               />
-              <Field
-                label="Nomor HP"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                required
-                hint={
-                  isLoket
-                    ? "4 digit terakhir dipakai untuk membuka detail resi."
-                    : "Kode verifikasi dikirim ke nomor ini. 4 digit terakhirnya untuk membuka detail resi."
-                }
-                error={errors["applicant.phone"]}
-              />
-              {showKtp && (
-                <KtpFields
-                  person={person}
-                  errors={errors}
-                  marriedOnly={married === true}
-                  onValue={(name, value) => setPerson((p) => ({ ...p, [name]: value }))}
-                />
-              )}
-              <Field
-                className="sm:col-span-2"
-                label="Email (opsional)"
-                name="email"
-                type="email"
-                autoComplete="email"
-                hint="Untuk notifikasi perubahan status."
-                error={errors["applicant.email"]}
-              />
-            </div>
-          </fieldset>
+            )}
+          </div>
+        </fieldset>
 
-          <div>
+        {/* Penutup: pernyataan di kiri, tombol kirim di kanan (layar lebar). Saat OTP: pernyataan di atas,
+            panel kode melebar penuh dan mendatar agar tidak ada ruang kosong. */}
+        <div
+          className={cn(
+            "grid gap-6 bg-surface-2/60 p-6 sm:p-8",
+            !otp && "xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start",
+          )}
+        >
+          <div inert={!nikOk} className={cn("transition-opacity", !nikOk && "opacity-50")}>
             <label className="flex cursor-pointer gap-3 text-sm">
               <input
                 type="checkbox"
@@ -706,105 +1090,103 @@ function ApplyFormBody({
             </label>
             {errors.consent && <p className="mt-1 text-sm text-late">{errors.consent}</p>}
           </div>
+
+          <div className="space-y-3">
+            <Alert>{errors.form}</Alert>
+            {otp ? (
+              <section
+                aria-labelledby="otp-title"
+                className="rounded-2xl border border-brand/50 bg-surface p-5 shadow-[0_0_0_4px_var(--brand-soft)] motion-safe:animate-[select-in_.25s_ease-out] sm:p-6"
+              >
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-start lg:gap-8">
+                  <div className="flex gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand text-white">
+                      <ShieldCheck aria-hidden className="size-5" />
+                    </span>
+                    <div className="min-w-0 space-y-2">
+                      <h2 id="otp-title" className="font-semibold">
+                        Verifikasi nomor HP
+                      </h2>
+                      <p className="text-sm text-muted">
+                        Kode 6 digit dikirim ke{" "}
+                        <span className="font-mono font-semibold text-text">{otp.phoneMasked}</span>. Berlaku
+                        5 menit.
+                      </p>
+                      {otp.demoCode && (
+                        <p className="inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-warn-soft px-3 py-1.5 text-sm text-warn">
+                          Mode demo, SMS/WhatsApp belum tersambung. Kode Anda:
+                          <span className="font-mono font-bold tracking-widest">{otp.demoCode}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                      <Field
+                        className="min-w-0 flex-1"
+                        label="Kode verifikasi"
+                        name="otpCode"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        autoFocus
+                        error={errors.otp}
+                      />
+                      {/* Sejajar dengan kotak isian (di bawah labelnya). */}
+                      <SubmitButton
+                        pending={pending}
+                        pendingLabel="Memeriksa kode…"
+                        icon={ShieldCheck}
+                        className="shrink-0 sm:mt-6.5"
+                      >
+                        Verifikasi & ajukan
+                      </SubmitButton>
+                    </div>
+                    <div className="mt-2 flex justify-between gap-2 text-sm">
+                      <button
+                        type="submit"
+                        value="resend"
+                        disabled={pending}
+                        className="font-semibold text-brand hover:underline"
+                      >
+                        Kirim ulang kode
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOtp(null)}
+                        className="text-muted hover:underline"
+                      >
+                        Ubah data
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            ) : (
+              <>
+                {/* Terkunci selama langkah NIK belum lolos, sama seperti isian di bawahnya. */}
+                <SubmitButton
+                  pending={pending}
+                  pendingLabel={isLoket ? "Menyimpan…" : "Mengirim kode…"}
+                  disabled={!nikOk}
+                  aria-describedby="submit-hint"
+                  className="min-h-12 w-full"
+                >
+                  {isLoket ? "Daftarkan & cetak resi" : "Ajukan & dapatkan resi"}
+                </SubmitButton>
+                <p id="submit-hint" className="text-center text-xs text-muted">
+                  {!nikOk
+                    ? "Isi NIK pemohon dulu untuk melanjutkan."
+                    : isLoket
+                      ? "Resi langsung terbit setelah data tersimpan."
+                      : "Setelah menekan tombol, kode verifikasi dikirim ke nomor HP Anda."}
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Ringkasan */}
-      <aside className="space-y-4 lg:sticky lg:top-24">
-        {showKtp && <KtpPreview person={person} className="hidden lg:block" />}
-        <div className="rounded-card border border-line bg-surface p-5">
-          <h2 className="font-bold">Alur {service.name}</h2>
-          <ol className="mt-3 space-y-2 text-sm">
-            {service.steps.map((step, i) => (
-              <li key={step.key} className="flex justify-between gap-3">
-                <span>
-                  <span className="text-muted">{i + 1}.</span> {step.name}
-                </span>
-                <span className="shrink-0 text-muted">
-                  {step.slaHours ? formatWorkHours(step.slaHours, { short: true }) : "—"}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-4 border-t border-line pt-3 text-sm">
-            Setelah berkas lengkap, dokumen terbit paling lama{" "}
-            <span className="font-semibold">{formatWorkHours(service.issueSlaHours)}</span> (Permendagri
-            19/2018: maks. 24 jam). Jam kerja Senin–Jumat 08.00–16.00 WIB; setiap tahap punya tenggat yang
-            bisa Anda pantau.
-          </p>
-          {service.requiresVisit && !isLoket && (
-            <p className="mt-3 rounded-xl border-l-4 border-warn bg-warn-soft/60 px-3 py-2 text-sm">
-              <span className="font-semibold">Wajib datang ke loket.</span> Pengajuan online ini mendaftarkan
-              data Anda lebih dulu; hitung mundur dimulai saat Anda hadir dengan dokumen asli.
-            </p>
-          )}
-        </div>
-        <Alert>{errors.form}</Alert>
-        {otp ? (
-          <section
-            aria-labelledby="otp-title"
-            className="space-y-3 rounded-card border-2 border-brand bg-surface p-5"
-          >
-            <h2 id="otp-title" className="flex items-center gap-2 font-bold">
-              <ShieldCheck aria-hidden className="size-5 text-brand" /> Verifikasi nomor HP
-            </h2>
-            <p className="text-sm text-muted">
-              Kode 6 digit dikirim ke{" "}
-              <span className="font-mono font-semibold text-text">{otp.phoneMasked}</span>. Berlaku 5 menit.
-            </p>
-            {otp.demoCode && (
-              <p className="rounded-xl bg-warn-soft px-3 py-2 text-sm text-warn">
-                Mode demo (SMS/WhatsApp belum tersambung). Kode Anda:{" "}
-                <span className="font-mono font-bold tracking-widest">{otp.demoCode}</span>
-              </p>
-            )}
-            <Field
-              label="Kode verifikasi"
-              name="otpCode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              autoFocus
-              error={errors.otp}
-            />
-            <button type="submit" disabled={pending} className={buttonClass("primary", "w-full")}>
-              {pending ? "Memeriksa…" : "Verifikasi & ajukan"}
-            </button>
-            <div className="flex justify-between gap-2 text-sm">
-              <button
-                type="submit"
-                value="resend"
-                disabled={pending}
-                className="font-semibold text-brand hover:underline"
-              >
-                Kirim ulang kode
-              </button>
-              <button type="button" onClick={() => setOtp(null)} className="text-muted hover:underline">
-                Ubah data
-              </button>
-            </div>
-          </section>
-        ) : (
-          <>
-            {/* Terkunci selama langkah NIK belum lolos, sama seperti isian di bawahnya. */}
-            <button
-              type="submit"
-              disabled={pending || !nikOk}
-              aria-describedby="submit-hint"
-              className={buttonClass("primary", "w-full")}
-            >
-              {pending ? "Memeriksa…" : isLoket ? "Daftarkan & cetak resi" : "Ajukan & dapatkan resi"}
-            </button>
-            <p id="submit-hint" className="text-center text-xs text-muted">
-              {!nikOk
-                ? "Lengkapi langkah 1 (NIK pemohon) untuk melanjutkan."
-                : isLoket
-                  ? "Resi langsung terbit setelah data tersimpan."
-                  : "Setelah menekan tombol, kode verifikasi dikirim ke nomor HP Anda."}
-            </p>
-          </>
-        )}
-      </aside>
     </form>
   );
 }

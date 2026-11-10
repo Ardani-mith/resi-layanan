@@ -163,7 +163,7 @@ function ServiceForm({ service, onDone }: { service?: AdminService; onDone: () =
         </legend>
         <p className="text-sm text-muted">
           SLA dalam jam kerja (Senin–Jumat 08.00–16.00 WIB; 8 jam = 1 hari kerja). Agar sesuai Permendagri
-          19/2018, total tahap setelah verifikasi sebaiknya ≤ 8 jam (dokumen terbit ≤ 24 jam setelah berkas
+          19/2018, total tahap setelah verifikasi sebaiknya ± 8 jam (dokumen terbit ± 24 jam setelah berkas
           lengkap). Kosongkan SLA untuk tahap tanpa tenggat (mis. menunggu warga mengambil dokumen). Perubahan
           hanya berlaku untuk permohonan baru.
         </p>

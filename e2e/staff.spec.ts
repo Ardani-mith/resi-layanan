@@ -113,7 +113,7 @@ test("loket mencatat kedatangan warga yang daftar online (KTP-el), lalu tenggat 
   const page = await openPage();
   await login(page, "loket@resi.demo", "/kerja");
   await page.waitForURL("**/kerja");
-  await page.getByRole("button", { name: /^Menunggu datang/ }).click();
+  await page.getByRole("button", { name: /^Belum datang/ }).click();
   await page.getByRole("link", { name: /RL-HJ26-DTNG/ }).click();
   await page.waitForURL("**/kerja/RL-HJ26-DTNG");
 

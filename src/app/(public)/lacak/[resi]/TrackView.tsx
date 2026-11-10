@@ -30,7 +30,15 @@ import ReceiptCard from "@/components/application/ReceiptCard";
 import Timeline, { FollowUpNote } from "@/components/application/Timeline";
 import TrackHero from "@/components/application/TrackHero";
 import Select from "@/components/Select";
-import { Alert, Button, buttonClass, DemoClockBanner, Field, inputClass } from "@/components/ui";
+import {
+  Alert,
+  Button,
+  buttonClass,
+  DemoClockBanner,
+  Field,
+  inputClass,
+  SubmitButton,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { Tracking } from "@/lib/dal";
 import { formatDate, formatDateTime, formatDuration } from "@/lib/format";
@@ -321,7 +329,7 @@ function Progress({ data }: { data: Tracking }) {
 }
 
 /**
- * Janji Permendagri 19/2018 (dokumen terbit ≤ 24 jam setelah berkas lengkap), dihitung dalam
+ * Janji Permendagri 19/2018 (dokumen terbit ± 24 jam setelah berkas lengkap), dihitung dalam
  * jam kerja: belum dimulai, berjalan (dengan batas waktunya), ditepati, atau terlewati.
  */
 function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
@@ -343,7 +351,7 @@ function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
         {icon(promise.kept ? "text-[#4ade80]" : "text-hero-alert")}
         <span className={promise.kept ? "text-hero-fg" : "text-hero-alert"}>
           {promise.kept
-            ? `Dokumen terbit ${took} kerja setelah berkas lengkap: sesuai janji ≤ 24 jam.`
+            ? `Dokumen terbit ${took} kerja setelah berkas lengkap: sesuai janji ± 24 jam.`
             : `Dokumen terbit ${took} kerja setelah berkas lengkap: melewati janji 24 jam.`}
         </span>
       </p>
@@ -354,7 +362,7 @@ function PromiseLine({ promise }: { promise: Tracking["issuePromise"] }) {
       {icon(promise.kept ? "text-hero-accent" : "text-hero-alert")}
       <span>
         <span className={promise.kept ? "text-hero-fg" : "text-hero-alert"}>
-          {promise.kept ? "Janji terbit: paling lambat " : "Janji terbit ≤ 24 jam terlewati sejak "}
+          {promise.kept ? "Janji terbit: paling lambat " : "Janji terbit ± 24 jam terlewati sejak "}
           <span className="font-semibold">{formatDateTime(promise.dueAt)}</span>
         </span>
         <span> · berkas lengkap {formatDateTime(promise.verifiedAt)}</span>
@@ -487,9 +495,14 @@ export default function TrackView({
             onChange={setLast4}
             error={phoneError("urgent")}
           >
-            <button type="submit" disabled={pending === "urgent"} className={buttonClass("secondary")}>
-              {pending === "urgent" ? "Menyimpan…" : "Tandai mendesak"}
-            </button>
+            <SubmitButton
+              variant="secondary"
+              icon={null}
+              pending={pending === "urgent"}
+              pendingLabel="Menyimpan…"
+            >
+              Tandai mendesak
+            </SubmitButton>
           </Last4Field>
           <FormError errors={errors} action="urgent" />
         </form>
@@ -634,13 +647,9 @@ export default function TrackView({
                       onChange={setLast4}
                       error={phoneError("resubmit")}
                     >
-                      <button
-                        type="submit"
-                        disabled={pending === "resubmit"}
-                        className={buttonClass("primary")}
-                      >
-                        {pending === "resubmit" ? "Mengirim…" : "Saya sudah melengkapi berkas"}
-                      </button>
+                      <SubmitButton pending={pending === "resubmit"} pendingLabel="Mengirim…">
+                        Saya sudah melengkapi berkas
+                      </SubmitButton>
                     </Last4Field>
                     <FormError errors={errors} action="resubmit" />
                   </form>
@@ -729,9 +738,9 @@ export default function TrackView({
                 onChange={setLast4}
                 error={phoneError("rate")}
               >
-                <button type="submit" disabled={pending === "rate"} className={buttonClass("primary")}>
-                  {pending === "rate" ? "Mengirim…" : "Kirim penilaian"}
-                </button>
+                <SubmitButton pending={pending === "rate"} pendingLabel="Mengirim…">
+                  Kirim penilaian
+                </SubmitButton>
               </Last4Field>
               <FormError errors={errors} action="rate" />
             </form>
@@ -1025,13 +1034,14 @@ export default function TrackView({
                     onChange={setLast4}
                     error={phoneError("verify")}
                   >
-                    <button
-                      type="submit"
-                      disabled={pending === "verify"}
-                      className={buttonClass("secondary")}
+                    <SubmitButton
+                      variant="secondary"
+                      icon={null}
+                      pending={pending === "verify"}
+                      pendingLabel="Memeriksa…"
                     >
-                      {pending === "verify" ? "Memeriksa…" : "Tampilkan detail"}
-                    </button>
+                      Tampilkan detail
+                    </SubmitButton>
                   </Last4Field>
                   <FormError errors={errors} action="verify" />
                 </form>

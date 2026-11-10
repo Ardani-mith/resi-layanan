@@ -181,7 +181,7 @@ function MiniPublic() {
   ];
   return (
     <GlassCard>
-      <GlassHead title="Rapor SLA" meta="terbit ≤ 24 jam" />
+      <GlassHead title="Rapor SLA" meta="terbit ± 24 jam" />
       <ol className="space-y-2">
         {rows.map((row, i) => (
           <li key={row.service} className="grid grid-cols-[1fr_5rem_2.5rem] items-center gap-2 text-[13px]">
@@ -603,7 +603,7 @@ export default function Home() {
             <ResiSearch example={hero.exampleResi} variant="hero" />
           </div>
           <div className="reveal mt-8 flex flex-wrap justify-center gap-3">
-            <Button href="/ajukan" transitionTypes={["nav-forward"]}>
+            <Button href="/layanan" transitionTypes={["nav-forward"]}>
               Ajukan permohonan
             </Button>
             <Button href="/rapor" transitionTypes={["nav-forward"]} variant="hero">

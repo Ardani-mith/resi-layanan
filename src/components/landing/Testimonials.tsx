@@ -8,14 +8,23 @@ type Item = Data["items"][number];
 
 const KIND_LABEL: Record<Item["kind"], string> = {
   pengalaman: "Pengalaman",
+  tanggapan: "Tanggapan",
   demo: "Setelah mencoba demo",
 };
+
+/** Inisial avatar dari dua kata pertama nama ("Satrio Wibowo" → "SW"). */
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
 
 /** Warna avatar inisial bergiliran (token status yang lembut). */
 const AVATAR = ["bg-brand-soft text-brand", "bg-ok-soft text-ok", "bg-pause-soft text-pause"];
 
 /**
- * Kutipan wawancara (tiga orang): grid kartu sorot, satu kolom di HP. Selama datanya contoh,
+ * Kutipan wawancara (tiga orang): grid kartu sorot, satu kolom di HP. Bila datanya contoh (`mock`),
  * label "Data contoh" ditampilkan agar tidak terbaca sebagai kutipan asli.
  */
 export default function Testimonials({ data }: { data: Data }) {
@@ -54,7 +63,7 @@ export default function Testimonials({ data }: { data: Data }) {
                       AVATAR[i % AVATAR.length],
                     )}
                   >
-                    {item.name.replace(/\W/g, "").slice(0, 2)}
+                    {initials(item.name)}
                   </span>
                   <span className="min-w-0 text-sm leading-tight">
                     <span className="block font-semibold">{item.name}</span>

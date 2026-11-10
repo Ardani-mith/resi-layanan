@@ -16,7 +16,7 @@ export interface ColumnDatum {
 
 /**
  * Grafik kolom satu seri untuk rasio 0–1 (mis. % tepat waktu per minggu).
- * - Kolom ≤24px, ujung data membulat 4px, tumbuh dari satu garis dasar.
+ * - Kolom ±24px, ujung data membulat 4px, tumbuh dari satu garis dasar.
  * - Tooltip per kolom saat hover DAN fokus keyboard; nilai yang sama ada di tabel.
  * - Label langsung hanya di titik terakhir (selektif).
  */

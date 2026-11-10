@@ -438,3 +438,11 @@ export function GenericDocArt() {
     </Svg>
   );
 }
+
+/** Ilustrasi dokumen hasil sesuai layanan, tanpa bingkai/lembar kedua (mis. latar kartu persyaratan). */
+export function DocumentArtFor({ slug }: { slug: string }) {
+  if (slug.includes("ktp")) return <KtpArt />;
+  if (slug.includes("kk") || slug.includes("keluarga")) return <KartuKeluargaArt />;
+  if (slug.includes("akta")) return <AktaArt />;
+  return <GenericDocArt />;
+}

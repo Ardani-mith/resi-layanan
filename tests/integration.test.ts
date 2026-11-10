@@ -546,7 +546,7 @@ describe("statistik", () => {
     expect(stats.services.reduce((n, s) => n + s.total, 0)).toBe(apps.length);
     expect(stats.trend).toHaveLength(8);
     expect(stats.services[0].steps.length).toBeGreaterThan(0);
-    // Janji Permendagri 19/2018: sebagian besar dokumen demo terbit ≤ 1 hari kerja setelah berkas lengkap.
+    // Janji Permendagri 19/2018: sebagian besar dokumen demo terbit ± 1 hari kerja setelah berkas lengkap.
     expect(stats.overall.issued).toBeGreaterThan(10);
     expect(stats.overall.promiseRate).toBeGreaterThan(0.5);
     expect(stats.overall.avgIssueHours).toBeGreaterThan(0);

@@ -11,7 +11,11 @@ test("warga mengajukan akta kelahiran dari HP", async ({ openPage }) => {
   const page = await openPage({ viewport: MOBILE });
   await gotoReady(page, "/ajukan?layanan=akta-kelahiran");
   await page.getByLabel("NIK", { exact: true }).fill("3299012208950002");
-  for (const box of await page.locator("fieldset").nth(1).getByRole("checkbox").all()) await box.check();
+  for (const box of await page
+    .getByRole("group", { name: "Persyaratan", exact: true })
+    .getByRole("checkbox")
+    .all())
+    await box.check();
   await page.getByLabel("Nama lengkap sesuai KTP/KK").fill("Dimas Anggara");
   await page.getByLabel("Nomor HP", { exact: true }).fill("081234569999");
   await page.getByLabel(/Saya menyatakan/).check();

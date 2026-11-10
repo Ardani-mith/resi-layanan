@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { Alert, buttonClass, Field } from "@/components/ui";
+import { Alert, Field, SubmitButton } from "@/components/ui";
 import { type FormErrors, formErrors, postJson } from "@/lib/http";
 import { PASSWORD_MIN } from "@/lib/roles";
 
@@ -73,9 +73,9 @@ export default function PasswordForm({ temporary }: { temporary: boolean }) {
       />
       <Alert>{errors.form}</Alert>
       {done && <Alert tone="success">Kata sandi berhasil diganti.</Alert>}
-      <button type="submit" disabled={pending} className={buttonClass("primary", "w-full")}>
-        {pending ? "Menyimpan…" : "Simpan kata sandi baru"}
-      </button>
+      <SubmitButton pending={pending} pendingLabel="Menyimpan…" icon={null} className="w-full">
+        Simpan kata sandi baru
+      </SubmitButton>
     </form>
   );
 }

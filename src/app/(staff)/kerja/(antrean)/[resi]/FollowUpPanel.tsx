@@ -93,7 +93,7 @@ export default function FollowUpPanel({
                     : "border-line hover:bg-surface-2",
                 )}
               >
-                {hours ? `≤ ${formatWorkHours(hours)}` : "Tanpa janji"}
+                {hours ? `± ${formatWorkHours(hours)}` : "Tanpa janji"}
               </button>
             ))}
           </div>

@@ -4,7 +4,7 @@ import { ChevronRight, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { StatusBadge } from "@/components/application/Badges";
-import { Alert, buttonClass, Field } from "@/components/ui";
+import { Alert, buttonClass, Field, SubmitButton } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { type FormErrors, postJson } from "@/lib/http";
 import type { Status } from "@/lib/workflow";
@@ -134,9 +134,9 @@ export default function RecoverForm() {
           error={errors.otp}
         />
         <Alert>{errors.form}</Alert>
-        <button type="submit" disabled={pending} className={buttonClass("primary", "w-full")}>
-          {pending ? "Memeriksa…" : "Tampilkan resi saya"}
-        </button>
+        <SubmitButton pending={pending} pendingLabel="Memeriksa…" className="w-full">
+          Tampilkan resi saya
+        </SubmitButton>
         <div className="flex justify-between gap-2 text-sm">
           <button
             type="button"
@@ -183,9 +183,9 @@ export default function RecoverForm() {
         error={errors.phone}
       />
       <Alert>{errors.form}</Alert>
-      <button type="submit" disabled={pending} className={buttonClass("primary", "w-full")}>
-        {pending ? "Mengirim kode…" : "Kirim kode verifikasi"}
-      </button>
+      <SubmitButton pending={pending} pendingLabel="Mengirim kode…" className="w-full">
+        Kirim kode verifikasi
+      </SubmitButton>
     </form>
   );
 }

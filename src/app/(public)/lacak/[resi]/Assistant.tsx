@@ -558,7 +558,7 @@ export default function Assistant({
           <div className="min-w-0">
             <p
               aria-live="polite"
-              className="mt-3 max-w-4xl text-base leading-relaxed text-hero-fg sm:text-lg"
+              className="mt-3 max-w-6xl text-base leading-relaxed text-hero-fg sm:text-lg"
             >
               <SlotText slot={summary} lines={2} id="summary" />
             </p>

@@ -84,7 +84,7 @@ export const site = {
       {
         topic: "Kapan selesai",
         today: "Tidak ada kepastian",
-        pantas: "Tenggat jam kerja; terbit ≤ 24 jam setelah lengkap",
+        pantas: "Tenggat jam kerja; terbit ± 24 jam setelah lengkap",
       },
       {
         topic: "Berkas kurang",
@@ -123,12 +123,12 @@ export const site = {
         body: "Online atau di loket. NIK dicek di awal, nomor HP diverifikasi, resi acak & unik.",
       },
       {
-        time: "≤ 1 hari kerja",
+        time: "± 1 hari kerja",
         title: "Berkas diverifikasi",
         body: "Petugas loket mencentang setiap persyaratan. Kurang? Catatan tertulis, jam instansi berhenti.",
       },
       {
-        time: "≤ 24 jam",
+        time: "± 24 jam",
         title: "Dokumen terbit",
         body: "Entri, tanda tangan, cetak: tiap tahap punya tenggat jam kerja dan HP Anda dikabari saat selesai. Lewat? Naik ke atasan otomatis.",
       },
@@ -172,7 +172,7 @@ export const site = {
         role: "Pimpinan",
         tone: "dusk",
         title: "tau di mana macetnya",
-        body: "Eskalasi Kasi → Kabid berjalan otomatis, tahap yang paling sering molor terlihat, dan persen terbit ≤ 24 jam terukur per layanan.",
+        body: "Eskalasi Kasi → Kabid berjalan otomatis, tahap yang paling sering molor terlihat, dan persen terbit ± 24 jam terukur per layanan.",
         cta: { label: "Masuk sebagai pimpinan", href: "/masuk" },
         points: [
           "Eskalasi otomatis ke Kasi, lalu Kabid satu hari kerja kemudian",
@@ -187,7 +187,7 @@ export const site = {
         body: "Rapor SLA terbuka per layanan, diperbarui otomatis dari data permohonan, dan audit log yang tidak bisa diubah.",
         cta: { label: "Buka rapor SLA", href: "/rapor" },
         points: [
-          "Persen terbit ≤ 24 jam per layanan",
+          "Persen terbit ± 24 jam per layanan",
           "Dihitung langsung dari data permohonan, tanpa input manual",
           "Audit log setiap keputusan yang tidak bisa diubah",
         ],
@@ -248,31 +248,35 @@ export const site = {
   // Kutipan wawancara. SEMENTARA: data contoh (mock: true) dan label "Data contoh" tampil di
   // section. Ganti dengan kutipan asli (dengan izin, pakai inisial), lalu set mock: false.
   testimonials: {
-    mock: true,
+    // Kutipan asli hasil wawancara (nama ditampilkan atas izin narasumber), kalimat dirapikan tanpa
+    // mengubah isi. Set `mock: true` + `mockNotice` hanya bila memakai data contoh.
+    mock: false,
     mockNotice: "Data contoh · akan diganti kutipan asli hasil wawancara",
     label: "Suara lapangan",
-    title: "Yang kami dengar dari warga & petugas.",
+    title: "Yang kami dengar dari warga.",
     intro:
-      "Kutipan dari wawancara: pengalaman mengurus dokumen hari ini, dan tanggapan setelah mencoba demo Pantas.",
+      "Kutipan dari wawancara: pengalaman mengurus dokumen hari ini, dan tanggapan setelah melihat atau mencoba Pantas.",
     items: [
       {
-        name: "R.",
-        role: "Warga, mengurus akta kelahiran anak",
-        kind: "pengalaman",
-        quote: "Saya datang tiga kali. Baru di kedatangan ketiga dibilang fotokopi KK kurang satu.",
+        name: "Ilham Fakih Hilmi",
+        role: "Warga",
+        kind: "tanggapan",
+        quote:
+          "Sebagai keluarga muda, kami masih akan banyak mengurus akta dan dokumen keluarga. Dengan Pantas, rasanya urusan itu akan mudah dipantau.",
       },
       {
-        name: "D.",
-        role: "Petugas loket",
+        name: "Satrio Wibowo",
+        role: "Warga, karyawan swasta",
         kind: "pengalaman",
-        quote: "Separuh waktu di loket habis untuk menjawab pertanyaan status, bukan memproses berkas.",
+        quote:
+          "Waktu membuat KTP, prosesnya terlalu lama dan saya bingung harus bertanya ke siapa. Sementara saya sendiri tetap harus bekerja.",
       },
       {
-        name: "M.",
+        name: "Deri Pran",
         role: "Warga, karyawan swasta",
         kind: "demo",
         quote:
-          "Di halaman lacak saya tahu berkas saya di tahap apa dan kapan selesai. Tidak perlu izin kerja cuma untuk bertanya.",
+          "Setelah saya coba, prosesnya mudah dilacak dan aplikasinya gampang digunakan. Saya merasa lebih tenang karena tahu status berkas saya...",
       },
     ],
   },

@@ -94,7 +94,7 @@ export default function ServiceCard({ service, index }: { service: CatalogServic
         <ul className="mt-4 flex flex-wrap gap-1.5 text-xs font-medium text-muted">
           <li className="rounded-sm bg-ok-soft px-2 py-1 text-ok">Gratis</li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">
-            terbit ≤ {formatWorkHours(service.issueSlaHours, { short: true })}
+            terbit ± {formatWorkHours(service.issueSlaHours, { short: true })}
           </li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">{service.steps.length} tahap</li>
           <li className="rounded-sm bg-surface-2 px-2 py-1">{service.requirements.length} syarat</li>

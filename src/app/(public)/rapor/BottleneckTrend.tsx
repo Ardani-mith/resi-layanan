@@ -146,7 +146,8 @@ export default function BottleneckTrend({ data }: { data: Bottlenecks }) {
           )}
         </p>
 
-        <div className="overflow-x-auto">
+        {/* relative: label sr-only (absolute) di sel tabel ikut terpotong di sini, tidak melebarkan halaman di HP. */}
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[36rem] border-separate border-spacing-1 text-sm">
             <caption className="sr-only">
               Persen tahap yang selesai melewati tenggat per bulan, {months} bulan terakhir

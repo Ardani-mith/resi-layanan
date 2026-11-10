@@ -25,7 +25,7 @@ export default async function SummaryStats() {
     <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
       <Stat
         value={formatPercent(overall.promiseRate)}
-        label="Terbit ≤ 24 jam"
+        label="Terbit ± 24 jam"
         note={
           overall.avgIssueHours === null
             ? "setelah berkas lengkap"

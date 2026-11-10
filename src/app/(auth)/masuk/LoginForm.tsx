@@ -4,7 +4,7 @@ import { ChevronLeft, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ComponentPropsWithoutRef, type FormEvent, useId, useRef, useState } from "react";
-import { Alert } from "@/components/ui";
+import { Alert, SubmitButton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useResetOnHide } from "@/lib/hooks";
 import { type FormErrors, formErrors, postJson } from "@/lib/http";
@@ -14,7 +14,7 @@ function safeNext(value: string | null): string | null {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
 }
 
-/** Kolom besar berbentuk pil dengan ikon info (petunjuk muncul saat hover/fokus, juga dibaca pembaca layar). */
+/** Kolom dengan ikon info (petunjuk muncul saat hover/fokus, juga dibaca pembaca layar). */
 function PillField({
   label,
   info,
@@ -24,8 +24,8 @@ function PillField({
   const id = useId();
   return (
     <div>
-      <div className="mb-2 flex items-center gap-1.5">
-        <label htmlFor={id} className="text-sm text-muted">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <label htmlFor={id} className="text-sm font-medium">
           {label}
         </label>
         <span className="group relative inline-flex">
@@ -50,7 +50,7 @@ function PillField({
         id={id}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="h-14 w-full rounded-2xl border border-line bg-surface px-5 text-base transition outline-none placeholder:text-muted/60 focus:border-text/40 focus:shadow-[0_0_0_4px_var(--brand-soft),0_8px_24px_-8px_rgb(15_27_45/0.18)] aria-invalid:border-late"
+        className="h-12 w-full rounded-card border border-line bg-surface px-4 text-base transition outline-none placeholder:text-muted/60 hover:border-muted/40 focus:border-brand focus:ring-3 focus:ring-brand/15 aria-invalid:border-late"
         {...props}
       />
       {error && (
@@ -117,7 +117,7 @@ export default function LoginForm() {
         if (input.name === "password") setFilled((f) => ({ ...f, password: input.value.length > 0 }));
       }}
       noValidate
-      className="space-y-6"
+      className="space-y-5"
     >
       <div aria-hidden className="grid grid-cols-3 gap-3">
         {steps.map((done, i) => (
@@ -163,17 +163,13 @@ export default function LoginForm() {
         <Link
           href="/"
           aria-label="Kembali ke beranda"
-          className="grid h-14 w-20 shrink-0 place-items-center rounded-full border border-line hover:bg-surface-2"
+          className="grid size-12 shrink-0 place-items-center rounded-xl border border-line transition-colors hover:bg-surface-2"
         >
           <ChevronLeft aria-hidden className="size-5" />
         </Link>
-        <button
-          type="submit"
-          disabled={pending}
-          className="h-14 flex-1 rounded-full bg-text font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Memeriksa…" : "Masuk"}
-        </button>
+        <SubmitButton pending={pending} pendingLabel="Memeriksa…" className="min-h-12 flex-1 text-base">
+          Masuk
+        </SubmitButton>
       </div>
     </form>
   );

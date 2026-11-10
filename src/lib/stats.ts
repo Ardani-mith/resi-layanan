@@ -90,7 +90,7 @@ function summarize(apps: StatsApp[], now: DateLike, holidays?: Holidays) {
     issued: issued.length,
     /** Rata-rata jam kerja dari berkas lengkap sampai dokumen terbit. */
     avgIssueHours: round((average(issued) ?? NaN) / HOUR_MS),
-    /** Porsi dokumen yang terbit ≤ 1 hari kerja setelah berkas lengkap (Permendagri 19/2018). */
+    /** Porsi dokumen yang terbit ± 1 hari kerja setelah berkas lengkap (Permendagri 19/2018). */
     promiseRate: round(
       ratio(issued.filter((ms) => ms <= ISSUE_PROMISE_HOURS * HOUR_MS).length, issued.length),
       3,

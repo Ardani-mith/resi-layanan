@@ -12,7 +12,7 @@ Karya untuk **Web In Action, MIA 2026**, subtema *Public Service Tracking*. Sken
 - **Petugas:** antrean dua panel per peran, syarat selesai & bukti per tahap, input warga di loket, pembeda kanal online/loket, audit log.
 - **Pimpinan:** dashboard `/pantau` (KPI, eskalasi, tren, bottleneck per tahap).
 - **Admin:** petugas, layanan & SLA, hari libur, mode demo (simulasi waktu). Semua tindakan tercatat.
-- **Aturan layanan:** SLA jam kerja WIB (Senin–Jumat 08.00–16.00, di luar libur), janji terbit ≤ 24 jam setelah berkas lengkap (Permendagri 19/2018), jeda saat perlu perbaikan, layanan wajib hadir (KTP-el) yang tenggatnya baru berjalan saat warga datang. Alurnya dijelaskan di [docs/ALUR-TAHAPAN.md](docs/ALUR-TAHAPAN.md).
+- **Aturan layanan:** SLA jam kerja WIB (Senin–Jumat 08.00–16.00, di luar libur), janji terbit ± 24 jam setelah berkas lengkap (Permendagri 19/2018), jeda saat perlu perbaikan, layanan wajib hadir (KTP-el) yang tenggatnya baru berjalan saat warga datang. Alurnya dijelaskan di [docs/ALUR-TAHAPAN.md](docs/ALUR-TAHAPAN.md).
 - **Keamanan & privasi (UU PDP):** NIK tidak disimpan apa adanya (hash + enkripsi + tersamar), nama & HP disamarkan di halaman publik, login dikunci setelah 5x salah, sesi petugas berakhir setelah 30 menit diam (maks. 12 jam), pemisahan tugas per peran.
 - **Kantor transparan** di beranda: denah pixel-art yang isinya mengikuti data antrean asli.
 

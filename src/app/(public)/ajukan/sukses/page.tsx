@@ -149,7 +149,7 @@ async function Success({ searchParams }: SearchParamsOf) {
                 Jika ada yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi dihentikan
                 sampai berkas dilengkapi.
               </Step>
-              <Step n={n(3)} title="Dokumen terbit ≤ 24 jam setelah berkas lengkap">
+              <Step n={n(3)} title="Dokumen terbit ± 24 jam setelah berkas lengkap">
                 Sesuai Permendagri 19/2018, dihitung dalam jam kerja (Senin–Jumat 08.00–16.00 WIB).
                 {data?.estimatedCompletion && (
                   <>
