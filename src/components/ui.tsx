@@ -1,7 +1,7 @@
 // Komponen UI dasar yang dipakai di banyak halaman. Semuanya aman untuk Server
 // Component (tanpa state); form client cukup mengimpornya.
 
-import { ArrowRight, ChevronDown, LoaderCircle, type LucideIcon } from "lucide-react";
+import { ArrowRight, BadgeCheck, ChevronDown, LoaderCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   type ComponentProps,
@@ -111,6 +111,16 @@ export function SubmitButton({
       )}
     </button>
   );
+}
+
+// --- Lencana ------------------------------------------------------------------------
+
+/**
+ * Lencana centang bergerigi biru ala "verified" Meta (#0866ff), untuk tanda "ada/terpenuhi" yang
+ * perlu terlihat premium. Hiasan (aria-hidden): sertakan teks/sr-only di pemakainya.
+ */
+export function VerifiedBadge({ className }: { className?: string }) {
+  return <BadgeCheck aria-hidden className={cn("size-5 shrink-0 fill-[#0866ff] text-white", className)} />;
 }
 
 // --- Pesan --------------------------------------------------------------------------

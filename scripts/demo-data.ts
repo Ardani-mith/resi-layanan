@@ -573,7 +573,7 @@ export function buildDemoApplications({
     arrive: false,
   });
   // 5) Kasus terlambat tambahan supaya dashboard pimpinan selalu berisi, termasuk
-  //    bottleneck di tahap tanda tangan pimpinan sendiri (level 2 → Kabid).
+  //    bottleneck di tahap tanda tangan pimpinan sendiri (level 2 → Kepala Bidang).
   lateCase({ slug: "perubahan-kk", name: "Agus Kurniawan" }, 2, 2);
   lateCase({ slug: "akta-kelahiran", name: "Maya Puspita" }, 2, 1);
   lateCase({ slug: "perekaman-ktp-el", name: "Fajar Nugroho", channel: "loket" }, 2, 1);

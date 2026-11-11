@@ -15,9 +15,9 @@ import {
 /** Bagian permohonan yang dibutuhkan eskalasi (hasil query lean dengan select). */
 type EscalationApp = Pick<ApplicationData, "_id" | "status" | "currentStep" | "steps" | "escalations">;
 
-// Ambang dalam jam kerja, sama seperti SLA: lewat tenggat → Kasi; masih belum selesai
-// 1 hari kerja setelah tenggat → Kabid. Malam & akhir pekan tidak dihitung, jadi tenggat
-// Jumat sore yang dicek Senin pagi belum langsung naik ke Kabid.
+// Ambang dalam jam kerja, sama seperti SLA: lewat tenggat → Kepala Seksi; masih belum selesai
+// 1 hari kerja setelah tenggat → Kepala Bidang. Malam & akhir pekan tidak dihitung, jadi tenggat
+// Jumat sore yang dicek Senin pagi belum langsung naik ke Kepala Bidang.
 export const ESCALATION_LEVELS = [
   { level: 1, afterWorkHours: 0, target: "Kepala Seksi" },
   { level: 2, afterWorkHours: WORKDAY_HOURS, target: "Kepala Bidang" },

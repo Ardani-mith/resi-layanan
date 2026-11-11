@@ -121,13 +121,13 @@ export const APPLICANT_MIN_AGE = 17;
 
 export type NikCheck =
   | {
-      ok: true;
-      birthDate: string;
-      gender: "LAKI-LAKI" | "PEREMPUAN";
-      age: number;
-      /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
-      needsMarried: boolean;
-    }
+    ok: true;
+    birthDate: string;
+    gender: "LAKI-LAKI" | "PEREMPUAN";
+    age: number;
+    /** Di bawah 17 tahun untuk KTP-el: hanya boleh jika sudah/pernah kawin (dicek di isian KTP). */
+    needsMarried: boolean;
+  }
   | { ok: false; message: string };
 
 /**
@@ -257,15 +257,15 @@ export function publicView(app: ApplicationData, { now, holidays }: Ctx) {
     currentStepName: current?.name ?? null,
     isLate: current?.state === "terlambat",
     isEscalated: (app.escalations ?? []).some((e) => !e.resolvedAt),
-    /** Level eskalasi terbuka tertinggi (1 = Kasi, 2 = Kabid); 0 = tidak ada. */
+    /** Level eskalasi terbuka tertinggi (1 = Kepala Seksi, 2 = Kepala Bidang); 0 = tidak ada. */
     escalationLevel: Math.max(0, ...(app.escalations ?? []).filter((e) => !e.resolvedAt).map((e) => e.level)),
     /** Keperluan mendesak sudah ditandai: tanggal dibutuhkan saja (alasannya setelah verifikasi HP). */
     urgentNeededBy: app.urgency?.neededBy ?? null,
     estimatedCompletion:
       // Belum datang: tenggat belum berjalan, jadi perkiraan baru ada setelah warga hadir.
       app.status === STATUS.SELESAI ||
-      app.status === STATUS.DITOLAK ||
-      app.status === STATUS.MENUNGGU_KEDATANGAN
+        app.status === STATUS.DITOLAK ||
+        app.status === STATUS.MENUNGGU_KEDATANGAN
         ? null
         : estimateCompletion(app.steps, app.currentStep, now, holidays),
     /** Janji terbit ± 24 jam (1 hari kerja) setelah berkas lengkap, Permendagri 19/2018. */

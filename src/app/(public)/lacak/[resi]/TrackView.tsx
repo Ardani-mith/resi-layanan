@@ -29,6 +29,7 @@ import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
 import Timeline, { FollowUpNote } from "@/components/application/Timeline";
 import TrackHero from "@/components/application/TrackHero";
+import CtaButton from "@/components/CtaButton";
 import Select from "@/components/Select";
 import {
   Alert,
@@ -756,7 +757,9 @@ export default function TrackView({
               Perbaiki hal di atas lalu ajukan lagi. Jika alasan ini keliru, tanyakan ke lokasi layanan dengan
               membawa nomor resi.
             </p>
-            <Button href={`/ajukan?layanan=${data.serviceSlug}`}>Ajukan ulang {data.serviceName}</Button>
+            <CtaButton href={`/ajukan?layanan=${data.serviceSlug}`}>
+              Ajukan ulang {data.serviceName}
+            </CtaButton>
           </NextStep>
         );
       default:
@@ -779,7 +782,7 @@ export default function TrackView({
                 . Anda tidak perlu melapor ulang atau datang ke kantor.
               </p>
             )}
-            {/* Sudah sampai Kabid (level 2): aduan resmi diarahkan ke kanal nasional, bukan ke loket. */}
+            {/* Sudah sampai Kepala Bidang (level 2): aduan resmi diarahkan ke kanal nasional, bukan ke loket. */}
             {data.escalationLevel >= 2 && (
               <p className="text-muted">
                 Sudah diteruskan sampai Kepala Bidang tetapi belum juga selesai? Anda dapat mengadu resmi

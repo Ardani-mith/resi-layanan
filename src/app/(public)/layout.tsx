@@ -71,7 +71,11 @@ async function SessionLink() {
 function Navbar() {
   return (
     // viewTransitionName: navbar tidak ikut bergeser saat pindah halaman (titik acuan tetap).
-    <header className="site-header sticky top-0 z-20 border-b" style={{ viewTransitionName: "site-header" }}>
+    <header
+      className="site-header sticky top-0 z-20 border-b data-[hidden=true]:not-focus-within:-translate-y-full"
+      style={{ viewTransitionName: "site-header" }}
+    >
+      {/* data-hidden (HeaderTone): menggulir ke bawah → navbar naik & hilang; tetap tampil saat difokus keyboard. */}
       {/* Tinggi tetap h-16: hero beranda ditarik ke bawahnya (-mt-16) agar gradien menyatu. */}
       <nav className="flex h-16 items-center gap-2 px-page">
         <Link

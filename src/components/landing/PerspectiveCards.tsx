@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowRight, Check, Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useRef, useState } from "react";
 import { PixelCard } from "@/components/landing/PixelArt";
 import SpotlightCard from "@/components/landing/SpotlightCard";
+import { VerifiedBadge } from "@/components/ui";
 import type { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
@@ -73,6 +74,8 @@ export default function PerspectiveCards({
                 >
                   <p className="font-mono text-sm text-brand">{item.role}</p>
                   <p className="mt-3 text-lg leading-snug font-semibold tracking-[-0.02em]">{item.title}</p>
+                  {/* Cuplikan isi agar kartu sempit tidak kosong; detail lengkap saat kartu dibuka. */}
+                  <p className="mt-3 line-clamp-6 text-sm text-muted">{item.body}</p>
                   {/* Isi bagian bawah kartu sempit: nomor besar + ajakan membuka. */}
                   <div className="mt-auto flex items-end justify-between gap-2">
                     <span className="font-mono text-5xl leading-none font-semibold tracking-[-0.06em] text-line">
@@ -95,9 +98,7 @@ export default function PerspectiveCards({
                   <ul className="mt-4 space-y-2 text-sm">
                     {item.points.map((point) => (
                       <li key={point} className="flex gap-2.5">
-                        <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
-                          <Check aria-hidden className="size-3" strokeWidth={3} />
-                        </span>
+                        <VerifiedBadge className="mt-px size-[18px]" />
                         {point}
                       </li>
                     ))}

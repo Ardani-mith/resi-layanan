@@ -292,7 +292,7 @@ describe("eskalasi (logika murni)", () => {
     expect(pendingEscalations(newApp(), wib("2026-10-13T08:59:00"))).toEqual([]);
   });
 
-  it("lewat tenggat → level 1 (Kasi); lewat 1 hari kerja lagi → level 2 (Kabid)", () => {
+  it("lewat tenggat → level 1 (Kepala Seksi); lewat 1 hari kerja lagi → level 2 (Kepala Bidang)", () => {
     const app = newApp(); // tenggat verifikasi: Selasa 13 Okt 09.00
     const late1 = pendingEscalations(app, wib("2026-10-13T10:00:00"));
     expect(late1.map((e) => [e.stepKey, e.level, e.target])).toEqual([["verifikasi", 1, "Kepala Seksi"]]);

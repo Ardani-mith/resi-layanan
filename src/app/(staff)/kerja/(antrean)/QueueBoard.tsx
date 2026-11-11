@@ -79,7 +79,7 @@ function Row({ item, now, selected }: { item: Item; now: number; selected: boole
           {item.escalationLevel > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-md border border-late/30 px-1.5 py-px text-xs font-medium text-late">
               <ArrowUpRight aria-hidden className="size-3" />
-              {item.escalationLevel === 2 ? "Kabid" : "Kasi"}
+              {item.escalationLevel === 2 ? "Kepala Bidang" : "Kepala Seksi"}
             </span>
           )}
           {/* Warga menandai keperluan mendesak (sinyal, bukan urutan otomatis). */}

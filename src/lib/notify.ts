@@ -9,7 +9,7 @@ import { type Action, type ApplicationData, followUpFor, STATUS } from "./workfl
 
 export type NotifyKind = "created" | "request_fix" | "ready" | "completed" | "rejected" | "follow_up";
 
-/** Jenis notifikasi setelah sebuah aksi, atau null jika warga tidak perlu diberi tahu. */
+/** Jenis notifikasi setelah sebuah aksi, atau null jika warga tidak perlu diberi tau. */
 export function notificationFor(
   action: Action | "created" | "follow_up",
   app: Pick<ApplicationData, "status">,
@@ -56,13 +56,13 @@ export function applicantEmail(
       `Resi ${app.resi}: permohonan ${app.serviceName} diterima`,
       app.status === STATUS.MENUNGGU_KEDATANGAN
         ? [
-            "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
-            "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
-          ]
+          "Pendaftaran Anda sudah kami terima. Layanan ini wajib datang ke loket (mis. perekaman biometrik).",
+          "Datang pada jam kerja dengan membawa dokumen asli dan nomor resi ini. Hitung mundur layanan dimulai saat Anda hadir.",
+        ]
         : [
-            "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
-            "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
-          ],
+          "Permohonan Anda sudah kami terima dan masuk tahap verifikasi berkas.",
+          "Simpan nomor resi ini untuk memantau setiap tahap dan tenggatnya.",
+        ],
     ],
     request_fix: [
       `Resi ${app.resi}: berkas perlu dilengkapi`,

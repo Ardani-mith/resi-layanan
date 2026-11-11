@@ -14,7 +14,7 @@ const LIST_MAX_PX = 272;
  * Dropdown kustom (pengganti <select> yang menu bawaannya mengikuti OS). Tombol menampilkan
  * pilihan saat ini; daftar membuka di bawahnya. Keyboard: ↑/↓ pindah, Enter/Spasi pilih, Esc
  * tutup, Home/End, dan huruf awal untuk lompat. Nilai ikut FormData lewat input tersembunyi
- * `name`; `onValueChange` untuk yang perlu tahu seketika (mis. pratinjau KTP).
+ * `name`; `onValueChange` untuk yang perlu tau seketika (mis. pratinjau KTP).
  */
 export default function Select({
   label,

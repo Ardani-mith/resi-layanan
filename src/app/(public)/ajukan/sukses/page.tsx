@@ -2,6 +2,7 @@ import { Check, CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
 import OfficeMap from "@/components/application/OfficeMap";
 import ReceiptCard from "@/components/application/ReceiptCard";
+import CtaButton from "@/components/CtaButton";
 import { Button, PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
 import type { SearchParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -150,8 +151,8 @@ async function Success({ searchParams }: SearchParamsOf) {
                 Jika ada yang kurang, catatannya muncul di halaman lacak dan hitung mundur instansi dihentikan
                 sampai berkas dilengkapi.
               </Step>
-              <Step n={n(3)} title="Dokumen terbit ± 24 jam setelah berkas lengkap">
-                Sesuai Permendagri 19/2018, dihitung dalam jam kerja (Senin–Jumat 08.00–16.00 WIB).
+              <Step n={n(3)} title="Dokumen terbit paling lama 1 hari kerja setelah berkas lengkap">
+                Janji 24 jam Permendagri 19/2018, dihitung sebagai 1 hari kerja (Senin–Jumat 08.00–16.00 WIB).
                 {data?.estimatedCompletion && (
                   <>
                     {" "}
@@ -185,9 +186,9 @@ async function Success({ searchParams }: SearchParamsOf) {
             Untuk melihat detail di halaman lacak, siapkan 4 digit terakhir nomor HP yang didaftarkan.
           </p>
           <div className="grid gap-2">
-            <Button href={`/lacak/${resi}`} transitionTypes={["nav-forward"]}>
+            <CtaButton href={`/lacak/${resi}`} transitionTypes={["nav-forward"]} className="w-full">
               Lacak sekarang
-            </Button>
+            </CtaButton>
             <Button
               href={isLoket ? "/kerja/baru" : "/"}
               transitionTypes={isLoket ? undefined : ["nav-back"]}

@@ -1,18 +1,9 @@
-import {
-  ArrowRight,
-  BadgeCheck,
-  Clock,
-  HandCoins,
-  MapPin,
-  Megaphone,
-  Send,
-  ShieldCheck,
-  Star,
-} from "lucide-react";
+import { ArrowRight, Clock, HandCoins, MapPin, Megaphone, Send, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentArtFor } from "@/components/application/DocumentArt";
-import { PageSlide, Skeleton, SuspenseReveal } from "@/components/ui";
+import CtaButton from "@/components/CtaButton";
+import { PageSlide, Skeleton, SuspenseReveal, VerifiedBadge } from "@/components/ui";
 import type { ParamsOf } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { getServiceCatalog } from "@/lib/dal";
@@ -144,14 +135,14 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
             </ol>
           </div>
 
-          <Link
+          <CtaButton
             href={applyHref}
             transitionTypes={["nav-forward"]}
-            className="relative mt-auto flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#0c1f5c] shadow-lg transition hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            variant="light"
+            className="mt-auto w-full"
           >
             Ajukan sekarang
-            <ArrowRight aria-hidden className="size-4" />
-          </Link>
+          </CtaButton>
           <p className="relative mt-2 text-center text-xs text-white/60">Isi data ±2 menit, tanpa akun.</p>
         </aside>
 
@@ -178,7 +169,7 @@ async function ServiceDetail({ params }: ParamsOf<{ slug: string }>) {
                 {service.requirements.map((r) => (
                   <li key={r} className="flex items-start gap-3 px-3.5 py-2.5 text-sm">
                     {/* Lencana centang bergaya "verified" (biru penuh, centang putih). */}
-                    <BadgeCheck aria-hidden className="size-5 shrink-0 fill-[#0866ff] text-white" />
+                    <VerifiedBadge />
                     <span>{r}</span>
                   </li>
                 ))}

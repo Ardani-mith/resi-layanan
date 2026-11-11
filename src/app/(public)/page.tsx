@@ -1,19 +1,24 @@
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
+import CtaButton from "@/components/CtaButton";
+import AssistantDemo from "@/components/landing/AssistantDemo";
 import Countdown from "@/components/landing/Countdown";
 import CountUp from "@/components/landing/CountUp";
 import HeroSection from "@/components/landing/HeroSection";
+import HowItWorks from "@/components/landing/HowItWorks";
 import PerspectiveCards from "@/components/landing/PerspectiveCards";
 import { type DecorationName, PixelCard, PixelDecoration, PixelStreet } from "@/components/landing/PixelArt";
+import { MarkReveal, ScrollSequence, ScrollWords } from "@/components/landing/ScrollReveal";
+import SmoothScroll from "@/components/landing/SmoothScroll";
 import Spotlight from "@/components/landing/Spotlight";
-import SpotlightCard from "@/components/landing/SpotlightCard";
 import SummaryStats, { SummaryStatsSkeleton } from "@/components/landing/SummaryStats";
 import Testimonials from "@/components/landing/Testimonials";
 import { maskStyle } from "@/components/Logo";
 import SectionError from "@/components/SectionError";
-import { Button, PageSlide, SectionLabel } from "@/components/ui";
+import { Button, PageSlide, SectionLabel, VerifiedBadge } from "@/components/ui";
 import { site } from "@/config/site";
 import { cn } from "@/lib/cn";
 
@@ -143,9 +148,9 @@ function MiniOfficer() {
 
 function MiniLeader() {
   const rows = [
-    { step: "Persetujuan", level: "Kasi", width: "w-3/5" },
-    { step: "Perekaman", level: "Kabid", width: "w-11/12" },
-    { step: "Entri data", level: "Kasi", width: "w-1/4" },
+    { step: "Persetujuan", level: "Kepala Seksi", width: "w-3/5" },
+    { step: "Perekaman", level: "Kepala Bidang", width: "w-11/12" },
+    { step: "Entri data", level: "Kepala Seksi", width: "w-1/4" },
   ];
   return (
     <GlassCard>
@@ -156,7 +161,7 @@ function MiniLeader() {
             <span className="text-white/60">{i + 1}</span>
             <span className="flex items-center gap-1.5 truncate">
               {row.step} <span className="text-white/60">· {row.level}</span>
-              {row.level === "Kabid" && (
+              {row.level === "Kepala Bidang" && (
                 <span className="size-1.5 shrink-0 rounded-full bg-[#ff7b70] opacity-0 spot-on:opacity-100 motion-safe:spot-on:animate-pulse" />
               )}
             </span>
@@ -202,6 +207,139 @@ function MiniPublic() {
 
 const MINI = [MiniCitizen, MiniOfficer, MiniLeader, MiniPublic];
 
+// --- Pembanding dengan layanan yang sudah ada (bagian "Masalah") ----------------------------
+
+type LandscapeValue = boolean | string;
+
+/** Isi sel: ✓ (ada), – (tidak ditemukan/bukan fungsinya), atau keterangan singkat. */
+function Mark({ value, strong }: { value: LandscapeValue; strong?: boolean }) {
+  const kind = strong ? "pantas" : "other";
+  if (typeof value === "string")
+    return (
+      <span data-mark={kind} className="inline-block text-xs leading-snug font-semibold">
+        {value}
+      </span>
+    );
+  if (!value)
+    return (
+      <span data-mark={kind} className="inline-block">
+        <span aria-hidden className="text-base text-muted">
+          –
+        </span>
+        <span className="sr-only">Tidak ditemukan</span>
+      </span>
+    );
+  if (strong)
+    return (
+      <span data-mark={kind} className="inline-grid">
+        <VerifiedBadge className="size-7" />
+        <span className="sr-only">Ada</span>
+      </span>
+    );
+  return (
+    <span
+      data-mark={kind}
+      className="inline-grid size-6 place-items-center rounded-full bg-surface-2 text-text ring-1 ring-line"
+    >
+      <Check aria-hidden className="size-3.5" strokeWidth={2.5} />
+      <span className="sr-only">Ada</span>
+    </span>
+  );
+}
+
+/** Tabel jujur: yang sudah ada (IKD, aplikasi daerah, SP4N-LAPOR!) vs yang ditambahkan Pantas. */
+function Landscape() {
+  const { title, body, checkedAt, apps, rows } = site.problem.landscape;
+  return (
+    <div className="mt-16 sm:mt-20">
+      <h3 className="reveal max-w-2xl text-2xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-[1.75rem]">
+        {title}
+      </h3>
+      <p className="reveal mt-3 max-w-2xl text-muted">{body}</p>
+      <p aria-hidden className="mt-6 font-mono text-xs text-muted sm:hidden">
+        Geser tabel ke samping →
+      </p>
+      <MarkReveal className="reveal mt-2 overflow-x-auto rounded-3xl border border-line bg-surface shadow-card sm:mt-8">
+        <table className="w-full min-w-[46rem] text-left text-sm">
+          <caption className="sr-only">Perbandingan fitur Pantas dengan layanan yang sudah ada</caption>
+          <thead>
+            <tr className="border-b border-line align-bottom">
+              <th scope="col" className="sticky left-0 z-10 w-36 bg-surface px-4 py-4 sm:w-52 sm:px-5">
+                <span className="sr-only">Fitur</span>
+              </th>
+              {apps.map((app) => (
+                <th scope="col" key={app.name} className="px-3 py-4 text-center font-normal">
+                  <a
+                    href={app.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex flex-col items-center gap-2"
+                  >
+                    <Image
+                      src={app.logo}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="size-11 rounded-xl border border-line bg-white object-cover"
+                    />
+                    <span className="text-[13px] leading-tight font-semibold text-text group-hover:underline">
+                      {app.name}
+                    </span>
+                    <span className="text-xs leading-tight text-muted">{app.owner}</span>
+                    <span className="sr-only">(sumber, buka di tab baru)</span>
+                  </a>
+                </th>
+              ))}
+              {/* HP: kolom Pantas menempel di kanan; kolom layanan lain bergeser di antaranya. */}
+              <th
+                scope="col"
+                className="sticky right-0 z-10 bg-brand-soft px-3 py-4 text-center font-normal shadow-[-10px_0_14px_-10px_rgb(0_0_0/0.18)] sm:static sm:shadow-none"
+              >
+                <span className="inline-flex flex-col items-center gap-2">
+                  <span className="grid size-11 place-items-center rounded-xl bg-brand">
+                    <span
+                      aria-hidden
+                      className="aspect-[293/358] h-5 bg-on-brand"
+                      style={maskStyle("/brand/pantas-p.png")}
+                    />
+                  </span>
+                  <span className="text-[13px] leading-tight font-semibold text-brand">{site.name}</span>
+                  <span className="text-xs leading-tight text-muted">Lapisan transparansi</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="[&>tr+tr>*]:shadow-[inset_0_1px_0_var(--line)]">
+            {rows.map((row) => (
+              <tr key={row.label}>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 bg-surface px-4 py-3.5 leading-snug font-medium sm:px-5"
+                >
+                  {row.label}
+                </th>
+                {row.values.map((value, i) => (
+                  <td key={apps[i].name} className="px-3 py-3.5 text-center">
+                    <Mark value={value} />
+                  </td>
+                ))}
+                <td className="sticky right-0 z-10 bg-brand-soft px-3 py-3.5 text-center shadow-[-10px_0_14px_-10px_rgb(0_0_0/0.18)] sm:static sm:bg-brand-soft/60 sm:shadow-none">
+                  <Mark value={row.pantas} strong />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </MarkReveal>
+      <p className="mt-3 max-w-3xl text-xs text-muted">
+        ✓ = tercantum di sumber publik · – = tidak kami temukan atau bukan fungsinya. Dicek {checkedAt}; klik
+        logo untuk sumbernya. Logo milik pemiliknya masing-masing; {site.name} tidak berafiliasi dengan
+        layanan tersebut.
+      </p>
+    </div>
+  );
+}
+
 // --- Penutup: kartu kaca melayang & pita berjalan -------------------------------------------
 
 /** Dua kartu kaca contoh di kiri-kanan judul penutup (layar lebar saja, hiasan). */
@@ -213,9 +351,9 @@ function FloatingChips() {
       <div className={cn(glass, "top-40 left-[6%] -rotate-3")}>
         <p className="flex items-center justify-between font-mono text-xs text-hero-muted">
           {site.hero.exampleResi}
-          <span className="rounded-full bg-white/10 px-2 py-0.5">tahap 3/5</span>
+          <span className="rounded-full bg-white/10 px-2 py-0.5">tahap 2/5</span>
         </p>
-        <p className="mt-2 text-sm font-semibold">Entri & perekaman</p>
+        <p className="mt-2 text-sm font-semibold">Entri & validasi data</p>
         <div className="mt-3 h-1 bg-white/15">
           <div className="h-full w-3/5 bg-hero-accent" />
         </div>
@@ -229,8 +367,8 @@ function FloatingChips() {
         </p>
         <p className="mt-2 text-sm font-semibold">Ditanggapi pimpinan</p>
         <p className="mt-1 text-xs text-hero-muted">Target selesai dalam 8 jam kerja.</p>
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#4ade80]/15 px-2.5 py-1 text-xs text-[#86efac]">
-          <Check className="size-3.5" /> tampil di halaman lacak warga
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 py-1 pr-2.5 pl-1.5 text-xs text-hero-fg">
+          <VerifiedBadge className="size-4" /> tampil di halaman lacak warga
         </p>
       </div>
     </div>
@@ -246,9 +384,7 @@ function Marquee({ items }: { items: readonly string[] }) {
           key={text}
           className="flex items-center gap-2.5 rounded-full border border-hero-line bg-hero-chip px-4 py-2 text-sm whitespace-nowrap text-hero-fg"
         >
-          <span className="grid size-5 place-items-center rounded-full bg-hero-soft text-hero-accent">
-            <Check aria-hidden className="size-3" strokeWidth={3} />
-          </span>
+          <VerifiedBadge />
           {text}
         </li>
       ))}
@@ -266,51 +402,6 @@ function Marquee({ items }: { items: readonly string[] }) {
 
 // --- Asisten & kabar: tiruan kartu Asisten Pantas + layar kunci HP (ilustrasi, aria-hidden) ---
 
-/** Kartu kaca yang meniru Asisten Pantas di halaman lacak (lacak/[resi]/Assistant.tsx). */
-function AssistantMock() {
-  const { demo } = site.assistant;
-  return (
-    <div
-      aria-hidden
-      className="reveal relative overflow-hidden rounded-3xl border border-hero-line bg-white/[0.05] p-6 shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_30px_70px_-30px_rgb(0_0_0/0.7)] backdrop-blur-md sm:p-7"
-    >
-      <div className="absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-[#b4a3ff] to-transparent" />
-      <div className="absolute -top-24 -right-16 size-64 rounded-full bg-[#8b7bff]/20 blur-3xl" />
-      <div className="relative">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-sm font-semibold text-hero-fg">
-            <Sparkles className="size-5 text-white drop-shadow-[0_0_8px_rgb(180_163_255/0.85)] motion-safe:animate-twinkle" />
-            Asisten Pantas
-          </p>
-          <span className="font-mono text-xs text-hero-muted">{site.hero.exampleResi}</span>
-        </div>
-        <p className="mt-4 text-base leading-relaxed text-hero-fg sm:text-lg">{demo.summary}</p>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {demo.chips.map((chip) => (
-            <span
-              key={chip}
-              className={cn(
-                "rounded-full border px-3.5 py-1.5 text-sm",
-                chip === demo.question
-                  ? "border-white bg-white font-medium text-[#0c1f5c]"
-                  : "border-hero-line bg-hero-chip text-hero-muted",
-              )}
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
-        <div className="mt-4 rounded-xl border border-hero-line bg-black/20 px-4 py-3.5 text-sm leading-relaxed text-hero-fg sm:text-base">
-          <p className="mb-1.5 text-xs text-hero-muted">“{demo.question}”</p>
-          {demo.answer}
-          <span className="ml-0.5 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] bg-hero-accent motion-safe:animate-pulse" />
-        </div>
-        {/* <p className="mt-4 text-xs text-hero-muted">Dibantu AI · acuan resmi tetap data di halaman lacak</p> */}
-      </div>
-    </div>
-  );
-}
-
 /** Layar kunci HP berisi notifikasi Pantas yang masuk berurutan saat digulir ke layar. */
 function PhoneMock() {
   const { phone, notifications } = site.assistant;
@@ -326,8 +417,8 @@ function PhoneMock() {
           {notifications.map((n, i) => (
             <li
               key={n.title}
-              className="reveal flex gap-2.5 rounded-2xl border border-white/10 bg-white/[0.12] p-3 text-white backdrop-blur-xl"
-              style={{ animationRange: `entry ${10 + i * 12}% entry ${50 + i * 12}%` }}
+              data-seq
+              className="flex gap-2.5 rounded-2xl border border-white/10 bg-white/[0.12] p-3 text-white backdrop-blur-xl"
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#0f1b2d]">
                 <span className="aspect-[293/358] h-4 bg-white" style={maskStyle("/brand/pantas-p.png")} />
@@ -357,7 +448,7 @@ function AssistantSection() {
       id="asisten"
       data-header-dark
       aria-labelledby="asisten-title"
-      className="relative isolate overflow-hidden bg-(--hero-g1) px-page py-16 text-hero-fg sm:py-24"
+      className="relative isolate overflow-clip bg-(--hero-g1) px-page py-16 text-hero-fg sm:py-24"
     >
       <div
         aria-hidden
@@ -384,21 +475,29 @@ function AssistantSection() {
           </h2>
           <p className="reveal mt-4 max-w-2xl text-lg text-hero-muted">{assistant.intro}</p>
         </div>
-        <Button href={assistant.cta.href} transitionTypes={["nav-forward"]} variant="hero" className="reveal">
-          {assistant.cta.label} <ArrowRight aria-hidden className="size-4" />
-        </Button>
+        <CtaButton
+          href={assistant.cta.href}
+          transitionTypes={["nav-forward"]}
+          variant="glass"
+          className="reveal"
+        >
+          {assistant.cta.label}
+        </CtaButton>
       </div>
 
-      <div className="mt-12 grid items-center gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-14">
-        <AssistantMock />
-        <PhoneMock />
-      </div>
+      {/* Desktop: adegan menempel; jawaban asisten lalu tiga notifikasi masuk mengikuti scroll. */}
+      <ScrollSequence className="mt-12 lg:h-[190vh]">
+        <div className="grid items-center gap-10 lg:sticky lg:top-[max(5rem,calc(50vh-20rem))] lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-14">
+          <AssistantDemo demo={site.assistant.demo} resi={site.hero.exampleResi} />
+          <PhoneMock />
+        </div>
+      </ScrollSequence>
 
       <ul className="mt-14 grid gap-6 border-t border-hero-line pt-10 sm:grid-cols-3">
         {assistant.guards.map((g) => (
           <li key={g.title} className="reveal">
             <p className="flex items-center gap-2 font-semibold">
-              <Check aria-hidden className="size-4 text-[#4ade80]" />
+              <VerifiedBadge />
               {g.title}
             </p>
             <p className="mt-1.5 text-sm text-hero-muted">{g.body}</p>
@@ -413,6 +512,7 @@ export default function Home() {
   const { hero, summary, problem, howItWorks, perspectives, testimonials, closing } = site;
   return (
     <PageSlide>
+      <SmoothScroll />
       <HeroSection hero={hero} />
       {/* Rapor ringkas: angka asli dari database, di-stream setelah kerangka halaman tampil. */}
       <section aria-labelledby="rapor-ringkas-title" className="border-b border-line bg-surface">
@@ -441,99 +541,37 @@ export default function Home() {
       </section>
 
       <Section id="masalah" index="01" label="Masalah" title={problem.title} decoration="hourglass">
-        <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-          <div>
-            <p className="reveal text-lg text-muted">{problem.body}</p>
-            <ul className="mt-8 divide-y divide-line border-y border-line">
-              {problem.stats.map((s) => (
-                <li key={s.source} className="reveal grid grid-cols-[6.5rem_1fr] items-baseline gap-4 py-4">
-                  <span className="font-mono text-3xl font-medium tracking-tight text-late tabular-nums">
-                    <CountUp value={s.value} />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-medium">{s.label}</span>
-                    <span className="block text-xs text-muted">{s.source}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Perbandingan gaya buku besar: hari ini vs dengan Pantas. */}
-          <div className="reveal overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
-            {/* HP: daftar bertumpuk (tabel tiga kolom terlalu sempit). */}
-            <dl className="divide-y divide-line sm:hidden">
-              {problem.compare.map((row) => (
-                <div key={row.topic} className="space-y-1.5 p-4">
-                  <dt className="font-semibold">{row.topic}</dt>
-                  <dd className="text-sm text-muted line-through decoration-line">{row.today}</dd>
-                  <dd className="rounded-lg bg-brand-soft px-3 py-2 text-sm font-medium">
-                    <span className="mr-1.5 font-mono text-xs font-semibold text-brand uppercase">
-                      {site.name}
-                    </span>
-                    {row.pantas}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <table className="hidden w-full text-left text-sm sm:table">
-              <caption className="sr-only">Perbandingan layanan hari ini dan dengan Pantas</caption>
-              <thead>
-                <tr className="border-b border-line font-mono text-xs tracking-[0.12em] uppercase">
-                  <th scope="col" className="w-1/4 px-4 py-3 font-medium text-muted sm:px-5">
-                    <span className="sr-only">Hal</span>
-                  </th>
-                  <th scope="col" className="px-4 py-3 font-medium text-muted sm:px-5">
-                    Hari ini
-                  </th>
-                  <th scope="col" className="bg-brand-soft px-4 py-3 font-semibold text-brand sm:px-5">
-                    Dengan {site.name}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {problem.compare.map((row) => (
-                  <tr key={row.topic} className="align-top">
-                    <th scope="row" className="px-4 py-4 font-semibold sm:px-5">
-                      {row.topic}
-                    </th>
-                    <td className="px-4 py-4 text-muted line-through decoration-line sm:px-5">{row.today}</td>
-                    <td className="bg-brand-soft/60 px-4 py-4 font-medium sm:px-5">{row.pantas}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Pernyataan masalah: kata-kata menyala satu per satu mengikuti scroll. */}
+        <ScrollWords
+          text={problem.body}
+          className="-mt-4 max-w-4xl text-[clamp(1.45rem,3.1vw,2.4rem)] leading-[1.22] font-medium tracking-[-0.025em] text-balance"
+        />
+        {/* Tiga angka Ombudsman sebagai satu baris bukti. */}
+        <ul className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-3">
+          {problem.stats.map((s) => (
+            <li key={s.source} className="reveal bg-surface p-6 sm:p-7">
+              <span className="block font-mono text-4xl font-medium tracking-tight text-late tabular-nums">
+                <CountUp value={s.value} />
+              </span>
+              <span className="mt-3 block text-sm font-medium">{s.label}</span>
+              <span className="mt-1 block text-xs text-muted">{s.source}</span>
+            </li>
+          ))}
+        </ul>
+        <Landscape />
       </Section>
 
       <div className="border-y border-line bg-surface">
-        <Section id="cara-kerja" index="02" label="Cara kerja" title={howItWorks.title} decoration="route">
-          {/* Empat kartu berurutan seperti rute paket; nomor & label waktu di atas. */}
-          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {howItWorks.steps.map((step, i) => (
-              <li key={step.title} className="reveal">
-                <SpotlightCard className="flex h-full flex-col p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <span
-                      className={cn(
-                        "grid size-10 place-items-center rounded-full font-mono text-sm font-semibold",
-                        i === 0 ? "bg-brand text-on-brand" : "bg-brand-soft text-brand",
-                      )}
-                    >
-                      0{i + 1}
-                    </span>
-                    <span className="rounded-full border border-line px-2.5 py-0.5 font-mono text-xs text-muted">
-                      {step.time}
-                    </span>
-                  </div>
-                  <h3 className="mt-8 text-lg font-semibold tracking-[-0.01em]">{step.title}</h3>
-                  <p className="mt-2 text-muted">{step.body}</p>
-                </SpotlightCard>
-              </li>
-            ))}
-          </ol>
-        </Section>
+        {/* Judul ikut menempel di kolom kiri selama langkah digulir (HowItWorks). */}
+        <section id="cara-kerja" aria-labelledby="cara-kerja-title" className="px-page py-14 sm:py-24">
+          <HowItWorks
+            data={howItWorks}
+            resi={hero.exampleResi}
+            index="02"
+            label="Cara kerja"
+            titleId="cara-kerja-title"
+          />
+        </section>
       </div>
 
       {/* Satu resi, empat sudut pandang: kartu yang melebar saat disorot (PerspectiveCards). */}
@@ -598,17 +636,17 @@ export default function Home() {
           >
             {closing.title}
           </h2>
-          <p className="reveal mx-auto mt-5 max-w-xl text-lg text-hero-muted">{closing.body}</p>
+          <p className="reveal mx-auto mt-5 max-w-xl text-lg text-balance text-hero-muted">{closing.body}</p>
           <div className="reveal mx-auto mt-10 max-w-xl text-left">
             <ResiSearch example={hero.exampleResi} variant="hero" />
           </div>
           <div className="reveal mt-8 flex flex-wrap justify-center gap-3">
-            <Button href="/layanan" transitionTypes={["nav-forward"]}>
+            <CtaButton href="/layanan" transitionTypes={["nav-forward"]} variant="light">
               Ajukan permohonan
-            </Button>
-            <Button href="/rapor" transitionTypes={["nav-forward"]} variant="hero">
+            </CtaButton>
+            <CtaButton href="/rapor" transitionTypes={["nav-forward"]} variant="glass" chip={false}>
               Lihat rapor SLA
-            </Button>
+            </CtaButton>
           </div>
         </div>
         <Marquee items={closing.marquee} />

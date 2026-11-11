@@ -296,7 +296,8 @@ input[list]::-webkit-calendar-picker-indicator {
     border-color 0.25s ease,
     backdrop-filter 0.25s ease,
     --nav-fg 0.25s ease,
-    --nav-muted 0.25s ease;
+    --nav-muted 0.25s ease,
+    translate 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .site-header:not([data-scrolled="true"]) {
   background-color: transparent;
@@ -346,6 +347,40 @@ body:has([data-header-dark]) .site-header:not([data-on-dark]) {
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
+}
+
+/* Tombol CTA (CtaButton): seberkas cahaya berputar di tepi pil. Sudutnya dianimasikan lewat
+   @property agar conic-gradient bisa bergerak; "kurangi gerakan" = cahaya diam. */
+@property --cta-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 200deg;
+}
+@keyframes cta-spin {
+  to {
+    --cta-angle: 560deg;
+  }
+}
+@utility cta-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--cta-angle),
+    transparent 0deg 250deg,
+    color-mix(in srgb, var(--cta-ring) 60%, transparent) 300deg,
+    var(--cta-ring) 335deg,
+    transparent 360deg
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  @media (prefers-reduced-motion: no-preference) {
+    animation: cta-spin 3.2s linear infinite;
+  }
 }
 
 /* Pita berjalan (diadaptasi dari "Infinite Moving Cards", Aceternity UI): isi digandakan, lalu

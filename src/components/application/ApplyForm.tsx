@@ -162,7 +162,7 @@ const digits = (value: string) => value.replace(/\D/g, "").slice(0, 3);
 const pad3 = (value: string) => (value ? value.padStart(3, "0") : "");
 
 /**
- * RT/RW sebagai dua kotak angka (warga tidak perlu tahu format "003/005"): maks. 3 digit,
+ * RT/RW sebagai dua kotak angka (warga tidak perlu tau format "003/005"): maks. 3 digit,
  * pindah otomatis ke RW setelah 3 digit, nol di depan ditambahkan saat kotak ditinggalkan,
  * Backspace di RW yang kosong kembali ke RT. Nilai gabungan dikirim lewat input tersembunyi
  * `rtRw`, dan dilaporkan ke `onValue` untuk pratinjau KTP.
@@ -262,7 +262,7 @@ function KtpFields({
       <Select
         label="Golongan darah"
         name="bloodType"
-        options={BLOOD_TYPES.map((b) => ({ value: b, label: b === "-" ? "Tidak tahu" : b }))}
+        options={BLOOD_TYPES.map((b) => ({ value: b, label: b === "-" ? "Tidak tau" : b }))}
         error={err("bloodType")}
         onValueChange={(v) => onValue("bloodType", v)}
       />
@@ -1080,7 +1080,7 @@ function ApplyFormBody({
               {/* Loket: petugas mencentang setelah pemohon menyatakannya secara lisan di depan loket. */}
               <span>
                 {isLoket
-                  ? "Pemohon telah menyatakan data dan dokumen yang diajukan benar dan sah, serta bersedia dihubungi petugas. Pemohon sudah diberi tahu bahwa memalsukan data dalam permohonan dokumen kependudukan dapat dipidana"
+                  ? "Pemohon telah menyatakan data dan dokumen yang diajukan benar dan sah, serta bersedia dihubungi petugas. Pemohon sudah diberi tau bahwa memalsukan data dalam permohonan dokumen kependudukan dapat dipidana"
                   : "Saya menyatakan data dan dokumen yang saya ajukan benar dan sah, serta bersedia dihubungi petugas. Saya memahami bahwa memalsukan data dalam permohonan dokumen kependudukan dapat dipidana"}{" "}
                 <span className="text-muted">
                   (Pasal 93 UU No. 23 Tahun 2006 tentang Administrasi Kependudukan)

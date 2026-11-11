@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import ResiSearch from "@/components/application/ResiSearch";
+import { ScrollParallax, ScrollTilt } from "@/components/landing/ScrollReveal";
 import Spotlight from "@/components/landing/Spotlight";
 import PixelOffice from "@/components/office/PixelOffice";
 import SectionError from "@/components/SectionError";
@@ -70,7 +71,7 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
       <HeroBackdrop />
 
       {/* Teks di tengah: label, judul, pengantar, lalu satu aksi utama (cek resi). */}
-      <div className="relative mx-auto max-w-5xl px-4 pt-20 text-center sm:pt-28 lg:pt-32">
+      <ScrollParallax className="relative mx-auto max-w-5xl px-4 pt-20 text-center sm:pt-28 lg:pt-32">
         <Link
           href="/rapor"
           transitionTypes={["nav-forward"]}
@@ -114,11 +115,12 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
         <div className="mx-auto mt-10 max-w-xl text-left motion-safe:animate-fade-up" style={delay(400)}>
           <ResiSearch example={hero.exampleResi} variant="hero" />
         </div>
-      </div>
+      </ScrollParallax>
 
       {/* Visual produk: kantor transparan dalam bingkai kaca, menumpang di peralihan gradien. */}
       <div className="relative px-page pt-16 motion-safe:animate-fade-up sm:pt-20" style={delay(550)}>
-        <div className="rounded-[1.75rem] border border-white/25 bg-white/10 p-2 shadow-[0_50px_100px_-40px_rgb(4_10_40/0.55)] backdrop-blur-sm sm:p-3">
+        {/* Desktop: jendela "dibuka" saat digulir (miring 3D → rata), lihat ScrollTilt. */}
+        <ScrollTilt className="rounded-[1.75rem] border border-white/25 bg-white/10 p-2 shadow-[0_50px_100px_-40px_rgb(4_10_40/0.55)] backdrop-blur-sm sm:p-3">
           <div className="rounded-[1.35rem] border border-line bg-surface px-3 pt-3 pb-4 sm:px-5 sm:pt-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
               <p className="flex items-center gap-3 text-sm">
@@ -141,7 +143,7 @@ export default function HeroSection({ hero }: { hero: typeof site.hero }) {
               </Suspense>
             </SectionError>
           </div>
-        </div>
+        </ScrollTilt>
         <p className="mt-4 text-center text-xs text-muted">
           <span className="mr-2 rounded-sm border border-line px-1.5 py-0.5 font-semibold">
             {site.demo.badge}
